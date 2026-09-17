@@ -112,9 +112,67 @@ def _validate_scratch_ablation(config):
         raise ValueError("Invalid scOT-without-TL config: " + "; ".join(failed))
 
 
+def _validate_transfer_learning_ablation(config):
+    model = config["model_params"]
+    train = config["train_params"]
+    optimizer = config["optimizer_params"]
+    groups = optimizer.get("param_groups", {})
+    batch_sizes = {
+        split: config["dataloader_params"][split]["batch_size"]
+        for split in ("train", "validation", "test")
+    }
+    checks = {
+        "load_pretrained_poseidon must be true": model.get(
+            "load_pretrained_poseidon", False
+        ),
+        "poseidon_model must be camlab-ethz/Poseidon-T": model.get(
+            "poseidon_model"
+        )
+        == "camlab-ethz/Poseidon-T",
+        "POSEIDON-native fluid normalization must be enabled": model.get(
+            "use_poseidon_fluid_normalization", False
+        ),
+        "velocity residual learning must be disabled": not model.get(
+            "velocity_residual", False
+        ),
+        "magnetic residual learning must be enabled": model.get(
+            "magnetic_residual", False
+        ),
+        "the locked transfer ablation uses batch_size=16 for every split": all(
+            value == 16 for value in batch_sizes.values()
+        ),
+        "optimizer parameter groups must be enabled": groups.get("enabled", False),
+        "pretrained_lr must be 5e-6": groups.get("pretrained_lr") == 5.0e-6,
+        "new_lr must be 5e-4": groups.get("new_lr") == 5.0e-4,
+        "pretrained_weight_decay must be 1e-2": groups.get(
+            "pretrained_weight_decay"
+        )
+        == 1.0e-2,
+        "new_weight_decay must be zero": groups.get("new_weight_decay") == 0.0,
+        "load_checkpoint must be empty": not str(
+            train.get("load_checkpoint", "")
+        ).strip(),
+    }
+    failed = [message for message, passed in checks.items() if not passed]
+    if failed:
+        raise ValueError("Invalid scOT-with-TL config: " + "; ".join(failed))
+
+
+def _validate_scot_ablation(config):
+    recipe = config["train_params"].get("recipe")
+    if recipe == "scot_without_tl":
+        _validate_scratch_ablation(config)
+    elif recipe == "scot_with_tl":
+        _validate_transfer_learning_ablation(config)
+    else:
+        raise ValueError(
+            "train_params.recipe must be scot_without_tl or scot_with_tl"
+        )
+
+
 def train_scot(config):
-    """Train the locked scOT-without-transfer-learning ablation."""
-    _validate_scratch_ablation(config)
+    """Train one of the locked three-channel scOT ablations."""
+    _validate_scot_ablation(config)
     torch.backends.cudnn.benchmark = True
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataset = config["dataset_params"]
@@ -155,7 +213,7 @@ def train_scot(config):
     load_checkpoint = str(train.get("load_checkpoint", "")).strip()
     if load_checkpoint:
         raise ValueError(
-            "The canonical Batch 6 scOT ablation is a no-warm-start baseline; "
+            "The canonical three-channel scOT ablations start at epoch zero; "
             "load_checkpoint must remain empty."
         )
 

@@ -49,6 +49,12 @@ model_params:
   load_pretrained_poseidon: true
 ```
 
+The historical transfer-learning YAMLs did not pin a Hugging Face model
+revision. The local artifact audited for Batch 7 currently resolves to
+`ec976ed5d25883ec9db4e486ebbeeefa9e08303b`, but this cannot be proven to
+be the revision fetched by the original training job. The trained checkpoint
+hash is pinned in the corresponding provenance record.
+
 At first use, Hugging Face downloads the model into its local cache. Internet
 access is therefore required unless the cache has already been populated. The
 cache location can be controlled with `HF_HOME`:

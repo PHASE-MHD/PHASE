@@ -29,3 +29,11 @@ export PHASE_SCOT_WITHOUT_TL_CHECKPOINT=/path/to/scot_without_tl.pt
 pytest -m checkpoint \
   tests/checkpoint_compatibility/test_scot_without_tl_legacy_checkpoint.py
 ```
+
+The scOT transfer-learning checkpoint check is enabled with:
+
+```bash
+export PHASE_SCOT_WITH_TL_CHECKPOINT=/path/to/scot_with_tl.pt
+pytest -m checkpoint \
+  tests/checkpoint_compatibility/test_scot_with_tl_legacy_checkpoint.py
+```

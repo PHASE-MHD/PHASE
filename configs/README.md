@@ -9,3 +9,5 @@ Implemented ablation configs:
 
 - `ablations/scot_without_tl/re1000.yaml`: three-channel scOT trained from
   scratch at `Re=Rm=1000`, with the reported batch size of 1.
+- `ablations/scot_with_tl/re1000.yaml`: three-channel scOT initialized from
+  `camlab-ethz/Poseidon-T` at `Re=Rm=1000`, with batch size 16.

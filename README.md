@@ -7,7 +7,7 @@ The repository is being assembled incrementally from audited legacy implementati
 with checkpoint-compatibility and regression tests at each stage. The current
 package includes canonical data preprocessing, the previous tFNO and DINO
 baselines, and the three-channel scOT ablation trained without POSEIDON
-transfer learning.
+transfer learning, plus its POSEIDON transfer-learning counterpart.
 
 ## Current status
 
@@ -39,3 +39,5 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
   tFNO: `docs/previous_baseline_dino.md`
 - scOT without POSEIDON transfer learning, `Re=Rm=1000`, batch size 1:
   `docs/scot_without_transfer_learning.md`
+- scOT with POSEIDON transfer learning, `Re=Rm=1000`, batch size 16:
+  `docs/scot_with_transfer_learning.md`

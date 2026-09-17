@@ -60,6 +60,7 @@ class MHDVecPotLoss(nn.Module):
         div_B_weight: float = 1.0,
         div_vel_weight: float = 1.0,
         magnetic_field_weight: float = 0.0,
+        log_inactive_derived_components: bool = False,
         Lx: float = 1.0,
         Ly: float = 1.0,
         tend: float = 1.0,
@@ -89,6 +90,8 @@ class MHDVecPotLoss(nn.Module):
             DA_weight: Weight for vector potential equation residual
             div_B_weight: Weight for magnetic field divergence constraint
             div_vel_weight: Weight for velocity divergence constraint
+            log_inactive_derived_components: Record zero-valued vorticity and
+                current entries for compatibility with later legacy logs
             Lx: Domain length in x direction
             Ly: Domain length in y direction
             tend: Final simulation time
@@ -126,6 +129,7 @@ class MHDVecPotLoss(nn.Module):
         self.div_B_weight = div_B_weight
         self.div_vel_weight = div_vel_weight
         self.magnetic_field_weight = magnetic_field_weight
+        self.log_inactive_derived_components = log_inactive_derived_components
 
         # Domain parameters
         self.Lx = Lx
@@ -289,6 +293,9 @@ class MHDVecPotLoss(nn.Module):
         else:
             loss_magnetic_field = torch.tensor(0.0, device=pred.device)
             loss_components["magnetic_field"] = 0.0
+
+        if self.log_inactive_derived_components:
+            loss_components.update({"vorticity": 0.0, "current": 0.0})
 
         # Calculate weight normalization factor
         if self.use_weighted_mean:

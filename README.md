@@ -15,7 +15,7 @@ stage.
 - Supported Python version: 3.11
 - Packaging: setuptools with a `src/` layout
 - Tests: pytest
-- License: none currently specified
+- License: MIT
 
 No training datasets, model checkpoints, logs, or generated analysis outputs
 are tracked in Git. Small synthetic fixtures may be stored under
@@ -23,3 +23,4 @@ are tracked in Git. Small synthetic fixtures may be stored under
 
 See `COPY_MANIFEST.md` for the audited legacy-source inventory and
 `README_src_changes.md` for the rationale behind the required consolidation.
+The MIT license preserves attribution for the inherited research code.

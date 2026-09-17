@@ -23,6 +23,8 @@ are tracked in Git. Small synthetic fixtures may be stored under
 
 See `COPY_MANIFEST.md` for the audited legacy-source inventory and
 `README_src_changes.md` for the rationale behind the required consolidation.
+Canonical array layouts and normalization rules are documented in
+`docs/data_format.md`.
 PHASE is MIT-licensed under the project copyright in `LICENSE`. A limited
 number of adapted components retain their original attribution, recorded
 separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.

@@ -22,7 +22,7 @@ outputs/
 checkpoints/
 
 # External scientific data and model artifacts
-data/
+/data/
 *.pt
 *.pth
 *.ckpt

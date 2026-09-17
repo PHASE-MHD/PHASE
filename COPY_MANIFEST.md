@@ -1,6 +1,6 @@
 # PHASE copy manifest
 
-Status: assembly in progress. Batches 1--7 are implemented; later model and
+Status: assembly in progress. Batches 1--8 are implemented; later model and
 diffusion batches remain inventory entries until their provenance checks are complete.
 
 This is the literal legacy-source manifest for rebuilding the public PHASE

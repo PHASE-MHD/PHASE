@@ -11,3 +11,5 @@ Implemented ablation configs:
   scratch at `Re=Rm=1000`, with the reported batch size of 1.
 - `ablations/scot_with_tl/re1000.yaml`: three-channel scOT initialized from
   `camlab-ethz/Poseidon-T` at `Re=Rm=1000`, with batch size 16.
+- `ablations/naive_multi_regime/multi_re.yaml`: warm-started three-channel
+  scOT with naive constant Re/Rm input maps and balanced ten-regime batches.

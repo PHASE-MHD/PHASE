@@ -41,3 +41,5 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
   `docs/scot_without_transfer_learning.md`
 - scOT with POSEIDON transfer learning, `Re=Rm=1000`, batch size 16:
   `docs/scot_with_transfer_learning.md`
+- Naive multi-regime scOT with constant Re/Rm input maps:
+  `docs/naive_multi_regime.md`

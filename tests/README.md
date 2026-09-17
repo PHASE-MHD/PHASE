@@ -37,3 +37,10 @@ export PHASE_SCOT_WITH_TL_CHECKPOINT=/path/to/scot_with_tl.pt
 pytest -m checkpoint \
   tests/checkpoint_compatibility/test_scot_with_tl_legacy_checkpoint.py
 ```
+
+## Batch 8 checkpoint compatibility
+
+Set both `PHASE_SCOT_WITH_TL_CHECKPOINT` and
+`PHASE_NAIVE_MULTI_RE_CHECKPOINT` to the corrected single-Re warm start and
+reported epoch-59 naive multi-regime checkpoint before running the marked
+checkpoint test.

@@ -62,6 +62,7 @@ def _register_all_losses():
     # Import all modules in this package
     from . import standard
     from . import weighted
+    from . import physics_informed
 
     # For future expansion, you can also automatically discover and import all modules
     # in the losses package using this pattern:

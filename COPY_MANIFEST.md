@@ -1,7 +1,7 @@
 # PHASE copy manifest
 
-Status: source inventory frozen; files have not yet been copied into the
-unified package.
+Status: assembly in progress. Batches 1--4 are implemented; later model and
+diffusion batches remain inventory entries until their provenance checks are complete.
 
 This is the literal legacy-source manifest for rebuilding the public PHASE
 repository from MHD data through preprocessing, deterministic training,

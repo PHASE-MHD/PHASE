@@ -3,10 +3,10 @@
 PHASE is currently being consolidated into a reproducible public research
 repository for incompressible magnetohydrodynamics models.
 
-The repository scaffold is intentionally minimal. Model source and canonical
-experiment configurations will be added incrementally from the audited legacy
-implementations, with checkpoint-compatibility and regression tests at each
-stage.
+The repository is being assembled incrementally from audited legacy implementations,
+with checkpoint-compatibility and regression tests at each stage. The current
+package includes canonical data preprocessing and the complete no-warm-start
+tFNO baseline training path.
 
 ## Current status
 
@@ -29,3 +29,8 @@ documented in `docs/preprocessing.md`.
 PHASE is MIT-licensed under the project copyright in `LICENSE`. A limited
 number of adapted components retain their original attribution, recorded
 separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
+
+## Implemented training paths
+
+- Previous tFNO baseline, `Re=Rm=1000`, trained from scratch:
+  `docs/previous_baseline_tfno.md`

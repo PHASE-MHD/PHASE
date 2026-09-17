@@ -88,7 +88,10 @@ def _save_checkpoint(path, model, optimizer, scheduler, epoch, val_loss, rel_l2,
 def _validate_scratch_ablation(config):
     model = config["model_params"]
     train = config["train_params"]
-    batch_size = config["dataloader_params"]["train"]["batch_size"]
+    batch_sizes = {
+        split: config["dataloader_params"][split]["batch_size"]
+        for split in ("train", "validation", "test")
+    }
     checks = {
         "load_pretrained_poseidon must be false": not model.get(
             "load_pretrained_poseidon", True
@@ -97,7 +100,9 @@ def _validate_scratch_ablation(config):
         "POSEIDON-native fluid normalization must be disabled": not model.get(
             "use_poseidon_fluid_normalization", True
         ),
-        "the locked no-transfer ablation uses batch_size=1": batch_size == 1,
+        "the locked no-transfer ablation uses batch_size=1 for every split": all(
+            value == 1 for value in batch_sizes.values()
+        ),
         "load_checkpoint must be empty": not str(
             train.get("load_checkpoint", "")
         ).strip(),
@@ -110,6 +115,7 @@ def _validate_scratch_ablation(config):
 def train_scot(config):
     """Train the locked scOT-without-transfer-learning ablation."""
     _validate_scratch_ablation(config)
+    torch.backends.cudnn.benchmark = True
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataset = config["dataset_params"]
     loaders = config["dataloader_params"]
@@ -128,6 +134,13 @@ def train_scot(config):
         x_range=tuple(dataset.get("x_range", (0.0, 1.0))),
         y_range=tuple(dataset.get("y_range", (0.0, 1.0))),
     )
+
+    # Preserve the legacy run order: its shape check consumed one shuffled
+    # training iterator before random model initialization.
+    probe_inputs, probe_target = next(iter(train_loader))
+    print(f"Input batch shape: {tuple(probe_inputs.shape)}", flush=True)
+    print(f"Output batch shape: {tuple(probe_target.shape)}", flush=True)
+    del probe_inputs, probe_target
 
     model = create_model(config).to(device)
     criterion = create_loss(config)

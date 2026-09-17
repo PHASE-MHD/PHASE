@@ -1,11 +1,13 @@
 """Regression checks for the locked scOT-without-TL ablation."""
 
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
 import torch
 
 from phase.losses import create_loss
+from phase.training.scot_trainer import _validate_scratch_ablation
 from phase.utils import load_config
 
 
@@ -25,6 +27,12 @@ def test_scot_without_tl_config_is_locked(monkeypatch, tmp_path):
     assert model["use_poseidon_fluid_normalization"] is False
     assert model["velocity_residual"] is True
     assert model["magnetic_residual"] is True
+    assert model["fallback_poseidon_embed_dim"] == 48
+    assert model["fallback_poseidon_depths"] == [2, 2, 2, 2]
+    assert model["fallback_poseidon_num_heads"] == [3, 6, 12, 24]
+    assert model["fallback_poseidon_skip_connections"] == [2, 2, 2, 0]
+    assert config["normalization_params"]["input_norm"] == [1.0, 1.0, 0.0052]
+    assert config["normalization_params"]["output_norm"] == [1.0, 1.0, 0.0052]
     assert config["dataloader_params"]["train"]["batch_size"] == 1
     assert config["dataset_params"]["train_size"] == 800
     assert config["dataset_params"]["val_plus_test_size"] == 200
@@ -32,9 +40,24 @@ def test_scot_without_tl_config_is_locked(monkeypatch, tmp_path):
     assert loss["nu"] == pytest.approx(1e-3)
     assert loss["eta"] == pytest.approx(1e-3)
     assert loss["magnetic_field_weight"] == pytest.approx(1.0)
+    assert loss["data_weight"] == pytest.approx(10.0)
+    assert loss["ic_weight"] == pytest.approx(1.0)
+    assert loss["pde_weight"] == pytest.approx(1e-3)
+    assert loss["constraint_weight"] == pytest.approx(0.1)
+    assert loss["A_weight"] == pytest.approx(5.0)
+    assert loss["DA_weight"] == pytest.approx(100.0)
     assert config["optimizer_params"]["lr"] == pytest.approx(5e-4)
     assert config["optimizer_params"]["weight_decay"] == pytest.approx(0.0)
     assert config["train_params"]["load_checkpoint"] == ""
+    assert config["train_params"]["epochs"] == 100
+    _validate_scratch_ablation(config)
+
+
+def test_scot_without_tl_guard_rejects_batch_size_drift(monkeypatch, tmp_path):
+    config = deepcopy(_config(monkeypatch, tmp_path))
+    config["dataloader_params"]["train"]["batch_size"] = 16
+    with pytest.raises(ValueError, match="batch_size=1"):
+        _validate_scratch_ablation(config)
 
 
 def test_scot_vector_potential_loss_reports_all_components():

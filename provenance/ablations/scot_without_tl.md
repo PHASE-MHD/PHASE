@@ -32,6 +32,14 @@ omega   5.302343e-1
 J       3.009337e0
 ```
 
+The NumPy seed-42 split-index SHA-256 digests are:
+
+```text
+train 0641723ad566748f655b65fff2db399e6be202f94cb7b8a61c4f53c17d7c281e
+val   17bfabf318edf05ff63c4994cc37ddc4b26d2ac3a8ce61467533fed9e3fd4d1b
+test  0b391decce865a16af4d2598872625588730b2a5a4257bd04160f88c4098b5a9
+```
+
 ## Artifact hashes
 
 ```text
@@ -52,6 +60,9 @@ The scOT implementation is supplied by the external POSEIDON repository at
 commit `b8fa28f59bd7f7673323f28d11a12c6f3a215c61`. This ablation uses its
 architecture only: `poseidon_model: null` and
 `load_pretrained_poseidon: false` ensure no pretrained weights are loaded.
+Consequently, the YAML magnetic input/output initialization labels are
+inactive; those options only initialize channels added to pretrained weights.
+The full scratch model uses the standard random scOT initialization.
 
 ## Public mapping
 

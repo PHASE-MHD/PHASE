@@ -19,6 +19,11 @@ weights and does not apply POSEIDON-native fluid normalization.
 - Checkpoint selection: minimum normalized validation loss
 - Transport coefficients: `nu=eta=1e-3`
 
+The `magnetic_input_init` and `magnetic_output_init` fields remain in the YAML
+for exact legacy-config parity, but they apply only when expanding pretrained
+POSEIDON weights. With transfer learning disabled, all scOT parameters,
+including the magnetic pathways, use the standard random scOT initialization.
+
 The loss combines relative-L2 data and initial-condition terms, MHD PDE
 residuals, velocity-divergence regularization, and a spectral magnetic-field
 loss obtained from `B=curl(A)`. The complete weights are in

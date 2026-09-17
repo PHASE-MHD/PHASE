@@ -13,6 +13,8 @@ model_params:
   poseidon_output_channel_map: [1, 2]
   magnetic_channel_index: 4
   use_poseidon_fluid_normalization: false
+  # Retained for legacy-config parity. These expansion settings are inactive
+  # when load_pretrained_poseidon=false; the complete scOT is random-initialized.
   magnetic_input_init: "zero"
   magnetic_output_init: "zero"
   velocity_residual: true

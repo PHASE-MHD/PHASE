@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+.venv/
+venv/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+
+# Experiment tracking and generated outputs
+wandb/
+logs/
+outputs/
+checkpoints/
+
+# External scientific data and model artifacts
+data/
+*.pt
+*.pth
+*.ckpt
+*.npy
+*.npz
+*.h5
+*.hdf5
+
+# Local machine configuration
+.env
+*.local.yaml

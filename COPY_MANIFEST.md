@@ -1,6 +1,6 @@
 # PHASE copy manifest
 
-Status: assembly in progress. Batches 1--5 are implemented; later model and
+Status: assembly in progress. Batches 1--6 are implemented; later model and
 diffusion batches remain inventory entries until their provenance checks are complete.
 
 This is the literal legacy-source manifest for rebuilding the public PHASE
@@ -357,7 +357,7 @@ at the destinations shown.
 ### Three-channel scOT ablations
 
 - `MHD-World-scratch/configs/config_poseidon_mhd_finetune_Re1000_scratch_physics_nueta1e3_corrected.yaml`
-  -> `configs/ablations/scot_without_transfer.yaml`
+  -> `configs/ablations/scot_without_tl/re1000.yaml` (**implemented in Batch 6**)
 - `MHD-World/configs/config_poseidon_mhd_finetune_Re1000_vecpot_TL_bs16_nueta1e3_corrected_100ep.yaml`
   -> `configs/ablations/scot_with_transfer.yaml`
 - `MHD-World-Re-naive/configs/gadi/config_poseidon_mhd_re_input_vecpot_TL_corrected_Re1000_warm_bs1_100ep.yaml`

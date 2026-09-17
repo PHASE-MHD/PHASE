@@ -12,6 +12,7 @@ from .loss_factory import register_loss
 from .lp_loss import LpLoss
 from ..physics.constraints import compute_constraints, compute_constraint_loss
 from ..physics.pde_solvers import compute_mhd_pde, compute_pde_loss
+from ..utils.fourier_utils import create_wavenumbers, compute_derivative
 
 from ..utils import (
     get_dataset_normalizer,
@@ -58,6 +59,7 @@ class MHDVecPotLoss(nn.Module):
         DA_weight: float = 1.0,
         div_B_weight: float = 1.0,
         div_vel_weight: float = 1.0,
+        magnetic_field_weight: float = 0.0,
         Lx: float = 1.0,
         Ly: float = 1.0,
         tend: float = 1.0,
@@ -123,6 +125,7 @@ class MHDVecPotLoss(nn.Module):
         # Constraint weights
         self.div_B_weight = div_B_weight
         self.div_vel_weight = div_vel_weight
+        self.magnetic_field_weight = magnetic_field_weight
 
         # Domain parameters
         self.Lx = Lx
@@ -131,9 +134,15 @@ class MHDVecPotLoss(nn.Module):
 
         # Loss calculation method
         self.use_weighted_mean = use_weighted_mean
+        self.last_components = {}
 
     def forward(
-        self, dataloader: DataLoader, pred: Tensor, target: Tensor, inputs: Tensor
+        self,
+        dataloader: DataLoader,
+        pred: Tensor,
+        target: Tensor,
+        inputs: Tensor,
+        metadata: Optional[Dict[str, Tensor]] = None,
     ) -> Tensor:
         """
         Calculate the total loss combining data fit and physics constraints.
@@ -159,9 +168,42 @@ class MHDVecPotLoss(nn.Module):
             inputs, target, pred, normalizer, data_channel_indices, has_grid_embeddings
         )
 
-        return self.compute_loss(pred_denorm, target_denorm, inputs_denorm)
+        return self.compute_loss(pred_denorm, target_denorm, inputs_denorm, metadata)
 
-    def compute_loss(self, pred: Tensor, target: Tensor, inputs: Tensor) -> Tensor:
+    def _transport_coefficients(
+        self, metadata: Optional[Dict[str, Tensor]], pred: Tensor
+    ) -> Tuple[Union[float, Tensor], Union[float, Tensor]]:
+        if metadata is None:
+            return self.nu, self.eta
+
+        nu = metadata.get("nu")
+        eta = metadata.get("eta")
+        if nu is None and metadata.get("re") is not None:
+            nu = 1.0 / metadata["re"].to(pred.device, dtype=pred.dtype)
+        if eta is None:
+            if metadata.get("rem") is not None:
+                eta = 1.0 / metadata["rem"].to(pred.device, dtype=pred.dtype)
+            elif metadata.get("re") is not None:
+                eta = 1.0 / metadata["re"].to(pred.device, dtype=pred.dtype)
+
+        if nu is None:
+            nu = self.nu
+        if eta is None:
+            eta = self.eta
+
+        if torch.is_tensor(nu):
+            nu = nu.to(pred.device, dtype=pred.dtype).view(-1, 1, 1, 1)
+        if torch.is_tensor(eta):
+            eta = eta.to(pred.device, dtype=pred.dtype).view(-1, 1, 1, 1)
+        return nu, eta
+
+    def compute_loss(
+        self,
+        pred: Tensor,
+        target: Tensor,
+        inputs: Tensor,
+        metadata: Optional[Dict[str, Tensor]] = None,
+    ) -> Tensor:
         """
         Compute weighted loss with all components.
 
@@ -181,24 +223,31 @@ class MHDVecPotLoss(nn.Module):
 
         # Data loss
         if self.use_data_loss:
-            loss_data = self.data_loss(pred, target)
+            loss_data, data_components = self.data_loss(
+                pred, target, return_components=True
+            )
             loss_components["data"] = loss_data.item()
+            loss_components.update({f"data_{k}": v for k, v in data_components.items()})
         else:
             loss_data = torch.tensor(0.0, device=pred.device)
             loss_components["data"] = 0.0
 
         # Initial condition loss
         if self.use_ic_loss:
-            loss_ic = self.ic_loss(pred, inputs)
+            loss_ic, ic_components = self.ic_loss(
+                pred, inputs, return_components=True
+            )
             loss_components["ic"] = loss_ic.item()
+            loss_components.update({f"ic_{k}": v for k, v in ic_components.items()})
         else:
             loss_ic = torch.tensor(0.0, device=pred.device)
             loss_components["ic"] = 0.0
 
         # PDE loss
         if self.use_pde_loss:
+            nu, eta = self._transport_coefficients(metadata, pred)
             Du, Dv, DA = compute_mhd_pde(
-                u, v, A, self.Lx, self.Ly, self.tend, self.nu, self.eta, self.rho0
+                u, v, A, self.Lx, self.Ly, self.tend, nu, eta, self.rho0
             )
             loss_pde, pde_components = compute_pde_loss(
                 Du,
@@ -229,6 +278,18 @@ class MHDVecPotLoss(nn.Module):
         else:
             loss_constraint = torch.tensor(0.0, device=pred.device)
 
+        if self.magnetic_field_weight > 0:
+            loss_magnetic_field, magnetic_field_components = self.magnetic_field_loss(
+                pred[:, 2], target[:, 2], return_components=True
+            )
+            loss_components["magnetic_field"] = loss_magnetic_field.item()
+            loss_components.update(
+                {f"magnetic_field_{k}": v for k, v in magnetic_field_components.items()}
+            )
+        else:
+            loss_magnetic_field = torch.tensor(0.0, device=pred.device)
+            loss_components["magnetic_field"] = 0.0
+
         # Calculate weight normalization factor
         if self.use_weighted_mean:
             active_weights = (
@@ -236,6 +297,7 @@ class MHDVecPotLoss(nn.Module):
                 + (self.ic_weight if self.use_ic_loss else 0)
                 + (self.pde_weight if self.use_pde_loss else 0)
                 + (self.constraint_weight if self.use_constraint_loss else 0)
+                + self.magnetic_field_weight
             )
             weight_sum = max(active_weights, 1.0)  # Avoid division by zero
         else:
@@ -247,14 +309,43 @@ class MHDVecPotLoss(nn.Module):
             + self.ic_weight * loss_ic
             + self.pde_weight * loss_pde
             + self.constraint_weight * loss_constraint
+            + self.magnetic_field_weight * loss_magnetic_field
         ) / weight_sum
 
         # Store total loss
         loss_components["total"] = loss.item()
+        self.last_components = loss_components
 
         return loss
 
-    def data_loss(self, pred: Tensor, target: Tensor) -> Tensor:
+    def magnetic_field_loss(
+        self, A_pred: Tensor, A_target: Tensor, return_components: bool = False
+    ) -> Union[Tensor, Tuple[Tensor, Dict[str, float]]]:
+        """Relative L2 loss on B = curl(A), computed with spectral derivatives."""
+        lploss = LpLoss(size_average=True)
+        Bx_pred, By_pred = self.vector_potential_to_B(A_pred)
+        Bx_target, By_target = self.vector_potential_to_B(A_target)
+        loss_Bx = lploss(Bx_pred, Bx_target)
+        loss_By = lploss(By_pred, By_target)
+        loss_B = 0.5 * (loss_Bx + loss_By)
+        if return_components:
+            return loss_B, {"Bx": loss_Bx.item(), "By": loss_By.item()}
+        return loss_B
+
+    def vector_potential_to_B(self, A: Tensor) -> Tuple[Tensor, Tensor]:
+        nx = A.size(2)
+        ny = A.size(3)
+        k_x, k_y = create_wavenumbers(nx, ny, self.Lx, self.Ly, A.device)
+        A_h = torch.fft.fftn(A, dim=[2, 3])
+        Ax_h = compute_derivative(A_h, k_x)
+        Ay_h = compute_derivative(A_h, k_y)
+        Bx = torch.fft.ifftn(Ay_h, dim=[2, 3]).real
+        By = torch.fft.ifftn(-Ax_h, dim=[2, 3]).real
+        return Bx, By
+
+    def data_loss(
+        self, pred: Tensor, target: Tensor, return_components: bool = False
+    ) -> Union[Tensor, Tuple[Tensor, Dict[str, float]]]:
         """
         Compute data fitting loss using Lp loss.
 
@@ -287,9 +378,17 @@ class MHDVecPotLoss(nn.Module):
             self.u_weight * loss_u + self.v_weight * loss_v + self.A_weight * loss_A
         ) / weight_sum
 
+        if return_components:
+            return loss_data, {
+                "u": loss_u.item(),
+                "v": loss_v.item(),
+                "A": loss_A.item(),
+            }
         return loss_data
 
-    def ic_loss(self, pred: Tensor, inputs: Tensor) -> Tensor:
+    def ic_loss(
+        self, pred: Tensor, inputs: Tensor, return_components: bool = False
+    ) -> Union[Tensor, Tuple[Tensor, Dict[str, float]]]:
         """
         Compute initial condition loss using Lp loss.
 
@@ -332,6 +431,12 @@ class MHDVecPotLoss(nn.Module):
             + self.A_weight * loss_A_ic
         ) / weight_sum
 
+        if return_components:
+            return loss_ic, {
+                "u": loss_u_ic.item(),
+                "v": loss_v_ic.item(),
+                "A": loss_A_ic.item(),
+            }
         return loss_ic
 
 

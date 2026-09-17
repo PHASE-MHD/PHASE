@@ -5,8 +5,9 @@ repository for incompressible magnetohydrodynamics models.
 
 The repository is being assembled incrementally from audited legacy implementations,
 with checkpoint-compatibility and regression tests at each stage. The current
-package includes canonical data preprocessing and the complete no-warm-start
-tFNO baseline training path.
+package includes canonical data preprocessing, the previous tFNO and DINO
+baselines, and the three-channel scOT ablation trained without POSEIDON
+transfer learning.
 
 ## Current status
 
@@ -36,3 +37,5 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
   `docs/previous_baseline_tfno.md`
 - Previous DINO baseline, full-field EDM diffusion conditioned on the released
   tFNO: `docs/previous_baseline_dino.md`
+- scOT without POSEIDON transfer learning, `Re=Rm=1000`, batch size 1:
+  `docs/scot_without_transfer_learning.md`

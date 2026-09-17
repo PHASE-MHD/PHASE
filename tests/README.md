@@ -21,3 +21,11 @@ export PHASE_OFFICIAL_TFNO_CHECKPOINT=/path/to/tfno_Re1000.pt
 export PHASE_LEGACY_DINO_CHECKPOINT=/path/to/dino_epoch100.pt
 pytest -m checkpoint tests/checkpoint_compatibility/test_dino_legacy_checkpoints.py
 ```
+
+The scOT-without-transfer checkpoint check is enabled with:
+
+```bash
+export PHASE_SCOT_WITHOUT_TL_CHECKPOINT=/path/to/scot_without_tl.pt
+pytest -m checkpoint \
+  tests/checkpoint_compatibility/test_scot_without_tl_legacy_checkpoint.py
+```

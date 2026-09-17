@@ -2,6 +2,18 @@
 
 from .checkpoint_mapping import map_official_tfno_state_dict
 from .model_factory import create_model
-from .tfno import TFNO
+from .scot_mhd import PoseidonMHDFinetune
 
-__all__ = ["TFNO", "create_model", "map_official_tfno_state_dict"]
+try:
+    from .tfno import TFNO
+except ModuleNotFoundError as exc:
+    if exc.name != "tltorch":
+        raise
+    TFNO = None
+
+__all__ = [
+    "PoseidonMHDFinetune",
+    "TFNO",
+    "create_model",
+    "map_official_tfno_state_dict",
+]

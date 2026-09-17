@@ -1,0 +1,31 @@
+# Architecture used to load the external DINOs-paper tFNO conditioner.
+model_params:
+  model_type: tfno
+  model_variant: 3d
+  in_channels: 6
+  out_channels: 3
+  decoder_layers: 2
+  dimension: 3
+  latent_channels: 32
+  num_fno_layers: 8
+  num_fno_modes: 8
+  padding: [5, 0, 0]
+  padding_type: constant
+  activation_fn: gelu
+  coord_features: false
+  rank: 0.5
+  factorization: cp
+
+normalization_params:
+  type: minmax
+  feature_range: [-1, 1]
+  stats_file: ${STATS_ROOT}/train_only_stats_Re1000.npz
+
+dataset_params:
+  data_path: ${DATA_ROOT}/mhd_Re1000_N1000/mhd_data_3channel.npy
+  channels: [ux, uy, A]
+  train_size: 900
+  val_plus_test_size: 100
+  seed: 42
+  sub_t: 4
+  sub_x: 1

@@ -34,3 +34,5 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
 
 - Previous tFNO baseline, `Re=Rm=1000`, trained from scratch:
   `docs/previous_baseline_tfno.md`
+- Previous DINO baseline, full-field EDM diffusion conditioned on the released
+  tFNO: `docs/previous_baseline_dino.md`

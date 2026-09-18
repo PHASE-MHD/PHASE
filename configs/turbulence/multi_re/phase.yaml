@@ -37,6 +37,8 @@ model_params:
   domain_size_y: 1.0
   use_vorticity_loss: false
   use_current_loss: false
+  vorticity_loss_weight: 0.0
+  current_loss_weight: 0.0
   re_conditioning: {enabled: false}
 
 normalization_params:
@@ -72,6 +74,7 @@ optimizer_params:
   lr: 5.0e-5
   weight_decay: 1.0e-4
   betas: [0.9, 0.999]
+  param_groups: {enabled: false}
   use_scheduler: true
   scheduler_type: cosine
   T_max: 1000
@@ -85,6 +88,6 @@ train_params:
   warm_start_checkpoint: ${CHECKPOINT_ROOT}/historical/dt_single_re_full_field_diffusion.pt
   warm_start_mode: model_weights_only
   validation_interval: 5
-  checkpoint_metric: denormalized_relative_l2
+  checkpoint_metric: denorm_rel_l2
   clip_grad: true
   clip_grad_max_norm: 1.0

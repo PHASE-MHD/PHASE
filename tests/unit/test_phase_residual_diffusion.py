@@ -6,7 +6,12 @@ import torch
 
 from phase.diffusion.models.helmholtz_projection import HelmholtzProjectionDiffusion
 from phase.preprocessing import diffusion_statistics_by_re
-from phase.training.dino_trainer import _validate_recipe, _warm_start_weights
+from phase.training.dino_trainer import (
+    _checkpoint,
+    _should_validate,
+    _validate_recipe,
+    _warm_start_weights,
+)
 from phase.utils import load_config
 from phase.utils.diffusion_tensor_normalization import (
     project_residual_via_full_field,
@@ -34,6 +39,11 @@ def test_single_re_phase_recipe_is_residual_and_random(monkeypatch, tmp_path):
     assert config["model_params"]["projection_mode"] == "full_field_residual"
     assert config["normalization_params"]["type"] == "paired_minmax"
     assert config["train_params"]["warm_start_checkpoint"] == ""
+    assert config["train_params"]["validation_interval"] == 10
+    assert config["train_params"]["checkpoint_metric"] == "denorm_rel_l2"
+    assert config["model_params"]["vorticity_loss_weight"] == 0.0
+    assert config["model_params"]["current_loss_weight"] == 0.0
+    assert config["optimizer_params"]["param_groups"]["enabled"] is False
 
 
 def test_multi_re_phase_recipe_preserves_reported_warm_start(monkeypatch, tmp_path):
@@ -43,6 +53,11 @@ def test_multi_re_phase_recipe_preserves_reported_warm_start(monkeypatch, tmp_pa
     assert config["dataset_params"]["res_per_batch"] == 10
     assert config["train_params"]["warm_start_mode"] == "model_weights_only"
     assert "historical" in config["train_params"]["warm_start_checkpoint"]
+    assert config["train_params"]["validation_interval"] == 5
+    assert config["train_params"]["checkpoint_metric"] == "denorm_rel_l2"
+    assert config["model_params"]["vorticity_loss_weight"] == 0.0
+    assert config["model_params"]["current_loss_weight"] == 0.0
+    assert config["optimizer_params"]["param_groups"]["enabled"] is False
 
 
 def test_residual_projection_operates_on_reconstructed_full_field():
@@ -94,6 +109,46 @@ def test_per_re_statistics_use_residual_targets(tmp_path):
     stats = diffusion_statistics_by_re(path, prediction_mode="residual", chunk_size=1)
     assert np.allclose(stats[80.0]["targets"]["mean"], 2.0)
     assert np.allclose(stats[1000.0]["targets"]["mean"], 5.0)
+
+
+def test_residual_validation_schedule_matches_reported_runs():
+    sr_epochs = [
+        epoch
+        for epoch in range(100)
+        if _should_validate(epoch, 100, 10, "phase_residual_single_re")
+    ]
+    mr_epochs = [
+        epoch
+        for epoch in range(100)
+        if _should_validate(epoch, 100, 5, "phase_residual_multi_re")
+    ]
+    assert sr_epochs == list(range(10, 100, 10))
+    assert mr_epochs == list(range(5, 100, 5))
+    assert _should_validate(0, 100, 10, "previous_dino")
+    assert _should_validate(99, 100, 10, "previous_dino")
+    with pytest.raises(ValueError, match="validation_interval"):
+        _should_validate(1, 100, 0, "phase_residual_single_re")
+
+
+def test_checkpoint_serializes_selected_denorm_metric(tmp_path):
+    model = torch.nn.Linear(2, 1)
+    optimizer = torch.optim.AdamW(model.parameters())
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
+    path = tmp_path / "checkpoint.pt"
+    metrics = (0.25, 0.125, 0.0625)
+    _checkpoint(
+        path, model, optimizer, scheduler, 5, metrics, selected_metric_index=1
+    )
+    saved = torch.load(path, map_location="cpu", weights_only=False)
+    assert saved["loss"] == metrics[1]
+    assert saved["model_val_loss"] == metrics[0]
+    assert saved["denorm_loss_rel_l2"] == metrics[1]
+    assert saved["denorm_loss_mse"] == metrics[2]
+
+    baseline_path = tmp_path / "baseline_checkpoint.pt"
+    _checkpoint(baseline_path, model, optimizer, scheduler, 5, metrics)
+    baseline = torch.load(baseline_path, map_location="cpu", weights_only=False)
+    assert baseline["loss"] == metrics[0]
 
 
 def test_weights_only_warm_start_is_strict_and_does_not_restore_epoch(tmp_path):

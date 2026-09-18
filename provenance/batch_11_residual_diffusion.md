@@ -34,6 +34,14 @@ zero and its reported best checkpoint is epoch 95 with validation
 denormalized relative L2 `0.01023141382` and denormalized MSE
 `1.7980645e-06`.
 
+Artifact identities verified during the paranoid follow-up audit:
+
+- historical SR full-field warm start: `133f67e0552b652ec343c4412e0db01d65f5a6e7f4814c70e89d9ef17444c67a`;
+- reported MR PHASE epoch-95 checkpoint: `97c24e526430889c173472770d97389531885599696dad6d1c514dc6094fd1b4`.
+
+Both checkpoints contain 349 model-state entries. The warm-start checkpoint
+reports source epoch 90; the reported final checkpoint reports epoch 95.
+
 ## Corrected SR PHASE status
 
 The earlier historical single-Re diffusion run reconstructed the full field.
@@ -47,9 +55,30 @@ batch was assembled. No corrected SR metric or checkpoint is claimed here.
 Regression tests lock residual construction, per-Re residual statistics,
 physical-field reconstruction for metrics, full-field rather than
 residual-only Helmholtz projection, strict model-only warm start, and the
-single-/multi-Re config invariants. Synthetic one-epoch single-Re and
+single-/multi-Re config invariants. Synthetic two-epoch single-Re and
 multi-Re training smokes also completed end to end in the project container;
 the multi-Re smoke exercised balanced batches, per-Re paired normalization,
 model-only warm start, validation, checkpointing, and held-out evaluation.
 A separate one-epoch regression smoke confirmed that the guarded previous-DINO
 full-field recipe still trains, validates, checkpoints, and tests unchanged.
+
+## Paranoid follow-up audit
+
+A post-assembly parity pass found and corrected two public-runtime differences:
+PHASE had initially evaluated epoch 0 (and an unscheduled final epoch), and its
+generic checkpoint `loss` field held normalized MSE. The public trainer now
+matches the production PHASE schedule (`10,20,...,90` for single-Re and
+`5,10,...,95` for multi-Re) and stores the selected denormalized relative L2
+under `loss`. The normalized validation MSE remains available separately as
+`model_val_loss`. Disabled derivative weights and optimizer parameter groups
+are explicit in both public configs to avoid dependency on constructor defaults.
+
+## Remaining scope boundaries
+
+The public trainer covers clean training from epoch zero and strict model-only
+warm starts. Full optimizer/scheduler resume across scheduler jobs is not yet
+implemented and is rejected by the PHASE recipe guard. Legacy TensorBoard,
+per-Re diagnostic, and plotting callbacks are also outside Batch 11; they do
+not alter the training objective. The complete 102 GB production feature store
+was inspected structurally but was not regenerated end to end during this
+audit.

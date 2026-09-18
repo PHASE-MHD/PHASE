@@ -26,6 +26,15 @@ def _metadata_re(metadata):
     return metadata.get("re") if metadata is not None else None
 
 
+def _should_validate(epoch, num_epochs, interval, recipe):
+    """Match historical PHASE validation epochs without changing DINO."""
+    if interval <= 0:
+        raise ValueError("validation_interval must be positive.")
+    if recipe in _RESIDUAL_RECIPES:
+        return epoch != 0 and epoch % interval == 0
+    return epoch % interval == 0 or epoch == num_epochs - 1
+
+
 def _train_epoch(model, loader, optimizer, device, clip_norm):
     model.train()
     total = 0.0
@@ -107,7 +116,9 @@ def _validate(model, loader, device, num_sample_steps):
     return tuple(value / count for value in totals)
 
 
-def _checkpoint(path, model, optimizer, scheduler, epoch, metrics):
+def _checkpoint(
+    path, model, optimizer, scheduler, epoch, metrics, selected_metric_index=0
+):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -116,7 +127,8 @@ def _checkpoint(path, model, optimizer, scheduler, epoch, metrics):
             "model_state_dict": model.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
             "scheduler_state_dict": scheduler.state_dict(),
-            "loss": metrics[0],
+            "loss": metrics[selected_metric_index],
+            "model_val_loss": metrics[0],
             "denorm_loss_rel_l2": metrics[1],
             "denorm_loss_mse": metrics[2],
         },
@@ -151,7 +163,7 @@ def _validate_recipe(config):
     checks = {
         "no full-state resume": not str(train.get("load_checkpoint", "")).strip(),
         "denormalized relative-L2 checkpointing": (
-            train.get("checkpoint_metric") == "denormalized_relative_l2"
+            train.get("checkpoint_metric") == "denorm_rel_l2"
         ),
         "four output channels": model_params.get("channels") == 4,
         "residual targets": (
@@ -170,7 +182,13 @@ def _validate_recipe(config):
         "no derivative-loss ablation": (
             not model_params.get("use_vorticity_loss", False)
             and not model_params.get("use_current_loss", False)
+            and float(model_params.get("vorticity_loss_weight", 0.0)) == 0.0
+            and float(model_params.get("current_loss_weight", 0.0)) == 0.0
         ),
+        "positive validation interval": int(train.get("validation_interval", 0)) > 0,
+        "single optimizer group": not config.get("optimizer_params", {})
+        .get("param_groups", {})
+        .get("enabled", False),
     }
     expected_norm = (
         "paired_minmax"
@@ -247,7 +265,10 @@ def train_dino(config):
         else:
             scheduler.step()
         row = {"epoch": epoch, "train_loss": train_loss}
-        if epoch % interval == 0 or epoch == int(train["epochs"]) - 1:
+        should_validate = _should_validate(
+            epoch, int(train["epochs"]), interval, recipe
+        )
+        if should_validate:
             metrics = _validate(model, val_loader, device, sample_steps)
             row.update(
                 validation_mse=metrics[0],
@@ -257,8 +278,15 @@ def train_dino(config):
             if metrics[1] < best:
                 best = metrics[1]
                 _checkpoint(
-                    train["checkpoint_path"], model, optimizer, scheduler,
-                    epoch, metrics,
+                    train["checkpoint_path"],
+                    model,
+                    optimizer,
+                    scheduler,
+                    epoch,
+                    metrics,
+                    selected_metric_index=(
+                        1 if recipe in _RESIDUAL_RECIPES else 0
+                    ),
                 )
         history.append(row)
         print(row, flush=True)

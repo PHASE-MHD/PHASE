@@ -18,9 +18,15 @@ balanced ten-regime batches, t=[0,5], sub_t=5, nominal batch size 1,
 global paired magnetic absolute-P99 scale 0.0806614549, POSEIDON transfer,
 the epoch-95 single-Re KH warm start, and channel-gated deep Re/Rm adapters.
 
-Full validation runs every fifth epoch and is the only source of checkpoint
-selection. A deterministic five-sample-per-Re diagnostic runs every epoch for
-monitoring. The public config starts a fresh multi-Re optimizer at epoch zero;
+Full validation runs every fifth epoch and at the final epoch; it is the only
+source of checkpoint selection. The locked global P99 value comes from the legacy sampled
+estimator over raw indices 0:800 and all 251 frames, not the later seed-split
+histogram estimator. The expanded magnetic input/output boundary tensors train
+in the pretrained optimizer group at 1e-7. The legacy
+magnetic_output_lr=2e-3 config entry is retained for compatibility but is
+inactive with boundary_group=pretrained. A deterministically resampled
+five-sample-per-Re diagnostic runs every epoch for monitoring. The public
+config starts a fresh multi-Re optimizer at epoch zero;
 legacy continuation configs are provenance artifacts, not public defaults.
 
 See provenance/batch_12_kh_scot.md for the time-local-loss discrepancy in

@@ -104,6 +104,11 @@ def _make_tiny_validation_loader(
     )
 
 
+def _should_run_validation(epoch, epochs, interval):
+    """Match legacy cadence: first/interval epochs plus the final epoch."""
+    return epoch == 0 or epoch % interval == 0 or epoch == epochs - 1
+
+
 def _tiny_per_re_metrics(model, loader, criterion, device, eps=1e-12):
     model.eval()
     normalizer = copy.deepcopy(getattr(loader.dataset.dataset, "normalizer", None))
@@ -277,9 +282,10 @@ def _validate_naive_multi_re_ablation(config):
         "velocity residual learning must be disabled": not model.get(
             "velocity_residual", False
         ),
-        "magnetic residual learning must be enabled": model.get(
+        "magnetic residual learning must be enabled at unit scale": model.get(
             "magnetic_residual", False
-        ),
+        )
+        and model.get("magnetic_residual_scale") == 1.0,
         "Re/Rm conditioning must include Rm": conditioning.get(
             "include_rem", False
         ),
@@ -642,9 +648,10 @@ def _validate_four_channel_common(
         "velocity residual learning must be disabled": not model.get(
             "velocity_residual", False
         ),
-        "magnetic residual learning must be enabled": model.get(
+        "magnetic residual learning must be enabled at unit scale": model.get(
             "magnetic_residual", False
-        ),
+        )
+        and model.get("magnetic_residual_scale") == 1.0,
         "Helmholtz projection must cover velocity and magnetic pairs": model.get(
             "helmholtz_projection", False
         )
@@ -822,7 +829,7 @@ def _validate_four_channel_multi_re(config):
         "multi-Re copied/adapter learning rates must be [1e-7, 1e-3]": [
             groups.get("pretrained_lr"), groups.get("new_lr")
         ] == [1.0e-7, 1.0e-3],
-        "the recorded magnetic output effective LR must remain 2e-3": groups.get(
+        "the recorded magnetic-output compatibility value must remain 2e-3": groups.get(
             "magnetic_output_lr"
         ) == 2.0e-3,
         "expanded boundary tensors must remain trainable in the pretrained group": groups.get(
@@ -913,12 +920,14 @@ def _validate_kh_single_re(config):
         ) == "adamw"
         and optimizer.get("lr") == 1.0e-5
         and optimizer.get("weight_decay") == 1.0e-2
+        and optimizer.get("betas") == [0.9, 0.999]
         and groups.get("enabled", False)
         and groups.get("pretrained_lr") == 5.0e-6
         and groups.get("new_lr") == 5.0e-4
         and groups.get("magnetic_output_lr") == 2.0e-3
         and groups.get("pretrained_weight_decay") == 1.0e-2
-        and groups.get("new_weight_decay") == 0.0,
+        and groups.get("new_weight_decay") == 0.0
+        and not optimizer.get("use_scheduler", True),
         "single-Re KH training must start fresh for 100 epochs": train.get("epochs")
         == 100
         and train.get("is_finetune", False)
@@ -952,6 +961,9 @@ def _validate_kh_multi_re(config):
             "enabled", False
         )
         and conditioning.get("type") == "deep_adapter_output_film"
+        and conditioning.get("hidden_dim") == 128
+        and conditioning.get("num_layers") == 2
+        and conditioning.get("residual_scale") == 1.0
         and conditioning.get("include_rem", False)
         and conditioning.get("log_re_mean") == 2.9756
         and conditioning.get("log_re_std") == 0.5417
@@ -960,6 +972,7 @@ def _validate_kh_multi_re(config):
         and adapter.get("bottleneck_dim") == 64
         and adapter.get("hidden_dim") == 128
         and adapter.get("num_layers") == 2
+        and adapter.get("adapter_scale") == 1.0
         and adapter.get("gate_type") == "channel",
         "the ten locked KH Re=Rm regimes must be used": dataset.get("re_values")
         == expected_re
@@ -989,12 +1002,16 @@ def _validate_kh_multi_re(config):
         ) == "adamw"
         and optimizer.get("lr") == 1.0e-5
         and optimizer.get("weight_decay") == 1.0e-2
+        and optimizer.get("betas") == [0.9, 0.999]
         and groups.get("enabled", False)
         and groups.get("pretrained_lr") == 1.0e-7
         and groups.get("new_lr") == 1.0e-3
         and groups.get("magnetic_output_lr") == 2.0e-3
         and groups.get("boundary_group") == "pretrained"
-        and not groups.get("freeze_pretrained", True),
+        and not groups.get("freeze_pretrained", True)
+        and groups.get("pretrained_weight_decay") == 1.0e-2
+        and groups.get("new_weight_decay") == 0.0
+        and not optimizer.get("use_scheduler", True),
         "multi-Re KH must warm-start weights and begin at epoch zero": train.get(
             "epochs"
         ) == 100
@@ -1108,15 +1125,6 @@ def train_scot(config):
 
     validation_interval = int(train.get("validation_interval", 1))
     tiny_interval = int(train.get("tiny_validation_interval", 0))
-    tiny_loader = None
-    if tiny_interval > 0:
-        tiny_loader = _make_tiny_validation_loader(
-            val_loader,
-            samples_per_re=int(train.get("tiny_validation_samples_per_re", 5)),
-            batch_size=int(train.get("tiny_validation_batch_size", 10)),
-            seed=int(train.get("tiny_validation_seed", 42)),
-        )
-
     checkpoint_metric = train.get(
         "checkpoint_metric", "normalized_validation_loss"
     )
@@ -1131,7 +1139,9 @@ def train_scot(config):
         train_loss, train_components = _run_epoch(
             model, train_loader, criterion, device, optimizer
         )
-        run_full_validation = epoch % validation_interval == 0
+        run_full_validation = _should_run_validation(
+            epoch, train["epochs"], validation_interval
+        )
         val_loss = val_rel_l2 = val_mse = None
         val_components = {}
         if run_full_validation:
@@ -1143,7 +1153,18 @@ def train_scot(config):
             )
 
         tiny_metrics = None
-        if tiny_loader is not None and epoch % tiny_interval == 0:
+        run_tiny_validation = tiny_interval > 0 and _should_run_validation(
+            epoch, train["epochs"], tiny_interval
+        )
+        if run_tiny_validation:
+            tiny_loader = _make_tiny_validation_loader(
+                val_loader,
+                samples_per_re=int(
+                    train.get("tiny_validation_samples_per_re", 5)
+                ),
+                batch_size=int(train.get("tiny_validation_batch_size", 10)),
+                seed=int(train.get("tiny_validation_seed", 42)) + epoch,
+            )
             tiny_metrics = _tiny_per_re_metrics(
                 model, tiny_loader, criterion, device
             )

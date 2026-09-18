@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader, Dataset
 from phase.losses.physics_informed import MHDDirectBFieldLoss
 from phase.training.scot_trainer import (
     _make_tiny_validation_loader,
+    _should_run_validation,
     _validate_kh_multi_re,
     _validate_kh_single_re,
 )
@@ -145,3 +146,57 @@ def test_tiny_validation_selects_five_samples_from_every_regime():
     assert len(selected) == 50
     for re_idx in range(10):
         assert sum(re_idx * 10 <= index < (re_idx + 1) * 10 for index in selected) == 5
+
+    next_epoch = _make_tiny_validation_loader(
+        val_loader, samples_per_re=5, batch_size=10, seed=43
+    )
+    assert next_epoch.dataset.indices != selected
+
+
+def test_full_validation_includes_final_epoch():
+    selected = [
+        epoch for epoch in range(100)
+        if _should_run_validation(epoch, epochs=100, interval=5)
+    ]
+    assert selected == list(range(0, 100, 5)) + [99]
+
+
+@pytest.mark.parametrize(
+    ("config_name", "mutate", "message"),
+    [
+        (
+            "single",
+            lambda config: config["model_params"].__setitem__(
+                "magnetic_residual_scale", 0.5
+            ),
+            "unit scale",
+        ),
+        (
+            "single",
+            lambda config: config["optimizer_params"].__setitem__(
+                "use_scheduler", True
+            ),
+            "optimizer groups",
+        ),
+        (
+            "multi",
+            lambda config: config["model_params"]["re_conditioning"][
+                "deep_adapter"
+            ].__setitem__("adapter_scale", 0.5),
+            "channel-gated adapter",
+        ),
+    ],
+)
+def test_kh_recipe_guards_reject_behavioral_drift(
+    monkeypatch, tmp_path, config_name, mutate, message
+):
+    single, multi = _configs(monkeypatch, tmp_path)
+    config = deepcopy(single if config_name == "single" else multi)
+    mutate(config)
+    validator = (
+        _validate_kh_single_re
+        if config_name == "single"
+        else _validate_kh_multi_re
+    )
+    with pytest.raises(ValueError, match=message):
+        validator(config)

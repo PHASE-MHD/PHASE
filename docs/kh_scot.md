@@ -23,8 +23,11 @@ multi-Re recipe uses all ten Re=Rm values: 80, 200, 400, 650, 1000, 1500,
 
 Velocity retains POSEIDON-native fluid normalization. Each magnetic pair shares
 one scale so Helmholtz projection remains compatible with normalization.
-Single-Re uses 0.0669424514; multi-Re uses the global train-only magnetic
-absolute-P99 scale 0.0806614549.
+Single-Re uses 0.0669424514, computed on the true seed-42 training split
+after sub_t=5. Multi-Re preserves the selected historical global magnetic
+absolute-P99 scale 0.0806614549. That legacy estimator sampled concatenated
+|Bx| and |By| values from raw trajectory indices 0:800 at all 251 frames; it
+was not computed from the later seed-split histogram routine.
 
 KH activates an opt-in time-local relative L2 objective. Spatial relative
 errors are calculated independently at each time and then averaged over time
@@ -45,10 +48,14 @@ continue to use the previous global-in-time objective.
 The single-Re recipe starts from POSEIDON and writes
 $OUTPUT_ROOT/checkpoints/kh_single_re_scot_re1000.pt. The multi-Re recipe
 loads only those model weights as a warm start, creates gated Re/Rm adapters,
-and starts its optimizer and epoch counter from zero.
+and starts its optimizer and epoch counter from zero. In the canonical multi-Re
+optimizer, the expanded magnetic boundary tensors belong to the pretrained
+group at 1e-7; the retained magnetic_output_lr=2e-3 field is inactive when
+boundary_group is pretrained.
 
-The multi-Re run performs a cheap deterministic five-sample-per-Re diagnostic
-each epoch. Full validation runs every five epochs; only full validation
+The multi-Re run performs a cheap, deterministically resampled
+five-sample-per-Re diagnostic each epoch. Full validation runs every five
+epochs and at the final epoch; only full validation
 denormalized relative L2 can replace the best checkpoint. Prediction-panel
 generation is intentionally deferred to the unified evaluation tooling rather
 than being embedded in the training loop.

@@ -15,8 +15,10 @@
 The run uses the seed-42 800/100/100 split, sub_t=5, batch size 1,
 POSEIDON velocity transfer, mean-velocity magnetic initialization, magnetic
 residual prediction, paired magnetic scale 0.0669424514, Helmholtz
-projection, direct-B PDE residuals, vorticity/current losses, and time-local
-relative losses for every primary and derived field.
+projection, and direct-B PDE, vorticity, and current losses. Its legacy source
+applied time-local relative losses to every primary field and current density,
+but not vorticity; the public recipe intentionally applies the selected
+time-local method to both derived fields.
 
 This checkpoint is the model-only warm start for multi-Re KH scOT.
 

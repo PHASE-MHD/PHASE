@@ -121,6 +121,8 @@ optimizer_params:
     enabled: true
     pretrained_lr: 1.0e-7
     new_lr: 1.0e-3
+    # Retained for checkpoint/config compatibility. With boundary_group=pretrained,
+    # expanded boundary tensors use pretrained_lr and this value is not active.
     magnetic_output_lr: 2.0e-3
     boundary_group: "pretrained"
     freeze_pretrained: false

@@ -1,4 +1,4 @@
-"""Training loop for the three-channel scOT ablations."""
+"""Training loop for the locked PHASE scOT recipes."""
 
 from __future__ import annotations
 
@@ -6,8 +6,10 @@ import copy
 import math
 from pathlib import Path
 
+import numpy as np
 import torch
 from torch import nn
+from torch.utils.data import DataLoader, Subset
 
 from phase.data import get_dataloaders, get_multi_re_dataloaders
 from phase.losses import LpLoss, create_loss
@@ -73,6 +75,83 @@ def _denormalized_metrics(model, loader, device):
             totals[1] += float(mse(prediction, target))
     count = max(len(loader), 1)
     return totals[0] / count, totals[1] / count
+
+
+def _make_tiny_validation_loader(
+    val_loader, samples_per_re=5, batch_size=10, seed=42
+):
+    dataset = val_loader.dataset
+    groups = getattr(dataset, "flat_indices_by_re_idx", None)
+    if not groups:
+        raise ValueError("Tiny per-Re validation requires a MultiReMHDDataset.")
+    rng = np.random.default_rng(seed)
+    indices = []
+    for re_idx in sorted(groups):
+        candidates = np.asarray(groups[re_idx], dtype=np.int64)
+        if len(candidates) < samples_per_re:
+            raise ValueError(
+                f"Re index {re_idx} has only {len(candidates)} validation samples."
+            )
+        indices.extend(
+            rng.choice(candidates, size=samples_per_re, replace=False).tolist()
+        )
+    return DataLoader(
+        Subset(dataset, indices),
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=0,
+        pin_memory=False,
+    )
+
+
+def _tiny_per_re_metrics(model, loader, criterion, device, eps=1e-12):
+    model.eval()
+    normalizer = copy.deepcopy(getattr(loader.dataset.dataset, "normalizer", None))
+    totals = {}
+    counts = {}
+    with torch.no_grad():
+        for batch in loader:
+            inputs, target, metadata = unpack_batch(batch)
+            inputs = inputs.to(device, non_blocking=True).contiguous()
+            target = target.to(device, non_blocking=True)
+            metadata = move_metadata_to_device(metadata, device)
+            prediction = model_forward(model, inputs, metadata)
+            if normalizer is not None:
+                normalizer = normalizer.to(device)
+                prediction = normalizer.denormalize(prediction)
+                target = normalizer.denormalize(target)
+            omega_pred = criterion.curl_2d(prediction[:, 0], prediction[:, 1])
+            omega_true = criterion.curl_2d(target[:, 0], target[:, 1])
+            current_pred = criterion.curl_2d(prediction[:, 2], prediction[:, 3])
+            current_true = criterion.curl_2d(target[:, 2], target[:, 3])
+            fields_pred = [prediction[:, i] for i in range(4)] + [
+                omega_pred, current_pred
+            ]
+            fields_true = [target[:, i] for i in range(4)] + [
+                omega_true, current_true
+            ]
+            names = ("ux", "uy", "Bx", "By", "omega", "j")
+            sample_metrics = {}
+            for name, pred_field, true_field in zip(
+                names, fields_pred, fields_true
+            ):
+                numerator = torch.linalg.vector_norm(
+                    (pred_field - true_field).flatten(1), dim=1
+                )
+                denominator = torch.linalg.vector_norm(
+                    true_field.flatten(1), dim=1
+                )
+                sample_metrics[name] = numerator / (denominator + eps)
+            for sample_idx, re_value in enumerate(metadata["re"].tolist()):
+                key = str(int(round(re_value)))
+                totals.setdefault(key, {name: 0.0 for name in names})
+                counts[key] = counts.get(key, 0) + 1
+                for name in names:
+                    totals[key][name] += float(sample_metrics[name][sample_idx])
+    return {
+        re_value: {name: value / counts[re_value] for name, value in metrics.items()}
+        for re_value, metrics in totals.items()
+    }
 
 
 def _save_checkpoint(path, model, optimizer, scheduler, epoch, val_loss, rel_l2, mse):
@@ -526,11 +605,16 @@ def _warm_start_model(model, checkpoint_path):
         )
 
 
-def _validate_four_channel_common(config):
+def _validate_four_channel_common(
+    config,
+    expected_norm=None,
+    expected_tend=1.0,
+):
     model = config["model_params"]
     normalization = config["normalization_params"]
     loss = config["loss_params"]
-    expected_norm = [1.0, 1.0, 4.27121774e-03, 4.27121774e-03]
+    if expected_norm is None:
+        expected_norm = [1.0, 1.0, 4.27121774e-03, 4.27121774e-03]
     checks = {
         "the canonical pretrained POSEIDON backbone must be used": model.get(
             "poseidon_model"
@@ -606,7 +690,7 @@ def _validate_four_channel_common(config):
         ),
         "the unit space-time domain must be used": loss.get("Lx") == 1.0
         and loss.get("Ly") == 1.0
-        and loss.get("tend") == 1.0,
+        and loss.get("tend") == expected_tend,
         "weighted means must be disabled": not loss.get("use_weighted_mean", True),
     }
     failed = [message for message, passed in checks.items() if not passed]
@@ -764,6 +848,175 @@ def _validate_four_channel_multi_re(config):
         raise ValueError("Invalid four-channel multi-Re config: " + "; ".join(failed))
 
 
+def _validate_kh_common(config, expected_norm):
+    _validate_four_channel_common(
+        config, expected_norm=expected_norm, expected_tend=5.0
+    )
+    dataset = config["dataset_params"]
+    loss = config["loss_params"]
+    checks = {
+        "KH data must retain all 51 frames after sub_t=5": dataset.get("sub_t") == 5
+        and dataset.get("sub_x") == 1
+        and dataset.get("t_range") == [0.0, 5.0],
+        "all KH primary and derived losses must be time-relative": all(
+            loss.get(name) == "time_relative"
+            for name in (
+                "u_time_loss_mode",
+                "v_time_loss_mode",
+                "magnetic_time_loss_mode",
+                "derived_time_loss_mode",
+            )
+        ),
+        "all KH time-relative epsilons must be 1e-6": all(
+            loss.get(name) == 1.0e-6
+            for name in (
+                "u_time_loss_eps",
+                "v_time_loss_eps",
+                "magnetic_time_loss_eps",
+                "derived_time_loss_eps",
+            )
+        ),
+    }
+    failed = [message for message, passed in checks.items() if not passed]
+    if failed:
+        raise ValueError("Invalid KH scOT config: " + "; ".join(failed))
+
+
+def _validate_kh_single_re(config):
+    expected_norm = [1.0, 1.0, 6.69424514e-02, 6.69424514e-02]
+    _validate_kh_common(config, expected_norm)
+    model = config["model_params"]
+    dataset = config["dataset_params"]
+    loaders = config["dataloader_params"]
+    optimizer = config["optimizer_params"]
+    groups = optimizer.get("param_groups", {})
+    train = config["train_params"]
+    checks = {
+        "the single-Re KH model type must be selected": model.get("model_type")
+        == "poseidon-mhd-finetune",
+        "single-Re KH data must be the Re=1000 four-channel array": dataset.get(
+            "dataset_type"
+        ) == "single_re"
+        and dataset.get("data_path", "").endswith(
+            "/mhd_Re1000_N1000/mhd_data_4channel.npy"
+        ),
+        "the KH split must be 800/100/100 with seed 42": dataset.get("train_size")
+        == 800
+        and dataset.get("val_plus_test_size") == 200
+        and dataset.get("seed") == 42,
+        "single-Re KH batch size must be one": all(
+            loaders[split].get("batch_size") == 1
+            for split in ("train", "validation", "test")
+        ),
+        "single-Re KH optimizer groups must match the selected run": optimizer.get(
+            "optimizer_type"
+        ) == "adamw"
+        and optimizer.get("lr") == 1.0e-5
+        and optimizer.get("weight_decay") == 1.0e-2
+        and groups.get("enabled", False)
+        and groups.get("pretrained_lr") == 5.0e-6
+        and groups.get("new_lr") == 5.0e-4
+        and groups.get("magnetic_output_lr") == 2.0e-3
+        and groups.get("pretrained_weight_decay") == 1.0e-2
+        and groups.get("new_weight_decay") == 0.0,
+        "single-Re KH training must start fresh for 100 epochs": train.get("epochs")
+        == 100
+        and train.get("is_finetune", False)
+        and not str(train.get("warm_start_checkpoint", "")).strip()
+        and not str(train.get("load_checkpoint", "")).strip(),
+        "single-Re KH checkpointing must use normalized validation loss": train.get(
+            "checkpoint_metric"
+        ) == "normalized_validation_loss",
+    }
+    failed = [message for message, passed in checks.items() if not passed]
+    if failed:
+        raise ValueError("Invalid single-Re KH scOT config: " + "; ".join(failed))
+
+
+def _validate_kh_multi_re(config):
+    expected_norm = [1.0, 1.0, 8.06614549e-02, 8.06614549e-02]
+    _validate_kh_common(config, expected_norm)
+    model = config["model_params"]
+    conditioning = model.get("re_conditioning", {})
+    adapter = conditioning.get("deep_adapter", {})
+    dataset = config["dataset_params"]
+    loaders = config["dataloader_params"]
+    optimizer = config["optimizer_params"]
+    groups = optimizer.get("param_groups", {})
+    train = config["train_params"]
+    expected_re = [80, 200, 400, 650, 1000, 1500, 2050, 2750, 3600, 4500]
+    checks = {
+        "the multi-Re KH gated model type must be selected": model.get("model_type")
+        == "poseidon-mhd-re-finetune",
+        "KH conditioning must use the all-block channel-gated adapter": conditioning.get(
+            "enabled", False
+        )
+        and conditioning.get("type") == "deep_adapter_output_film"
+        and conditioning.get("include_rem", False)
+        and conditioning.get("log_re_mean") == 2.9756
+        and conditioning.get("log_re_std") == 0.5417
+        and conditioning.get("reference_re") == 1000.0
+        and adapter.get("target") == "all"
+        and adapter.get("bottleneck_dim") == 64
+        and adapter.get("hidden_dim") == 128
+        and adapter.get("num_layers") == 2
+        and adapter.get("gate_type") == "channel",
+        "the ten locked KH Re=Rm regimes must be used": dataset.get("re_values")
+        == expected_re
+        and dataset.get("rem_values") == expected_re,
+        "multi-Re KH data must use four-channel arrays": dataset.get("dataset_type")
+        == "multi_re"
+        and dataset.get("data_file") == "mhd_data_4channel.npy",
+        "every KH regime must use an 800/100/100 split": dataset.get(
+            "train_size_per_re"
+        ) == 800
+        and dataset.get("val_plus_test_size_per_re") == 200
+        and dataset.get("seed") == 42,
+        "KH batches must balance all ten regimes": dataset.get(
+            "balanced_re_batches", False
+        )
+        and dataset.get("res_per_batch") == 10,
+        "nominal multi-Re KH batch size must be one": all(
+            loaders[split].get("batch_size") == 1
+            for split in ("train", "validation", "test")
+        ),
+        "multi-Re KH loaders must use four workers": all(
+            loaders[split].get("num_workers") == 4
+            for split in ("train", "validation", "test")
+        ),
+        "multi-Re KH optimizer groups must match the selected run": optimizer.get(
+            "optimizer_type"
+        ) == "adamw"
+        and optimizer.get("lr") == 1.0e-5
+        and optimizer.get("weight_decay") == 1.0e-2
+        and groups.get("enabled", False)
+        and groups.get("pretrained_lr") == 1.0e-7
+        and groups.get("new_lr") == 1.0e-3
+        and groups.get("magnetic_output_lr") == 2.0e-3
+        and groups.get("boundary_group") == "pretrained"
+        and not groups.get("freeze_pretrained", True),
+        "multi-Re KH must warm-start weights and begin at epoch zero": train.get(
+            "epochs"
+        ) == 100
+        and not train.get("is_finetune", True)
+        and bool(str(train.get("warm_start_checkpoint", "")).strip())
+        and not str(train.get("load_checkpoint", "")).strip(),
+        "multi-Re KH checkpointing must use full denormalized relative L2": train.get(
+            "checkpoint_metric"
+        ) == "denorm_rel_l2"
+        and train.get("validation_interval") == 5,
+        "tiny KH validation must use five samples per Re every epoch": train.get(
+            "tiny_validation_interval"
+        ) == 1
+        and train.get("tiny_validation_samples_per_re") == 5
+        and train.get("tiny_validation_batch_size") == 10
+        and train.get("tiny_validation_seed") == 42,
+    }
+    failed = [message for message, passed in checks.items() if not passed]
+    if failed:
+        raise ValueError("Invalid multi-Re KH scOT config: " + "; ".join(failed))
+
+
 def _validate_scot_ablation(config):
     recipe = config["train_params"].get("recipe")
     if recipe == "scot_without_tl":
@@ -778,10 +1031,15 @@ def _validate_scot_ablation(config):
         _validate_four_channel_single_re(config)
     elif recipe == "four_channel_multi_re":
         _validate_four_channel_multi_re(config)
+    elif recipe == "kh_four_channel_single_re":
+        _validate_kh_single_re(config)
+    elif recipe == "kh_four_channel_multi_re":
+        _validate_kh_multi_re(config)
     else:
         raise ValueError(
             "train_params.recipe must be scot_without_tl, scot_with_tl, "
-            "naive_multi_re, gated_adapter_multi_re, four_channel_single_re, or four_channel_multi_re"
+            "naive_multi_re, gated_adapter_multi_re, four_channel_single_re, "
+            "four_channel_multi_re, kh_four_channel_single_re, or kh_four_channel_multi_re"
         )
 
 
@@ -844,8 +1102,27 @@ def train_scot(config):
     load_checkpoint = str(train.get("load_checkpoint", "")).strip()
     if load_checkpoint:
         raise ValueError(
-            "The canonical three-channel scOT ablations start at epoch zero; "
+            "Canonical scOT recipes start at epoch zero; "
             "load_checkpoint must remain empty."
+        )
+
+    validation_interval = int(train.get("validation_interval", 1))
+    tiny_interval = int(train.get("tiny_validation_interval", 0))
+    tiny_loader = None
+    if tiny_interval > 0:
+        tiny_loader = _make_tiny_validation_loader(
+            val_loader,
+            samples_per_re=int(train.get("tiny_validation_samples_per_re", 5)),
+            batch_size=int(train.get("tiny_validation_batch_size", 10)),
+            seed=int(train.get("tiny_validation_seed", 42)),
+        )
+
+    checkpoint_metric = train.get(
+        "checkpoint_metric", "normalized_validation_loss"
+    )
+    if checkpoint_metric not in {"normalized_validation_loss", "denorm_rel_l2"}:
+        raise ValueError(
+            "checkpoint_metric must be normalized_validation_loss or denorm_rel_l2."
         )
 
     best = math.inf
@@ -854,12 +1131,29 @@ def train_scot(config):
         train_loss, train_components = _run_epoch(
             model, train_loader, criterion, device, optimizer
         )
-        val_loss, val_components = _run_epoch(model, val_loader, criterion, device)
-        val_rel_l2, val_mse = _denormalized_metrics(model, val_loader, device)
+        run_full_validation = epoch % validation_interval == 0
+        val_loss = val_rel_l2 = val_mse = None
+        val_components = {}
+        if run_full_validation:
+            val_loss, val_components = _run_epoch(
+                model, val_loader, criterion, device
+            )
+            val_rel_l2, val_mse = _denormalized_metrics(
+                model, val_loader, device
+            )
+
+        tiny_metrics = None
+        if tiny_loader is not None and epoch % tiny_interval == 0:
+            tiny_metrics = _tiny_per_re_metrics(
+                model, tiny_loader, criterion, device
+            )
+
         if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-            scheduler.step(val_loss)
+            if run_full_validation:
+                scheduler.step(val_loss)
         else:
             scheduler.step()
+
         row = {
             "epoch": epoch,
             "train_loss": train_loss,
@@ -868,21 +1162,29 @@ def train_scot(config):
             "val_denorm_mse": val_mse,
             "train_components": train_components,
             "val_components": val_components,
+            "tiny_val_per_re": tiny_metrics,
         }
         history.append(row)
         print(row, flush=True)
-        if val_loss < best:
-            best = val_loss
-            _save_checkpoint(
-                train["checkpoint_path"],
-                model,
-                optimizer,
-                scheduler,
-                epoch,
-                val_loss,
-                val_rel_l2,
-                val_mse,
+
+        if run_full_validation:
+            score = (
+                val_loss
+                if checkpoint_metric == "normalized_validation_loss"
+                else val_rel_l2
             )
+            if score < best:
+                best = score
+                _save_checkpoint(
+                    train["checkpoint_path"],
+                    model,
+                    optimizer,
+                    scheduler,
+                    epoch,
+                    val_loss,
+                    val_rel_l2,
+                    val_mse,
+                )
 
     checkpoint = torch.load(
         train["checkpoint_path"], map_location=device, weights_only=True

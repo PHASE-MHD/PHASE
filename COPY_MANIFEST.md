@@ -385,12 +385,17 @@ epoch-0-to-100 runs. Do not encode continuation epochs in canonical YAML.
   -> `configs/kh/single_re/scot_re1000.yaml`
 - `DINOs/configs/model_mag/singleRe_KH_diffusion_best/config_diffusion_KH_Re1000_bestscot_residual_fullfield_100ep.yaml`
   -> `configs/kh/single_re/residual_diffusion_re1000.yaml`
-- `MHD-World-new/configs/KH_multiRe/config_poseidon_mhd_re_finetune_KH_bfield_globalP99_bheavy_warm_deep_adapters_t0_4_100ep_48h_tinyval.template.yaml`
-- `MHD-World-new/configs/KH_multiRe/config_poseidon_mhd_re_finetune_KH_bfield_globalP99_bheavy_warm_deep_adapters_t0_4_100ep_48h_tinyval_restart_epoch75_denormrel.yaml`
-  -> merge into `configs/kh/multi_re/scot_t0_4.yaml`
-- `DINOs/configs/model_mag/KH_multiRe_diffusion_globalP99_t0_4_epoch85_no_recond_warmstart_Re1000_per_re_norm_workers8_48h/config_diffusion_KH_multiRe_globalP99_t0_4_epoch85_residual_no_recond_warmstart_Re1000_per_re_norm_workers8_48h.yaml`
-- `DINOs/configs/model_mag/KH_multiRe_diffusion_globalP99_t0_4_epoch85_no_recond_warmstart_Re1000_per_re_norm_workers8_restart_epoch80_48h/config_diffusion_KH_multiRe_globalP99_t0_4_epoch85_residual_no_recond_warmstart_Re1000_per_re_norm_workers8_restart_epoch80_48h.yaml`
-  -> merge into `configs/kh/multi_re/residual_diffusion_t0_4.yaml`
+- `MHD-World-new/configs/KH_multiRe/config_poseidon_mhd_re_finetune_KH_bfield_p99_bheavy_warm_deep_adapters_100ep_48h_tinyval.yaml`
+- `MHD-World-new/configs/KH_multiRe/config_poseidon_mhd_re_finetune_KH_bfield_globalP99_t0_5_resume_epoch45_100ep_48h_denormrel.yaml`
+  -> merge into `configs/kh/multi_re/scot_t0_5.yaml`
+- `DINOs/configs/model_mag/KH_multiRe_diffusion_globalP99_t0_5_epoch55_no_recond_warmstart_Re1000_per_re_norm_workers8_48h/config_diffusion_KH_multiRe_globalP99_t0_5_epoch55_residual_no_recond_warmstart_Re1000_per_re_norm_workers8_48h.yaml`
+- `DINOs/configs/model_mag/KH_multiRe_diffusion_globalP99_t0_5_epoch55_no_recond_warmstart_Re1000_per_re_norm_workers8_restart_epoch75_48h/config_diffusion_KH_multiRe_globalP99_t0_5_epoch55_residual_no_recond_warmstart_Re1000_per_re_norm_workers8_restart_epoch75_48h.yaml`
+  -> merge into `configs/kh/multi_re/residual_diffusion_t0_5.yaml`
+
+The canonical KH configs must be fresh epoch-0-to-100 recipes over t=[0,5].
+The legacy deterministic chain selected epoch 55 and reached epoch 75; the
+legacy diffusion chain completed epoch 99 and selected epoch 95. Preserve
+t=[0,4] only as a documented ablation, not as the canonical KH recipe.
 
 ## 7. Provenance records
 

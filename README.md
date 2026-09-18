@@ -52,3 +52,5 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
   `docs/four_channel_hp_physics.md`
 - Single- and multi-Re DT PHASE residual diffusion:
   `docs/turbulence_residual_diffusion.md`
+- Single- and multi-Re Kelvin-Helmholtz deterministic scOT, canonical `t=[0,5]`:
+  `docs/kh_scot.md`

@@ -76,6 +76,20 @@ parameter counts, and optimizer grouping. Unit tests additionally lock the two
 recipes, direct-B transport metadata, Helmholtz divergence, mean-mode
 preservation, and paired-normalization commutation.
 
+## Batch 12 checkpoint compatibility
+
+Set `PHASE_KH_SINGLE_RE_SCOT_CHECKPOINT` to the selected epoch-95 single-Re
+KH checkpoint and `PHASE_KH_MULTI_RE_SCOT_CHECKPOINT` to the selected epoch-55
+global-P99 t=[0,5] checkpoint, then run:
+
+```bash
+pytest -m checkpoint tests/checkpoint_compatibility/test_kh_scot_legacy_checkpoints.py
+```
+
+The test strict-loads both checkpoints and verifies the model-only warm-start
+boundary. Unit tests lock the KH configs, time-local loss semantics, and the
+five-sample-per-regime tiny-validation subset.
+
 For Batch 11 checkpoint compatibility, set
 `PHASE_HISTORICAL_SR_DIFFUSION_CHECKPOINT` to the historical Re=1000
 full-field diffusion warm start and `PHASE_MULTI_RE_DIFFUSION_CHECKPOINT` to

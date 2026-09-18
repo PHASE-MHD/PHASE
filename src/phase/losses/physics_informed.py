@@ -507,6 +507,14 @@ class MHDDirectBFieldLoss(nn.Module):
         Ly: float = 1.0,
         tend: float = 1.0,
         use_weighted_mean: bool = False,
+        u_time_loss_mode: str = "global",
+        u_time_loss_eps: float = 1e-6,
+        v_time_loss_mode: str = "global",
+        v_time_loss_eps: float = 1e-6,
+        magnetic_time_loss_mode: str = "global",
+        magnetic_time_loss_eps: float = 1e-6,
+        derived_time_loss_mode: str = "global",
+        derived_time_loss_eps: float = 1e-6,
         **kwargs,
     ):
         super().__init__()
@@ -540,7 +548,51 @@ class MHDDirectBFieldLoss(nn.Module):
         self.Ly = Ly
         self.tend = tend
         self.use_weighted_mean = use_weighted_mean
+        self.u_time_loss_mode = self._validate_time_loss_mode(
+            "u_time_loss_mode", u_time_loss_mode
+        )
+        self.u_time_loss_eps = u_time_loss_eps
+        self.v_time_loss_mode = self._validate_time_loss_mode(
+            "v_time_loss_mode", v_time_loss_mode
+        )
+        self.v_time_loss_eps = v_time_loss_eps
+        self.magnetic_time_loss_mode = self._validate_time_loss_mode(
+            "magnetic_time_loss_mode", magnetic_time_loss_mode
+        )
+        self.magnetic_time_loss_eps = magnetic_time_loss_eps
+        self.derived_time_loss_mode = self._validate_time_loss_mode(
+            "derived_time_loss_mode", derived_time_loss_mode
+        )
+        self.derived_time_loss_eps = derived_time_loss_eps
         self.last_components = {}
+
+    @staticmethod
+    def _validate_time_loss_mode(name: str, mode: str) -> str:
+        if mode not in {"global", "time_relative"}:
+            raise ValueError(
+                f"{name} must be global or time_relative, got {mode!r}."
+            )
+        return mode
+
+    @staticmethod
+    def _time_relative_component_loss(
+        pred: Tensor, target: Tensor, eps: float
+    ) -> Tensor:
+        """Average spatial relative L2 independently over sample and time."""
+        if pred.ndim != 4 or target.ndim != 4:
+            raise ValueError(
+                "Time-relative component loss expects tensors shaped [B, T, H, W]."
+            )
+        error = torch.linalg.vector_norm((pred - target).flatten(2), dim=-1)
+        scale = torch.linalg.vector_norm(target.flatten(2), dim=-1)
+        return (error / (scale + eps)).mean()
+
+    def _component_loss(
+        self, pred: Tensor, target: Tensor, mode: str, eps: float
+    ) -> Tensor:
+        if mode == "time_relative":
+            return self._time_relative_component_loss(pred, target, eps)
+        return LpLoss(size_average=True)(pred, target)
 
     def forward(
         self,
@@ -723,12 +775,21 @@ class MHDDirectBFieldLoss(nn.Module):
     def data_loss(
         self, pred: Tensor, target: Tensor, return_components: bool = False
     ) -> Union[Tensor, Tuple[Tensor, Dict[str, float]]]:
-        lploss = LpLoss(size_average=True)
         losses = {
-            "u": lploss(pred[:, 0], target[:, 0]),
-            "v": lploss(pred[:, 1], target[:, 1]),
-            "Bx": lploss(pred[:, 2], target[:, 2]),
-            "By": lploss(pred[:, 3], target[:, 3]),
+            "u": self._component_loss(
+                pred[:, 0], target[:, 0], self.u_time_loss_mode, self.u_time_loss_eps
+            ),
+            "v": self._component_loss(
+                pred[:, 1], target[:, 1], self.v_time_loss_mode, self.v_time_loss_eps
+            ),
+            "Bx": self._component_loss(
+                pred[:, 2], target[:, 2], self.magnetic_time_loss_mode,
+                self.magnetic_time_loss_eps
+            ),
+            "By": self._component_loss(
+                pred[:, 3], target[:, 3], self.magnetic_time_loss_mode,
+                self.magnetic_time_loss_eps
+            ),
         }
         weight_sum = (
             self.u_weight + self.v_weight + self.Bx_weight + self.By_weight
@@ -816,10 +877,12 @@ class MHDDirectBFieldLoss(nn.Module):
         u_target: Tensor,
         v_target: Tensor,
     ) -> Tensor:
-        lploss = LpLoss(size_average=True)
         omega_pred = self.curl_2d(u_pred, v_pred)
         omega_target = self.curl_2d(u_target, v_target)
-        return lploss(omega_pred, omega_target)
+        return self._component_loss(
+            omega_pred, omega_target, self.derived_time_loss_mode,
+            self.derived_time_loss_eps
+        )
 
     def current_loss(
         self,
@@ -828,10 +891,12 @@ class MHDDirectBFieldLoss(nn.Module):
         Bx_target: Tensor,
         By_target: Tensor,
     ) -> Tensor:
-        lploss = LpLoss(size_average=True)
         j_pred = self.curl_2d(Bx_pred, By_pred)
         j_target = self.curl_2d(Bx_target, By_target)
-        return lploss(j_pred, j_target)
+        return self._component_loss(
+            j_pred, j_target, self.derived_time_loss_mode,
+            self.derived_time_loss_eps
+        )
 
     def delta_B_loss(
         self,

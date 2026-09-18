@@ -62,13 +62,12 @@ and checkpoint-selection state.
 | --- | --- | --- |
 | Single-Re scOT | `MHD-World/configs/config_poseidon_mhd_finetune_KH_Re1000_bfield_p99_bheavy_alltimerel_batch1_subt5_100ep_resume_epoch58_48h.yaml` | Four channels, paired P99 scale, projection, direct-B and derived losses, time-local relative losses; 100-epoch chain, best reported near epoch 95. |
 | Single-Re scOT + diffusion | `DINOs/configs/model_mag/singleRe_KH_diffusion_best/config_diffusion_KH_Re1000_bestscot_residual_fullfield_100ep.yaml` | Residual learning for all four fields, separate conditioner/residual statistics, full-field projection, 32 steps. |
-| Multi-Re scOT, global P99, t=[0,4] | `MHD-World-new/configs/KH_multiRe/config_poseidon_mhd_re_finetune_KH_bfield_globalP99_bheavy_warm_deep_adapters_t0_4_100ep_48h_tinyval_restart_epoch75_denormrel.yaml` | Ten regimes, Re=1000 warm start, gated adapters, global paired magnetic P99, time-local losses, full and tiny validation. |
-| Multi-Re scOT + diffusion, t=[0,4] | `DINOs/configs/model_mag/KH_multiRe_diffusion_globalP99_t0_4_epoch85_no_recond_warmstart_Re1000_per_re_norm_workers8_restart_epoch80_48h/config_diffusion_KH_multiRe_globalP99_t0_4_epoch85_residual_no_recond_warmstart_Re1000_per_re_norm_workers8_restart_epoch80_48h.yaml` | Residual diffusion, no diffusion Re conditioning, per-Re paired conditioner/residual normalization, single-Re weight warm start, balanced regimes, full-field projection, 32 steps. |
+| Multi-Re scOT, global P99, t=[0,5] | `MHD-World-new/configs/KH_multiRe/config_poseidon_mhd_re_finetune_KH_bfield_globalP99_t0_5_resume_epoch45_100ep_48h_denormrel.yaml` | Ten regimes, Re=1000 warm start, gated adapters, global paired magnetic P99, and full/tiny validation. The frozen legacy source ignored its configured time-local-loss keys; the public recipe applies the intended behavior. The canonical checkpoint was selected at epoch 55; the continuation reached epoch 75. |
+| Multi-Re scOT + diffusion, t=[0,5] | `DINOs/configs/model_mag/KH_multiRe_diffusion_globalP99_t0_5_epoch55_no_recond_warmstart_Re1000_per_re_norm_workers8_restart_epoch75_48h/config_diffusion_KH_multiRe_globalP99_t0_5_epoch55_residual_no_recond_warmstart_Re1000_per_re_norm_workers8_restart_epoch75_48h.yaml` | Residual diffusion for all four fields, no diffusion Re conditioning, per-Re paired conditioner/residual normalization, single-Re weight warm start, balanced regimes, full-field projection, and 32 sampling steps. The chain completed epoch 99 and selected epoch 95. |
 
-Keep global/per-Re P99 and t=[0,5]/t=[0,4] as explicit KH ablations. The
-paper-facing chain is global-P99 scOT on t=[0,4], then per-Re residual
-diffusion. Reconcile the epoch-85 directory name with the visible epoch-75
-frozen source checkpoint before publication.
+The canonical paper-facing KH chain uses global-P99 multi-Re scOT over
+t=[0,5], followed by per-Re-normalized residual diffusion over the same time
+interval. Keep global/per-Re P99 and t=[0,4] as explicit KH ablations.
 
 ## Required MHD-World source
 
@@ -235,8 +234,8 @@ PHASE/
         scot_re1000.yaml
         residual_diffusion_re1000.yaml
       multi_re/
-        scot_t0_4.yaml
-        residual_diffusion_t0_4.yaml
+        scot_t0_5.yaml
+        residual_diffusion_t0_5.yaml
     ablations/
   scripts/
     prepare_data.py

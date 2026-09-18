@@ -17,3 +17,5 @@ Implemented ablation configs:
   diffusion from random initialization.
 - `turbulence/multi_re/phase.yaml`: reported MR residual diffusion with per-Re
   paired normalization and its historical weights-only SR warm start.
+- `kh/single_re/scot_re1000.yaml`: canonical Re=Rm=1000 KH scOT on 51 frames.
+- `kh/multi_re/scot_t0_5.yaml`: canonical ten-regime KH scOT with global paired P99 normalization, gated adapters, tiny monitoring, and full-validation checkpointing.

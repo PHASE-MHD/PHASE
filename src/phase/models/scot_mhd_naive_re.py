@@ -38,6 +38,10 @@ class PoseidonMHDReInputFinetune(PoseidonMHDFinetune):
         self._re_input_hooks_registered = False
         self._expand_input_projection_for_re_channels(re_channel_init)
 
+    def expected_warm_start_missing_keys(self) -> set[str]:
+        """State introduced after the single-Re warm-start checkpoint."""
+        return {"log_re_mean", "log_re_std"}
+
     def _expand_input_projection_for_re_channels(self, init: str) -> None:
         patch_embeddings = self.poseidon.embeddings.patch_embeddings
         projection = patch_embeddings.projection

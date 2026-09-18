@@ -6,8 +6,8 @@ repository for incompressible magnetohydrodynamics models.
 The repository is being assembled incrementally from audited legacy implementations,
 with checkpoint-compatibility and regression tests at each stage. The current
 package includes canonical data preprocessing, the previous tFNO and DINO
-baselines, and the three-channel scOT ablation trained without POSEIDON
-transfer learning, plus its POSEIDON transfer-learning counterpart.
+baselines, the single-regime three-channel scOT ablations, and both naive and
+gated-adapter multi-regime conditioning.
 
 ## Current status
 
@@ -43,3 +43,5 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
   `docs/scot_with_transfer_learning.md`
 - Naive multi-regime scOT with constant Re/Rm input maps:
   `docs/naive_multi_regime.md`
+- Gated-adapter multi-regime scOT with deep Re/Rm conditioning:
+  `docs/gated_adapter_multi_regime.md`

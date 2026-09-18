@@ -301,19 +301,226 @@ def _validate_naive_multi_re_ablation(config):
         raise ValueError("Invalid naive multi-Re config: " + "; ".join(failed))
 
 
+def _validate_gated_adapter_multi_re_ablation(config):
+    model = config["model_params"]
+    normalization = config["normalization_params"]
+    dataset = config["dataset_params"]
+    loss = config["loss_params"]
+    optimizer = config["optimizer_params"]
+    train = config["train_params"]
+    groups = optimizer.get("param_groups", {})
+    conditioning = model.get("re_conditioning", {})
+    adapter = conditioning.get("deep_adapter", {})
+    expected_re = [80, 200, 400, 650, 1000, 1500, 2050, 2750, 3600, 4500]
+    batch_sizes = {
+        split: config["dataloader_params"][split]["batch_size"]
+        for split in ("train", "validation", "test")
+    }
+    checks = {
+        "model_type must be poseidon-mhd-re-finetune": model.get("model_type")
+        == "poseidon-mhd-re-finetune",
+        "load_pretrained_poseidon must be true": model.get(
+            "load_pretrained_poseidon", False
+        ),
+        "poseidon_model must be camlab-ethz/Poseidon-T": model.get(
+            "poseidon_model"
+        )
+        == "camlab-ethz/Poseidon-T",
+        "POSEIDON-native fluid normalization must be enabled": model.get(
+            "use_poseidon_fluid_normalization", False
+        ),
+        "the locked 128-grid, patch-4, three-channel model must be used": [
+            model.get(name) for name in ("image_size", "patch_size", "out_channels")
+        ]
+        == [128, 4, 3],
+        "the POSEIDON velocity channel maps must both be [1, 2]": model.get(
+            "poseidon_input_channel_map"
+        )
+        == [1, 2]
+        and model.get("poseidon_output_channel_map") == [1, 2],
+        "the magnetic channel index must be 4": model.get("magnetic_channel_index")
+        == 4,
+        "magnetic boundary initialization must be mean-velocity input and zero output": model.get(
+            "magnetic_input_init"
+        )
+        == "mean_velocity"
+        and model.get("magnetic_output_init") == "zero",
+        "Helmholtz projection must not be enabled for the vector-potential ablation": not model.get(
+            "helmholtz_projection", False
+        ),
+        "velocity residual learning must be disabled": not model.get(
+            "velocity_residual", False
+        ),
+        "magnetic residual learning must be enabled": model.get(
+            "magnetic_residual", False
+        ),
+        "gated conditioning must be enabled": conditioning.get("enabled", False),
+        "conditioning type must be deep_adapter_output_film": conditioning.get(
+            "type"
+        )
+        == "deep_adapter_output_film",
+        "FiLM dimensions must be hidden_dim=128 and num_layers=2": conditioning.get(
+            "hidden_dim"
+        )
+        == 128
+        and conditioning.get("num_layers") == 2,
+        "Re/Rm conditioning must include Rm": conditioning.get(
+            "include_rem", False
+        ),
+        "log_re_mean must be 2.9756": conditioning.get("log_re_mean") == 2.9756,
+        "log_re_std must be 0.5417": conditioning.get("log_re_std") == 0.5417,
+        "conditioning residual scale must be 1": conditioning.get(
+            "residual_scale"
+        )
+        == 1.0,
+        "reference_re must be 1000": conditioning.get("reference_re") == 1000,
+        "deep adapters must target all blocks": adapter.get("target") == "all",
+        "adapter bottleneck must be 64": adapter.get("bottleneck_dim") == 64,
+        "adapter MLP must use hidden_dim=128 and num_layers=2": adapter.get(
+            "hidden_dim"
+        )
+        == 128
+        and adapter.get("num_layers") == 2,
+        "adapter scale must be 1": adapter.get("adapter_scale") == 1.0,
+        "adapter gate type must be channel": adapter.get("gate_type") == "channel",
+        "physics normalization must be used": normalization.get("type")
+        == "physics",
+        "input normalization must be [1, 1, 0.0052]": normalization.get(
+            "input_norm"
+        )
+        == [1.0, 1.0, 0.0052],
+        "output normalization must be [1, 1, 0.0052]": normalization.get(
+            "output_norm"
+        )
+        == [1.0, 1.0, 0.0052],
+        "dataset_type must be multi_re": dataset.get("dataset_type") == "multi_re",
+        "data_file must be mhd_data_3channel.npy": dataset.get("data_file")
+        == "mhd_data_3channel.npy",
+        "n must be 1000": dataset.get("n") == 1000,
+        "the locked ten Re values must be used": dataset.get("re_values")
+        == expected_re,
+        "Rm values must match Re values": dataset.get("rem_values") == expected_re,
+        "balanced Re batches must be enabled": dataset.get(
+            "balanced_re_batches", False
+        ),
+        "res_per_batch must be 10": dataset.get("res_per_batch") == 10,
+        "each regime must use an 800/100/100 split": dataset.get(
+            "train_size_per_re"
+        )
+        == 800
+        and dataset.get("val_plus_test_size_per_re") == 200,
+        "dataset seed must be 42": dataset.get("seed") == 42,
+        "sub_t must be 4": dataset.get("sub_t") == 4,
+        "sub_x must be 1": dataset.get("sub_x") == 1,
+        "the unit space-time domain must be used": dataset.get("t_range")
+        == [0.0, 1.0]
+        and dataset.get("x_range") == [0.0, 1.0]
+        and dataset.get("y_range") == [0.0, 1.0],
+        "the nominal batch_size must be 1 for every split": all(
+            value == 1 for value in batch_sizes.values()
+        ),
+        "physics-informed loss must be used": loss.get("type")
+        == "physics-informed",
+        "all four configured loss terms must be enabled": all(
+            loss.get(name, False)
+            for name in (
+                "use_data_loss",
+                "use_ic_loss",
+                "use_pde_loss",
+                "use_constraint_loss",
+            )
+        ),
+        "loss fallback nu and eta must both be 1e-3": loss.get("nu") == 1.0e-3
+        and loss.get("eta") == 1.0e-3,
+        "loss group weights must be [10, 1, 0.001, 0.1]": [
+            loss.get(name)
+            for name in (
+                "data_weight",
+                "ic_weight",
+                "pde_weight",
+                "constraint_weight",
+            )
+        ]
+        == [10.0, 1.0, 0.001, 0.1],
+        "field weights must be [1, 1, 5]": [
+            loss.get(name) for name in ("u_weight", "v_weight", "A_weight")
+        ]
+        == [1.0, 1.0, 5.0],
+        "PDE weights must be [1, 1, 100]": [
+            loss.get(name) for name in ("Du_weight", "Dv_weight", "DA_weight")
+        ]
+        == [1.0, 1.0, 100.0],
+        "divergence weights must be [1, 0]": [
+            loss.get(name) for name in ("div_vel_weight", "div_B_weight")
+        ]
+        == [1.0, 0.0],
+        "the loss domain and density must be unity": loss.get("rho0") == 1.0
+        and loss.get("Lx") == 1.0
+        and loss.get("Ly") == 1.0
+        and loss.get("tend") == 1.0,
+        "weighted means must be disabled": not loss.get("use_weighted_mean", True),
+        "AdamW with the locked base hyperparameters must be used": optimizer.get(
+            "optimizer_type"
+        )
+        == "adamw"
+        and optimizer.get("lr") == 1.0e-5
+        and optimizer.get("weight_decay") == 1.0e-2
+        and optimizer.get("betas") == [0.9, 0.999],
+        "optimizer parameter groups must be enabled": groups.get("enabled", False),
+        "pretrained_lr must be 1e-7": groups.get("pretrained_lr") == 1.0e-7,
+        "new_lr must be 1e-3": groups.get("new_lr") == 1.0e-3,
+        "boundary parameters must remain in the pretrained group": groups.get(
+            "boundary_group"
+        )
+        == "pretrained",
+        "pretrained_weight_decay must be 1e-2": groups.get(
+            "pretrained_weight_decay"
+        )
+        == 1.0e-2,
+        "new_weight_decay must be zero": groups.get("new_weight_decay") == 0.0,
+        "pretrained parameters must remain trainable": not groups.get(
+            "freeze_pretrained", True
+        ),
+        "the scheduler must be disabled": not optimizer.get(
+            "use_scheduler", True
+        ),
+        "the locked run must target 100 epochs": train.get("epochs") == 100,
+        "the run must remain a fine-tune": train.get("is_finetune", False),
+        "checkpoint selection must use normalized validation loss": train.get(
+            "checkpoint_metric"
+        )
+        == "normalized_validation_loss",
+        "warm_start_checkpoint must be set": bool(
+            str(train.get("warm_start_checkpoint", "")).strip()
+        ),
+        "load_checkpoint must be empty": not str(
+            train.get("load_checkpoint", "")
+        ).strip(),
+    }
+    failed = [message for message, passed in checks.items() if not passed]
+    if failed:
+        raise ValueError(
+            "Invalid gated-adapter multi-Re config: " + "; ".join(failed)
+        )
+
+
 def _warm_start_model(model, checkpoint_path):
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     state_dict = checkpoint.get("model_state_dict", checkpoint)
     incompatible = model.load_state_dict(state_dict, strict=False)
-    expected_missing = {"log_re_mean", "log_re_std"}
+    if not hasattr(model, "expected_warm_start_missing_keys"):
+        raise RuntimeError(
+            "Warm-started model must declare expected_warm_start_missing_keys()."
+        )
+    expected_missing = set(model.expected_warm_start_missing_keys())
     if set(incompatible.missing_keys) != expected_missing:
         raise RuntimeError(
-            "Unexpected missing keys while warm-starting naive multi-Re model: "
+            "Unexpected missing keys while warm-starting multi-Re model: "
             f"{incompatible.missing_keys}"
         )
     if incompatible.unexpected_keys:
         raise RuntimeError(
-            "Unexpected checkpoint keys while warm-starting naive multi-Re model: "
+            "Unexpected checkpoint keys while warm-starting multi-Re model: "
             f"{incompatible.unexpected_keys}"
         )
 
@@ -326,10 +533,12 @@ def _validate_scot_ablation(config):
         _validate_transfer_learning_ablation(config)
     elif recipe == "naive_multi_re":
         _validate_naive_multi_re_ablation(config)
+    elif recipe == "gated_adapter_multi_re":
+        _validate_gated_adapter_multi_re_ablation(config)
     else:
         raise ValueError(
             "train_params.recipe must be scot_without_tl, scot_with_tl, "
-            "or naive_multi_re"
+            "naive_multi_re, or gated_adapter_multi_re"
         )
 
 

@@ -1,6 +1,6 @@
 # PHASE copy manifest
 
-Status: assembly in progress. Batches 1--8 are implemented; later model and
+Status: assembly in progress. Batches 1--9 are implemented; later model and
 diffusion batches remain inventory entries until their provenance checks are complete.
 
 This is the literal legacy-source manifest for rebuilding the public PHASE
@@ -359,11 +359,11 @@ at the destinations shown.
 - `MHD-World-scratch/configs/config_poseidon_mhd_finetune_Re1000_scratch_physics_nueta1e3_corrected.yaml`
   -> `configs/ablations/scot_without_tl/re1000.yaml` (**implemented in Batch 6**)
 - `MHD-World/configs/config_poseidon_mhd_finetune_Re1000_vecpot_TL_bs16_nueta1e3_corrected_100ep.yaml`
-  -> `configs/ablations/scot_with_transfer.yaml`
+  -> `configs/ablations/scot_with_tl/re1000.yaml` (**implemented in Batch 7**)
 - `MHD-World-Re-naive/configs/gadi/config_poseidon_mhd_re_input_vecpot_TL_corrected_Re1000_warm_bs1_100ep.yaml`
-  -> `configs/ablations/naive_multi_regime.yaml`
+  -> `configs/ablations/naive_multi_regime/multi_re.yaml` (**implemented in Batch 8**)
 - `MHD-World-new/configs/config_poseidon_mhd_re_vecpot_TL_corrected_Re1000_warm_FiLMAdapter_bs1_100ep.yaml`
-  -> `configs/ablations/gated_adapter_multi_regime.yaml`
+  -> `configs/ablations/gated_adapter_multi_regime/multi_re.yaml` (**implemented in Batch 9**)
 
 ### Four-channel DT models
 

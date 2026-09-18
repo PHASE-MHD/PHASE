@@ -59,6 +59,7 @@ class PoseidonMHDFinetune(nn.Module):
                 "package or make sure it is on PYTHONPATH."
             ) from exc
 
+        self.out_channels = int(out_channels)
         self.poseidon_input_channel_map = tuple(poseidon_input_channel_map)
         self.poseidon_output_channel_map = tuple(poseidon_output_channel_map)
         self.magnetic_channel_index = int(magnetic_channel_index)

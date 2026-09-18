@@ -10,8 +10,9 @@
 - `generate_diffusion_features.py`: generate full-field DINO conditioner/DNS
   pairs from the released tFNO.
 - `train_dino.py`: train the previous-study full-field EDM diffusion baseline.
-- `train_scot.py`: train the guarded three-channel scOT ablations. Batches 6-8
-  implement the no-transfer, POSEIDON-transfer, and naive multi-regime recipes.
+- `train_scot.py`: train the guarded three-channel scOT ablations. Batches 6-9
+  implement the no-transfer, POSEIDON-transfer, naive multi-regime, and gated-
+  adapter multi-regime recipes.
 
 PHASE residual diffusion, evaluation, and visualization entry points will be
 added in later audited batches.

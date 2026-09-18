@@ -27,8 +27,13 @@ def create_model(config: Mapping):
 
         return create_poseidon_mhd_re_input_finetune(params)
 
+    if model_type == "poseidon-mhd-re-finetune" and variant is None:
+        from .scot_mhd_gated_re import create_poseidon_mhd_re_finetune
+
+        return create_poseidon_mhd_re_finetune(params)
+
     raise ValueError(
         f"Unsupported model_type={model_type!r}, model_variant={variant!r}. "
         "Supported models are tfno/3d, poseidon-mhd-finetune, and "
-        "poseidon-mhd-re-input-finetune."
+        "poseidon-mhd-re-input-finetune, and poseidon-mhd-re-finetune."
     )

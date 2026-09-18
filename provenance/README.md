@@ -6,6 +6,6 @@ reported ablations and DT/KH model chains. It does not contain checkpoints or
 large generated artifacts.
 
 Implemented ablation provenance currently includes the previous tFNO/DINO
-baselines, single-Re scOT without/with transfer learning, and naive
-multi-regime input conditioning. Batch-level validation records are stored as
+baselines, single-Re scOT without/with transfer learning, naive
+multi-regime input conditioning, and gated-adapter multi-regime conditioning. Batch-level validation records are stored as
 `batch_*.md`.

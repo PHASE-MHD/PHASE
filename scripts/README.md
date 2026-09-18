@@ -14,5 +14,7 @@
   implement the no-transfer, POSEIDON-transfer, naive multi-regime, and gated-
   adapter multi-regime recipes.
 
-PHASE residual diffusion, evaluation, and visualization entry points will be
-added in later audited batches.
+`generate_scot_diffusion_features.py` exports physical-unit scOT/DNS pairs for
+single- or multi-Re residual diffusion. `train_dino.py` now dispatches both the
+locked previous DINO full-field recipe and the guarded PHASE residual recipes.
+Evaluation and visualization entry points will be added in later audited batches.

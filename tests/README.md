@@ -75,3 +75,10 @@ The test checks strict loading, model-only warm-start keys, checkpoint metadata,
 parameter counts, and optimizer grouping. Unit tests additionally lock the two
 recipes, direct-B transport metadata, Helmholtz divergence, mean-mode
 preservation, and paired-normalization commutation.
+
+For Batch 11 checkpoint compatibility, set
+`PHASE_HISTORICAL_SR_DIFFUSION_CHECKPOINT` to the historical Re=1000
+full-field diffusion warm start and `PHASE_MULTI_RE_DIFFUSION_CHECKPOINT` to
+the reported epoch-95 MR PHASE checkpoint. The optional test verifies strict
+architecture compatibility and the recorded best metric without committing
+large checkpoint files.

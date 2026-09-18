@@ -1,11 +1,11 @@
-# Previous-study DINO baseline: full-field diffusion, not residual diffusion.
+# Corrected single-Re DT PHASE: four-field residual diffusion from random weights.
 config_type: diffusion
 
 model_params:
   model_type: elucidated
   base_dim: 128
   dim_mults: [1, 2, 3, 5, 8, 12]
-  channels: 3
+  channels: 4
   self_condition: true
   learned_variance: false
   learned_sinusoidal_cond: false
@@ -28,30 +28,34 @@ model_params:
   S_tmin: 0.05
   S_tmax: 50
   S_noise: 1.003
-  helmholtz_projection: false
-  project_velocity: false
-  project_B: false
+  field_representation: magnetic
+  helmholtz_projection: true
+  project_velocity: true
+  project_B: true
+  projection_mode: full_field_residual
+  domain_size_x: 1.0
+  domain_size_y: 1.0
   use_vorticity_loss: false
   use_current_loss: false
   re_conditioning: {enabled: false}
 
 normalization_params:
-  type: minmax
+  type: paired_minmax
+  channel_groups: [[0, 1], [2, 3]]
   feature_range: [-1, 1]
-  inputs_stats_file: ${STATS_ROOT}/dino_re1000_inputs.npz
-  targets_stats_file: ${STATS_ROOT}/dino_re1000_targets.npz
+  inputs_stats_file: ${STATS_ROOT}/turbulence/single_re/phase_re1000_inputs.npz
+  targets_stats_file: ${STATS_ROOT}/turbulence/single_re/phase_re1000_targets.npz
 
 dataset_params:
-  train_path: ${FEATURE_ROOT}/train
-  val_path: ${FEATURE_ROOT}/val
-  test_path: ${FEATURE_ROOT}/test
-  prediction_mode: direct
-  residual_target: false
+  train_path: ${FEATURE_ROOT}/turbulence/single_re/phase_re1000/train
+  val_path: ${FEATURE_ROOT}/turbulence/single_re/phase_re1000/val
+  test_path: ${FEATURE_ROOT}/turbulence/single_re/phase_re1000/test
+  seed: 42
+  prediction_mode: residual
+  residual_target: true
 
 dataloader_params:
   train: {batch_size: 64, num_workers: 1, shuffle: true, pin_memory: true}
-
-# Backward-compatible key consumed by the shared diffusion dataloader.
 train_loader_params:
   batch_size: 64
   shuffle: true
@@ -60,19 +64,20 @@ train_loader_params:
 
 optimizer_params:
   optimizer_type: adamw
-  lr: 1.0e-4
+  lr: 5.0e-5
   weight_decay: 1.0e-4
   betas: [0.9, 0.999]
   use_scheduler: true
   scheduler_type: cosine
   T_max: 1000
-  eta_min: 5.0e-5
+  eta_min: 2.5e-5
 
 train_params:
-  recipe: previous_dino
-  epochs: 101
-  checkpoint_path: ${OUTPUT_ROOT}/checkpoints/dino_re1000.pt
-  load_checkpoint: ""
+  recipe: phase_residual_single_re
+  epochs: 100
+  checkpoint_path: ${OUTPUT_ROOT}/checkpoints/dt_single_re_phase_re1000.pt
+  warm_start_checkpoint: ""
+  warm_start_mode: none
   validation_interval: 10
   checkpoint_metric: denormalized_relative_l2
   clip_grad: true

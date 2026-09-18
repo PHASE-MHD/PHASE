@@ -292,3 +292,21 @@ uses residual diffusion.
 - Isolation of later KH options from DT defaults.
 - Exact metric reproduction after consolidation.
 - Authorship of individual uncommitted lines.
+
+## Batch 11: residual diffusion
+
+- `src/phase/training/dino_trainer.py`: generalized the locked previous-DINO
+  loop to dispatch guarded single- and multi-Re PHASE residual recipes; added
+  metadata-aware normalization, physical full-field reconstruction for
+  validation, strict weights-only warm starts, and denormalized-relative-L2
+  checkpoint selection.
+- `src/phase/preprocessing/statistics.py`: added train-only per-Re statistics
+  for scOT conditions and `DNS - scOT` residual targets.
+- `scripts/generate_scot_diffusion_features.py`: added one single-/multi-Re
+  exporter that preserves physical units, deterministic split IDs, and Re
+  metadata.
+- `configs/turbulence/{single_re,multi_re}/`: added the corrected SR recipe
+  and historically faithful reported MR recipe.
+- The existing low-level residual reconstruction and full-field Helmholtz
+  implementation was retained from the audited DINOs source rather than
+  duplicated.

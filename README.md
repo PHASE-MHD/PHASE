@@ -50,3 +50,5 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
   `docs/turbulence_single_re_scot.md`
 - Four-channel multi-regime Helmholtz/physics-loss ablation:
   `docs/four_channel_hp_physics.md`
+- Single- and multi-Re DT PHASE residual diffusion:
+  `docs/turbulence_residual_diffusion.md`

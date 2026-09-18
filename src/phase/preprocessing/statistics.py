@@ -150,6 +150,43 @@ def diffusion_statistics(
     return {"inputs": input_moments.result(), "targets": target_moments.result()}
 
 
+def diffusion_statistics_by_re(
+    data_path: str | Path,
+    *,
+    prediction_mode: str = "residual",
+    chunk_size: int = 8,
+) -> dict[float, dict[str, dict[str, np.ndarray]]]:
+    """Compute conditioner and target statistics separately for every Re."""
+    path = Path(data_path)
+    if not path.is_dir() or not (path / "re.npy").exists():
+        raise ValueError("Per-Re diffusion statistics require a directory with re.npy")
+    inputs, targets = _load_diffusion_arrays(path)
+    re_values = np.load(path / "re.npy", mmap_mode="r")
+    if len(re_values) != len(inputs):
+        raise ValueError("re.npy must contain one Reynolds number per trajectory")
+    mode = prediction_mode.lower()
+    if mode not in {"direct", "residual"}:
+        raise ValueError("prediction_mode must be direct or residual")
+    results = {}
+    for re_value in sorted(float(value) for value in np.unique(re_values)):
+        indices = np.flatnonzero(np.asarray(re_values) == np.float32(re_value))
+        input_moments = ChannelMoments(inputs.shape[1])
+        target_moments = ChannelMoments(targets.shape[1])
+        for start in range(0, len(indices), chunk_size):
+            selected = indices[start : start + chunk_size]
+            x = np.asarray(inputs[selected], dtype=np.float64)
+            y = np.asarray(targets[selected], dtype=np.float64)
+            if mode == "residual":
+                y = y - x
+            input_moments.update(x)
+            target_moments.update(y)
+        results[re_value] = {
+            "inputs": input_moments.result(),
+            "targets": target_moments.result(),
+        }
+    return results
+
+
 def _histogram_abs_percentile(
     sources: Iterable[tuple[np.ndarray, np.ndarray]],
     *,

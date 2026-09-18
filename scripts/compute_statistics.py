@@ -9,6 +9,7 @@ from pathlib import Path
 
 from phase.preprocessing import (
     diffusion_statistics,
+    diffusion_statistics_by_re,
     multi_re_magnetic_p99,
     save_npz_statistics,
     trajectory_statistics,
@@ -45,6 +46,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--prediction-mode", choices=("direct", "residual"), required=True
     )
     diffusion.add_argument("--chunk-size", type=int, default=8)
+
+    per_re = commands.add_parser("diffusion-per-re")
+    per_re.add_argument("--input", required=True)
+    per_re.add_argument("--output-dir", required=True)
+    per_re.add_argument("--prediction-mode", choices=("direct", "residual"), default="residual")
+    per_re.add_argument("--chunk-size", type=int, default=8)
 
     multi = commands.add_parser("multi-re-p99")
     multi.add_argument("--data-root", required=True)
@@ -99,6 +106,24 @@ def main() -> None:
         )
         print(f"Wrote {input_path}")
         print(f"Wrote {target_path}")
+        return
+
+    if args.command == "diffusion-per-re":
+        results = diffusion_statistics_by_re(
+            args.input, prediction_mode=args.prediction_mode, chunk_size=args.chunk_size
+        )
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        for re_value, stats in results.items():
+            label = _re_label(re_value)
+            input_path = save_npz_statistics(
+                output_dir / f"Re{label}_inputs_stats", stats["inputs"]
+            )
+            target_path = save_npz_statistics(
+                output_dir / f"Re{label}_residual_targets_stats", stats["targets"]
+            )
+            print(f"Wrote {input_path}")
+            print(f"Wrote {target_path}")
         return
 
     root = Path(args.data_root)

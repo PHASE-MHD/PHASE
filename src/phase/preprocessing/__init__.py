@@ -2,6 +2,7 @@
 
 from .statistics import (
     diffusion_statistics,
+    diffusion_statistics_by_re,
     multi_re_magnetic_p99,
     save_npz_statistics,
     split_indices,
@@ -20,6 +21,7 @@ __all__ = [
     "discover_dedalus_files",
     "spectral_b_from_a",
     "diffusion_statistics",
+    "diffusion_statistics_by_re",
     "multi_re_magnetic_p99",
     "save_npz_statistics",
     "split_indices",

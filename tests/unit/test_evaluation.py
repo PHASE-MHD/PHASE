@@ -71,6 +71,21 @@ def test_kh_report_excludes_turbulence_distribution_and_spectrum_metrics():
     assert not any("kurtosis" in key for key in result["aggregate"])
 
 
+def test_kh_relative_l2_is_computed_over_the_complete_trajectory():
+    truth = torch.zeros(4, 2, 4, 4, dtype=torch.float64)
+    truth[:, 0] = 1.0
+    truth[:, 1] = 10.0
+    prediction = truth.clone()
+    prediction[:, 0] = 0.0
+    result = evaluate_records(
+        [EvaluationRecord(prediction, truth, "direct_b", 905, 1000.0)],
+        problem="kh",
+    )
+    expected = (1.0 / 101.0) ** 0.5
+    assert result["aggregate"]["rel_l2_ux"] == pytest.approx(expected)
+    assert "complete space-time trajectory" in result["aggregation"]
+
+
 def test_spectrum_error_preserves_reported_log_ratio_definition():
     truth = torch.ones(16, dtype=torch.float64)
     prediction = truth * 10.0

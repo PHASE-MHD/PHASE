@@ -14,20 +14,41 @@ from phase.evaluation.reporting import sha256_file, write_evaluation_report
 from phase.utils import load_config
 
 
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
+
+
+def nonnegative_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must be a nonnegative integer")
+    return parsed
+
+
+def positive_float(value: str) -> float:
+    parsed = float(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be positive")
+    return parsed
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True)
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--problem", choices=("turbulence", "kh"), required=True)
-    parser.add_argument("--re", type=float, required=True, help="Evaluation Re=Rm.")
-    parser.add_argument("--max-samples", type=int, default=None)
-    parser.add_argument("--num-workers", type=int, default=0)
-    parser.add_argument("--num-sample-steps", type=int, default=32)
+    parser.add_argument("--re", type=positive_float, required=True, help="Evaluation Re=Rm.")
+    parser.add_argument("--max-samples", type=positive_int, default=None)
+    parser.add_argument("--num-workers", type=nonnegative_int, default=0)
+    parser.add_argument("--num-sample-steps", type=positive_int, default=32)
     parser.add_argument("--diffusion-seed", type=int, default=42)
     parser.add_argument("--device", choices=("auto", "cpu", "cuda"), default="auto")
-    parser.add_argument("--lx", type=float, default=1.0)
-    parser.add_argument("--ly", type=float, default=1.0)
+    parser.add_argument("--lx", type=positive_float, default=1.0)
+    parser.add_argument("--ly", type=positive_float, default=1.0)
     return parser.parse_args()
 
 

@@ -115,6 +115,7 @@ def write_evaluation_report(
         f"Split                    : {metadata['split']}",
         f"Re=Rm                    : {metadata['re']}",
         f"Number of trajectories   : {results['number_of_samples']}",
+        f"Sample ID source         : {metadata.get('sample_id_source', 'unspecified')}",
         f"Aggregation              : {results['aggregation']}",
         f"Configuration            : {metadata['config']}",
         f"Configuration SHA-256    : {metadata['config_sha256']}",

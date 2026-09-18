@@ -3,7 +3,10 @@
 import numpy as np
 import torch
 
-from phase.data.diffusion_dataset import DiffusionDataset
+from phase.data.diffusion_dataset import (
+    DiffusionDataset,
+    get_diffusion_test_dataloader,
+)
 from phase.data.multi_re_neurops_dataset import (
     BalancedReBatchSampler,
     MultiReMHDDataset,
@@ -88,3 +91,44 @@ def test_diffusion_residual_targets_preserve_metadata(tmp_path):
     assert torch.allclose(residual, torch.full_like(residual, 2.0))
     assert metadata["re"].item() == 80.0
     assert metadata["sample_id"].item() == 11
+
+
+def test_diffusion_evaluation_loader_builds_only_trajectory_test_store(tmp_path):
+    test_path = tmp_path / "test"
+    test_path.mkdir()
+    inputs = np.zeros((2, 4, 3, 4, 4), dtype=np.float32)
+    np.save(test_path / "diff_inputs.npy", inputs)
+    np.save(test_path / "diff_targets.npy", inputs)
+    np.save(test_path / "sample_id.npy", np.array([11, 22], dtype=np.int64))
+    config = {
+        "model_params": {"channels": 4},
+        "normalization_params": {"type": "identity"},
+        "dataset_params": {
+            "test_path": str(test_path),
+            "return_metadata": True,
+        },
+    }
+    loader = get_diffusion_test_dataloader(config, num_workers=0)
+    assert loader.batch_size == 3
+    assert len(loader.dataset) == 6
+    _, _, metadata = next(iter(loader))
+    assert torch.equal(metadata["sample_id"], torch.full((3,), 11))
+
+
+def test_diffusion_evaluation_rejects_flattened_test_store(tmp_path):
+    test_path = tmp_path / "flat_test"
+    test_path.mkdir()
+    inputs = np.zeros((6, 4, 4, 4), dtype=np.float32)
+    np.save(test_path / "diff_inputs.npy", inputs)
+    np.save(test_path / "diff_targets.npy", inputs)
+    config = {
+        "model_params": {"channels": 4},
+        "normalization_params": {"type": "identity"},
+        "dataset_params": {"test_path": str(test_path)},
+    }
+    try:
+        get_diffusion_test_dataloader(config, num_workers=0)
+    except ValueError as error:
+        assert "trajectory-shaped 5D" in str(error)
+    else:
+        raise AssertionError("Flattened diffusion evaluation store was accepted.")

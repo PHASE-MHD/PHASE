@@ -45,6 +45,11 @@ They are flattened to independent time slices only after residual construction
 and normalization. With prediction_mode set to residual, the clean target is
 formed as DNS minus conditioner before target normalization.
 
+Held-out evaluation requires this five-dimensional representation so every
+batch corresponds to one complete trajectory. Feature generation preserves
+the deterministic split order and writes the original source simulation index
+to sample_id.
+
 ## Normalization
 
 Statistics must be fitted on the training split only.

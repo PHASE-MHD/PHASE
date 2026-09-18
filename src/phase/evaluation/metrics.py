@@ -124,7 +124,7 @@ def evaluate_record(
     lx: float = 1.0,
     ly: float = 1.0,
 ) -> dict[str, float]:
-    """Evaluate one trajectory, averaging each metric uniformly over time."""
+    """Evaluate one physical trajectory with the locked problem convention."""
     if problem not in {"turbulence", "kh"}:
         raise ValueError("problem must be 'turbulence' or 'kh'.")
     if record.prediction.shape != record.truth.shape:
@@ -139,6 +139,22 @@ def evaluate_record(
 
     def add(name: str, value: float) -> None:
         values.setdefault(name, []).append(float(value))
+
+    if problem == "kh":
+        # Compare a complete trajectory before averaging over samples.
+        result = {}
+        for name in FIELD_NAMES:
+            result[f"rel_l2_{name}"] = _relative_l2(pred[name], true[name])
+            result[f"mse_{name}"] = float(
+                torch.mean((pred[name] - true[name]) ** 2)
+            )
+        div_u = divergence_2d(pred["ux"], pred["uy"], lx, ly)
+        div_b = divergence_2d(pred["Bx"], pred["By"], lx, ly)
+        result["div_mse_u"] = float(torch.mean(div_u.square()))
+        result["div_rms_u"] = float(torch.sqrt(torch.mean(div_u.square())))
+        result["div_mse_B"] = float(torch.mean(div_b.square()))
+        result["div_rms_B"] = float(torch.sqrt(torch.mean(div_b.square())))
+        return result
 
     for time_index in range(nt):
         for name in FIELD_NAMES:
@@ -163,9 +179,6 @@ def evaluate_record(
         add("div_rms_u", float(torch.sqrt(torch.mean(div_u.square()))))
         add("div_mse_B", float(torch.mean(div_b.square())))
         add("div_rms_B", float(torch.sqrt(torch.mean(div_b.square()))))
-
-        if problem == "kh":
-            continue
 
         scales = _frame_scales(true, time_index)
         for name in FIELD_NAMES:
@@ -245,7 +258,11 @@ def evaluate_records(
             **{name: _mean([row[name] for row in selected]) for name in metric_names},
         }
     return {
-        "aggregation": "mean over spatial metric, then time, then trajectories",
+        "aggregation": (
+            "metric over each complete space-time trajectory, then mean over trajectories"
+            if problem == "kh"
+            else "mean over spatial metric, then time, then trajectories"
+        ),
         "number_of_samples": len(rows),
         "aggregate": aggregate,
         "by_re": by_re,

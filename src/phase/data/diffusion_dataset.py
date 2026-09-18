@@ -742,3 +742,76 @@ def get_diffusion_dataloaders(config, num_workers=4):
         )
 
     return train_loader, val_loader, test_loader
+
+
+def get_diffusion_test_dataloader(config, num_workers=4):
+    """Create only the trajectory-preserving held-out-test loader."""
+    input_normalizer = None
+    target_normalizer = None
+    norm_params = config.get("normalization_params", {})
+    norm_type = norm_params.get("type", "identity").lower()
+
+    if norm_type == "per_re_paired_minmax":
+        input_params = norm_params.copy()
+        input_params["stats_by_re"] = _load_per_re_stats(norm_params, "inputs")
+        input_normalizer = create_normalization(
+            {"normalization_params": input_params}
+        )
+        target_params = norm_params.copy()
+        target_params["stats_by_re"] = _load_per_re_stats(norm_params, "targets")
+        target_normalizer = create_normalization(
+            {"normalization_params": target_params}
+        )
+    elif norm_params:
+        input_stats_path = norm_params.get(
+            "inputs_stats_file", norm_params.get("stats_file")
+        )
+        target_stats_path = norm_params.get(
+            "targets_stats_file", norm_params.get("stats_file")
+        )
+
+        def build_normalizer(stats_path, label):
+            if not stats_path:
+                return None
+            if not str(stats_path).endswith(".npz"):
+                raise ValueError(f"{label} statistics must be an .npz file.")
+            if not os.path.exists(stats_path):
+                raise FileNotFoundError(
+                    f"{label} statistics file not found: {stats_path}"
+                )
+            params = norm_params.copy()
+            with np.load(stats_path) as stats:
+                for key in stats.files:
+                    value = stats[key]
+                    params[key] = (
+                        value.tolist() if hasattr(value, "tolist") else value
+                    )
+            return create_normalization({"normalization_params": params})
+
+        input_normalizer = build_normalizer(input_stats_path, "Input")
+        target_normalizer = build_normalizer(target_stats_path, "Target")
+
+    test_path = config.get("dataset_params", {}).get("test_path")
+    if not test_path:
+        raise ValueError("Test data path must be specified in config")
+    test_dataset = DiffusionDataset(
+        test_path,
+        config=config,
+        input_normalizer=input_normalizer,
+        target_normalizer=target_normalizer,
+        split_name="test",
+    )
+    if test_dataset.timesteps is None:
+        raise ValueError(
+            "Diffusion evaluation requires a trajectory-shaped 5D test feature "
+            "store [samples, channels, time, x, y]; pre-flattened 4D features "
+            "cannot be grouped into auditable trajectories."
+        )
+    return DataLoader(
+        test_dataset,
+        batch_size=test_dataset.timesteps,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=(num_workers > 0),
+    )

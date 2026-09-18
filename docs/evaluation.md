@@ -43,19 +43,20 @@ No finite-difference or model-specific derivative path is used.
 
 ## Aggregation contract
 
-Relative L2, MSE, divergence, spectrum, PDF, standard-deviation, and kurtosis
-errors are first computed on each spatial snapshot. They are then averaged
-uniformly over time and finally over held-out trajectories. This avoids
-weighting a regime or trajectory by its field amplitude. Spectrum errors are
-the mean absolute log10 ratio between predicted and DNS shell power. The
-low-wavenumber band contains shells 1--8; the high-wavenumber band contains the
-remaining resolved shells. This exactly preserves the reported turbulence
-evaluation convention.
+For turbulence, relative L2, MSE, divergence, spectrum, PDF,
+standard-deviation, and kurtosis errors are first computed on each spatial
+snapshot, then averaged uniformly over time and finally over held-out
+trajectories. Spectrum errors are the mean absolute log10 ratio between
+predicted and DNS shell power. The low-wavenumber band contains shells 1--8;
+the high-wavenumber band contains the remaining resolved shells. This exactly
+preserves the reported turbulence evaluation convention.
 
 Turbulence reports contain all metrics. KH reports intentionally contain only
 relative L2, MSE, and velocity/magnetic divergence because homogeneous
 turbulence PDF and low/high-k summary metrics are not used for the instability
-experiments.
+experiments. For KH, each metric is computed over a complete space-time
+trajectory and then averaged uniformly over held-out trajectories, matching
+the canonical deterministic KH evaluation.
 
 ## Model-specific reconstruction
 
@@ -69,5 +70,9 @@ experiments.
   values use the same log-Re interpolation implemented by the normalizer.
 
 Every report stores absolute config/checkpoint paths, their SHA-256 digests,
-the checkpoint epoch, exact sample IDs, Re, split, diffusion seed, and sampling
-step count.
+the checkpoint epoch, Re, split, diffusion seed, sampling step count, and the
+sample-ID source. Newly generated feature stores carry exact source simulation
+IDs. Legacy diffusion stores without this metadata are explicitly reported as
+using test-split positions. Diffusion evaluation loads only the test store and
+rejects pre-flattened features because their trajectory boundaries cannot be
+verified.

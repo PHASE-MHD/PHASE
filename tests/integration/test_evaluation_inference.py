@@ -112,8 +112,8 @@ def test_full_field_dino_and_residual_phase_adapters(monkeypatch, tmp_path):
 
         monkeypatch.setattr(
             inference,
-            "get_diffusion_dataloaders",
-            lambda config, num_workers=0: (None, None, Loader()),
+            "get_diffusion_test_dataloader",
+            lambda config, num_workers=0: Loader(),
         )
         monkeypatch.setattr(
             inference,

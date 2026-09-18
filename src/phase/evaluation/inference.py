@@ -10,7 +10,7 @@ import torch
 
 from phase.data import (
     get_dataloaders,
-    get_diffusion_dataloaders,
+    get_diffusion_test_dataloader,
     get_multi_re_dataloaders,
 )
 from phase.diffusion import create_diffusion_model
@@ -154,6 +154,7 @@ def _deterministic_records(
     return iterator(), {
         "checkpoint_epoch": checkpoint.get("epoch"),
         "representation": output_representation,
+        "sample_id_source": "source_dataset_index",
     }
 
 
@@ -188,7 +189,7 @@ def _diffusion_records(
     num_sample_steps: int,
 ) -> tuple[Iterator[EvaluationRecord], dict]:
     configured_sigma_data = config.get("model_params", {}).get("sigma_data")
-    test_loader = get_diffusion_dataloaders(config, num_workers=num_workers)[2]
+    test_loader = get_diffusion_test_dataloader(config, num_workers=num_workers)
     if configured_sigma_data is not None:
         config["model_params"]["sigma_data"] = configured_sigma_data
     model = create_diffusion_model(config).to(device)
@@ -198,6 +199,7 @@ def _diffusion_records(
     residual_mode = bool(dataset.residual_target)
     channel_indices = dataset.channel_indices or list(range(model.channels))
     output_representation = representation(config)
+    has_feature_sample_ids = getattr(dataset, "sample_id_per_sample", None) is not None
 
     def iterator():
         count = 0
@@ -270,6 +272,9 @@ def _diffusion_records(
         "representation": output_representation,
         "diffusion_seed": diffusion_seed,
         "num_sample_steps": num_sample_steps,
+        "sample_id_source": (
+            "feature_metadata" if has_feature_sample_ids else "test_split_position"
+        ),
     }
 
 

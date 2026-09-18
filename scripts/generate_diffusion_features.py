@@ -8,6 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
 
 from phase.data import get_dataloaders
 from phase.models import create_model, map_official_tfno_state_dict
@@ -19,14 +20,15 @@ from phase.utils import (
 )
 
 
-def _save_split(path, inputs, targets):
+def _save_split(path, inputs, targets, sample_ids):
     path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
     np.save(path / "diff_inputs.npy", inputs)
     np.save(path / "diff_targets.npy", targets)
+    np.save(path / "sample_id.npy", np.asarray(sample_ids, dtype=np.int64))
 
 
-def _generate_split(loader, model, normalizer, output_path, device):
+def _generate_split(loader, model, normalizer, output_path, device, sample_ids):
     predictions = []
     targets = []
     model.eval()
@@ -43,7 +45,12 @@ def _generate_split(loader, model, normalizer, output_path, device):
             targets.append(target.cpu().numpy())
     condition = np.concatenate(predictions).astype(np.float32, copy=False)
     truth = np.concatenate(targets).astype(np.float32, copy=False)
-    _save_split(output_path, condition, truth)
+    if condition.shape[0] != len(sample_ids):
+        raise ValueError(
+            f"Generated {condition.shape[0]} trajectories but received "
+            f"{len(sample_ids)} sample IDs."
+        )
+    _save_split(output_path, condition, truth, sample_ids)
     return condition.shape
 
 
@@ -73,8 +80,18 @@ def generate_features(config, checkpoint_path, output_root, batch_size=4, num_wo
     output_root = Path(output_root)
     shapes = {}
     for split, loader in zip(("train", "val", "test"), loaders):
+        # Persist features in deterministic source-dataset order.
+        loader = DataLoader(
+            loader.dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=num_workers,
+            pin_memory=True,
+            persistent_workers=(num_workers > 0),
+        )
+        sample_ids = np.asarray(loader.dataset.indices, dtype=np.int64)
         shapes[split] = _generate_split(
-            loader, model, normalizer, output_root / split, device
+            loader, model, normalizer, output_root / split, device, sample_ids
         )
         print(f"Generated {split}: {shapes[split]}", flush=True)
     return shapes

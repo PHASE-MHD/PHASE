@@ -24,8 +24,39 @@ format are preserved.
 
 ## Validation pass
 
-The consolidation audit checks that the locked config, warm-start contract,
-zero-correction initialization, 32-block placement, optimizer grouping,
-checkpoint metadata, and `log10(Re/Rm)` standardization match the historical
-artifact. The final validation results and any limitations of the available
-environment are recorded when the audit is completed.
+The consolidation audit verified that:
+
+- the public config preserves the legacy architecture, normalization, ten
+  regimes, balanced effective batch of 10, per-sample transport coefficients,
+  loss weights, learning rates, weight decay, and validation-loss selection;
+- all Batch 6--9 recipe guards pass, while deliberate changes to conditioning,
+  adapter placement, normalization, PDE weight, checkpoint metric, magnetic
+  initialization, and temporal subsampling are rejected;
+- the public model installs 32 adapters and declares exactly 390 new warm-start
+  state keys: 384 adapter entries and six output-FiLM entries;
+- the corrected epoch-98 single-Re checkpoint loads with no missing keys beyond
+  that exact allowlist and no unexpected keys;
+- before conditioning training, predictions at `Re=80` and `Re=4500` are
+  bit-for-bit identical to the single-Re warm-start prediction;
+- the historical epoch-44 model loads strictly with 1,234 state tensors and
+  22,289,366 total state elements;
+- its AdamW state restores 844 warm-started tensors and 324 conditioning
+  tensors, 1,168 optimizer states in total, and scheduler `last_epoch=45`; and
+- repository-wide source, tests, and scripts compile in the established
+  Apptainer environment.
+
+The source comparison against the canonical legacy model found only package
+imports/registration, the explicit warm-start allowlist, and removal of
+inactive options from the locked three-channel factory. The legacy final
+Helmholtz call was a no-op for this config; omitting it does not alter the
+active computation.
+
+The established Apptainer image does not include pytest. The pytest suites are
+committed, and equivalent direct assertions were run successfully. The image
+uses Python 3.10.13; the public package remains declared for Python 3.11.
+
+The historical job targeted 100 epochs, but the surviving log contains
+complete summaries only through epoch 50 and no normal-completion marker. The
+reported epoch-44 checkpoint is byte-identical to the mutable best-checkpoint
+file, so its provenance is unambiguous without claiming that the schedule
+finished.

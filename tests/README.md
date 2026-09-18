@@ -44,3 +44,18 @@ Set both `PHASE_SCOT_WITH_TL_CHECKPOINT` and
 `PHASE_NAIVE_MULTI_RE_CHECKPOINT` to the corrected single-Re warm start and
 reported epoch-59 naive multi-regime checkpoint before running the marked
 checkpoint test.
+
+## Batch 9 checkpoint compatibility
+
+Set `PHASE_SCOT_WITH_TL_CHECKPOINT` to the corrected single-Re warm start and
+`PHASE_GATED_ADAPTER_MULTI_RE_CHECKPOINT` to the reported epoch-44 checkpoint,
+then run:
+
+```bash
+pytest -m checkpoint \
+  tests/checkpoint_compatibility/test_gated_adapter_multi_regime_legacy_checkpoint.py
+```
+
+The test verifies strict final-checkpoint loading, model-only warm-start keys,
+zero-correction initialization, exact warm-start prediction preservation,
+optimizer grouping, and scheduler/checkpoint metadata.

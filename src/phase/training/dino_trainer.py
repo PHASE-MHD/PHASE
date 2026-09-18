@@ -225,24 +225,97 @@ def _validate_recipe(config):
             == len(config.get("normalization_params", {}).get("re_values", []))
         )
     if recipe in _KH_RESIDUAL_RECIPES:
+        expected_model = {
+            "model_type": "elucidated",
+            "base_dim": 128,
+            "dim_mults": [1, 2, 3, 5, 8, 12],
+            "channels": 4,
+            "self_condition": True,
+            "learned_variance": False,
+            "learned_sinusoidal_cond": False,
+            "random_fourier_features": False,
+            "sinusoidal_pos_emb_theta": 10000,
+            "learned_sinusoidal_dim": 16,
+            "dropout": 0.0,
+            "attn_heads": 8,
+            "attn_dim_head": 64,
+            "flash_attn": True,
+            "image_size": 128,
+            "num_sample_steps": 32,
+            "sigma_min": 0.002,
+            "sigma_max": 80,
+            "sigma_data": 0.5,
+            "rho": 7,
+            "P_mean": -1.2,
+            "P_std": 1.2,
+            "S_churn": 80,
+            "S_tmin": 0.05,
+            "S_tmax": 50,
+            "S_noise": 1.003,
+        }
+        expected_optimizer = {
+            "optimizer_type": "adamw",
+            "lr": 5.0e-5,
+            "weight_decay": 1.0e-4,
+            "betas": [0.9, 0.999],
+            "use_scheduler": True,
+            "scheduler_type": "cosine",
+            "T_max": 1000,
+            "eta_min": 2.5e-5,
+        }
+        optimizer = config.get("optimizer_params", {})
+        loader = config.get("train_loader_params", {})
+        runtime_loader = config.get("dataloader_params", {}).get("train", {})
+        normalization = config.get("normalization_params", {})
+        expected_workers = (
+            1 if recipe == "kh_phase_residual_single_re" else 8
+        )
         checks.update(
             {
+                "canonical KH EDM architecture and schedule": all(
+                    model_params.get(key) == value
+                    for key, value in expected_model.items()
+                ),
+                "canonical KH optimizer and scheduler": all(
+                    optimizer.get(key) == value
+                    for key, value in expected_optimizer.items()
+                ),
+                "canonical KH train loader": (
+                    loader.get("batch_size") == 64
+                    and loader.get("shuffle") is True
+                    and loader.get("num_workers") == expected_workers
+                    and loader.get("pin_memory") is True
+                    and runtime_loader == loader
+                ),
+                "canonical KH paired channel groups": (
+                    normalization.get("channel_groups") == [[0, 1], [2, 3]]
+                    and normalization.get("feature_range") == [-1, 1]
+                ),
                 "KH source interval t=[0,5]": dataset.get("source_time_range")
                 == [0.0, 5.0],
-                "51 KH frames after sub_t=5": (
-                    dataset.get("source_sub_t") == 5
+                "51 KH frames at physical dt=0.1": (
+                    dataset.get("source_output_dt") == 0.02
+                    and dataset.get("source_sub_t") == 5
                     and dataset.get("frames_per_trajectory") == 51
                 ),
-                "32-step KH diffusion sampling": model_params.get(
-                    "num_sample_steps"
-                )
-                == 32,
+                "100-epoch KH training": train.get("epochs") == 100,
                 "five-epoch KH full validation": train.get(
                     "validation_interval"
                 )
                 == 5,
             }
         )
+        if recipe == "kh_phase_residual_single_re":
+            checks["single-Re KH random-start mode"] = (
+                train.get("warm_start_mode") == "none"
+            )
+        else:
+            checks["canonical KH Re grid and metadata"] = (
+                normalization.get("re_values")
+                == [80, 200, 400, 650, 1000, 1500, 2050, 2750, 3600, 4500]
+                and normalization.get("default_re") == 1000.0
+                and dataset.get("return_metadata") is True
+            )
     failed = [name for name, valid in checks.items() if not valid]
     if failed:
         raise ValueError("Invalid " + recipe + " config: " + ", ".join(failed))

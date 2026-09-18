@@ -71,3 +71,16 @@ login-node `python` is older than the repository's supported Python and
 cannot compile the pre-existing walrus operator in
 `scripts/verify_artifact.py`; the supported container Python compiled the
 complete tree successfully.
+
+## Paranoid re-audit
+
+A second independent pass verified the public recipes against the complete
+legacy single-Re YAML and both the initial and final multi-Re continuation
+YAMLs. It also verified every feature split against the source DNS arrays,
+all 22 normalization files, split disjointness, exact per-Re sample counts,
+checkpoint hashes and strict 349-key loading, residual-statistics semantics,
+balanced batching, full-field projection, zero mean modes, and full-state
+resume behavior. No data, checkpoint, normalization, or training-objective
+defect was found. The recipe guard and regression tests were strengthened so
+that drift in the U-Net/EDM parameters, optimizer, loader, physical-time
+metadata, epoch count, or canonical ten-Re grid now fails immediately.

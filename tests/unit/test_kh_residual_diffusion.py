@@ -69,6 +69,30 @@ def test_kh_diffusion_architecture_matches_between_stages(monkeypatch, tmp_path)
     assert single["optimizer_params"] == multi["optimizer_params"]
 
 
+@pytest.mark.parametrize(
+    ("section", "key", "value", "message"),
+    [
+        ("model_params", "base_dim", 64, "canonical KH EDM"),
+        ("model_params", "sigma_data", 1.0, "canonical KH EDM"),
+        ("optimizer_params", "lr", 1.0e-4, "canonical KH optimizer"),
+        ("train_loader_params", "batch_size", 32, "canonical KH train loader"),
+        ("train_params", "epochs", 99, "100-epoch KH training"),
+        ("dataset_params", "source_output_dt", 0.01, "physical dt=0.1"),
+    ],
+)
+def test_kh_recipe_rejects_canonical_parameter_drift(
+    monkeypatch, tmp_path, section, key, value, message
+):
+    config = _config(
+        "configs/kh/single_re/residual_diffusion_re1000.yaml",
+        monkeypatch,
+        tmp_path,
+    )
+    config[section][key] = value
+    with pytest.raises(ValueError, match=message):
+        _validate_recipe(config)
+
+
 def test_kh_residual_validation_runs_every_fifth_epoch():
     for recipe in (
         "kh_phase_residual_single_re",
@@ -111,6 +135,28 @@ def test_kh_recipe_rejects_diffusion_re_conditioning(monkeypatch, tmp_path):
     )
     config["model_params"]["re_conditioning"]["enabled"] = True
     with pytest.raises(ValueError, match="no diffusion Re conditioning"):
+        _validate_recipe(config)
+
+
+def test_kh_recipe_rejects_runtime_loader_drift(monkeypatch, tmp_path):
+    config = _config(
+        "configs/kh/multi_re/residual_diffusion_t0_5.yaml",
+        monkeypatch,
+        tmp_path,
+    )
+    config["dataloader_params"]["train"]["num_workers"] = 1
+    with pytest.raises(ValueError, match="canonical KH train loader"):
+        _validate_recipe(config)
+
+
+def test_kh_multi_re_recipe_rejects_regime_grid_drift(monkeypatch, tmp_path):
+    config = _config(
+        "configs/kh/multi_re/residual_diffusion_t0_5.yaml",
+        monkeypatch,
+        tmp_path,
+    )
+    config["normalization_params"]["re_values"][-1] = 4000
+    with pytest.raises(ValueError, match="canonical KH Re grid"):
         _validate_recipe(config)
 
 

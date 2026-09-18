@@ -36,11 +36,23 @@ tensors at `lr=1e-3, wd=0`. Expanded boundary tensors belong to the
 warm-started group. The single-Re warm start permits exactly 390 missing
 adapter/FiLM keys.
 
+Because `boundary_group: pretrained`, every expanded input/output boundary
+tensor also uses `lr=1e-7` in this multi-regime stage. The inherited
+`magnetic_output_lr: 2e-3` YAML entry is inactive here because gradient-slice
+hooks are registered only when boundary tensors are assigned to the new group;
+it is retained solely to mirror the canonical legacy configuration.
+
 The legacy YAML's scalar `nu`/`eta` fallback was `0.01`, but it was
 inactive: all multi-regime batches carry per-sample `nu=1/Re` and
 `eta=1/Rm`. The public YAML sets the physically correct Re=1000 fallback
 `0.001` as well, eliminating that misleading dormant value without changing
 the active historical computation.
+
+The historical launchers did not set PyTorch/CUDA initialization seeds, and
+the final artifact was reached through continuation jobs whose balanced
+samplers restarted their local epoch counters. A fresh public run reproduces
+the locked method, data split, and optimization rules, but not the exact
+historical stochastic trajectory.
 
 ## Artifact hashes
 

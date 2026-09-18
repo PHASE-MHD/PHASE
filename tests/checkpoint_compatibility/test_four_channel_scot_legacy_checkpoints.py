@@ -54,6 +54,7 @@ def test_four_channel_checkpoints_load_and_warm_start(monkeypatch, tmp_path):
     assert [group["weight_decay"] for group in single_optimizer.param_groups] == [
         1e-2, 0.0
     ]
+    assert single._optimizer_hooks_registered
     assert len(multi.expected_warm_start_missing_keys()) == 390
 
     multi_checkpoint = torch.load(
@@ -80,3 +81,23 @@ def test_four_channel_checkpoints_load_and_warm_start(monkeypatch, tmp_path):
     assert [group["weight_decay"] for group in optimizer.param_groups] == [
         1e-2, 0.0
     ]
+
+    # The canonical multi-Re recipe keeps every expanded scOT boundary tensor
+    # in the pretrained group. Consequently, magnetic_output_lr is historical
+    # config metadata here; no slice hook is active in this stage.
+    boundary_prefixes = (
+        "poseidon.embeddings.patch_embeddings.projection",
+        "poseidon.patch_recovery.projection",
+        "poseidon.patch_recovery.mixup",
+    )
+    boundary_ids = {
+        id(parameter)
+        for name, parameter in multi.named_parameters()
+        if name.startswith(boundary_prefixes)
+    }
+    pretrained_ids = {id(parameter) for parameter in optimizer.param_groups[0]["params"]}
+    adapter_ids = {id(parameter) for parameter in optimizer.param_groups[1]["params"]}
+    assert boundary_ids
+    assert boundary_ids <= pretrained_ids
+    assert boundary_ids.isdisjoint(adapter_ids)
+    assert not multi._optimizer_hooks_registered

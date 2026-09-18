@@ -39,6 +39,22 @@ The audit established the following:
 - the previous Batch 7 and Batch 9 checkpoints still strict-load after the
   shared model extension.
 
+The optimizer was also audited at the gradient-slice level. In the single-Re
+stage, copied input/output slices have effective learning rate `5e-6`, the new
+magnetic input slices have effective learning rate `5e-4`, and the new
+magnetic output slices have effective learning rate `2e-3`. In the multi-Re
+stage, the canonical `boundary_group: pretrained` assignment places both
+copied and expanded boundary slices at `1e-7`; adapters and output FiLM use
+`1e-3`. Thus, the retained multi-Re `magnetic_output_lr: 2e-3` entry is dormant
+historical configuration metadata, not an active third optimizer rate.
+
+The historical training launchers fixed data-split and balanced-sampler seeds
+but did not fix PyTorch model-initialization/CUDA seeds. The reported weights
+also passed through continuation jobs, whose newly constructed balanced
+samplers restarted their epoch counters. The public fresh epoch-0-to-100
+recipe therefore reproduces the method and checkpoint schema, but is not
+expected to regenerate the historical checkpoint bit for bit.
+
 The established Apptainer image does not contain pytest. Equivalent direct
 assertions were run in that image; the pytest regression and checkpoint tests
 are committed for a complete development environment.

@@ -50,3 +50,7 @@ prerequisite. Warm-started and expanded operator tensors use
 `lr=1e-7, weight_decay=1e-2`; new adapter/FiLM tensors use
 `lr=1e-3, weight_decay=0`. Training targets 100 fresh multi-regime epochs and
 selects the lowest normalized validation objective.
+
+The retained `magnetic_output_lr: 2e-3` field mirrors the historical YAML but
+is inactive in this stage: `boundary_group: pretrained` deliberately places
+the complete expanded input/output tensors in the `1e-7` operator group.

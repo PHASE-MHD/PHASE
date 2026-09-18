@@ -167,9 +167,12 @@ def _validate_transfer_learning_ablation(config):
 
 def _validate_naive_multi_re_ablation(config):
     model = config["model_params"]
+    normalization = config["normalization_params"]
     dataset = config["dataset_params"]
+    loss = config["loss_params"]
     train = config["train_params"]
-    groups = config["optimizer_params"].get("param_groups", {})
+    optimizer = config["optimizer_params"]
+    groups = optimizer.get("param_groups", {})
     conditioning = model.get("re_input_conditioning", {})
     expected_re = [80, 200, 400, 650, 1000, 1500, 2050, 2750, 3600, 4500]
     batch_sizes = {
@@ -184,6 +187,10 @@ def _validate_naive_multi_re_ablation(config):
         "load_pretrained_poseidon must be true": model.get(
             "load_pretrained_poseidon", False
         ),
+        "poseidon_model must be camlab-ethz/Poseidon-T": model.get(
+            "poseidon_model"
+        )
+        == "camlab-ethz/Poseidon-T",
         "POSEIDON-native fluid normalization must be enabled": model.get(
             "use_poseidon_fluid_normalization", False
         ),
@@ -203,6 +210,18 @@ def _validate_naive_multi_re_ablation(config):
         "log_re_mean must be 2.9756": conditioning.get("log_re_mean") == 2.9756,
         "log_re_std must be 0.5417": conditioning.get("log_re_std") == 0.5417,
         "reference_re must be 1000": conditioning.get("reference_re") == 1000,
+        "physics normalization must be used": normalization.get("type")
+        == "physics",
+        "input normalization must be [1, 1, 0.0052]": normalization.get(
+            "input_norm"
+        )
+        == [1.0, 1.0, 0.0052],
+        "output normalization must be [1, 1, 0.0052]": normalization.get(
+            "output_norm"
+        )
+        == [1.0, 1.0, 0.0052],
+        "dataset_type must be multi_re": dataset.get("dataset_type") == "multi_re",
+        "n must be 1000": dataset.get("n") == 1000,
         "the locked ten Re values must be used": dataset.get("re_values")
         == expected_re,
         "Rm values must match Re values": dataset.get("rem_values") == expected_re,
@@ -210,9 +229,50 @@ def _validate_naive_multi_re_ablation(config):
             "balanced_re_batches", False
         ),
         "res_per_batch must be 10": dataset.get("res_per_batch") == 10,
+        "each regime must use an 800/100/100 split": dataset.get(
+            "train_size_per_re"
+        )
+        == 800
+        and dataset.get("val_plus_test_size_per_re") == 200,
+        "dataset seed must be 42": dataset.get("seed") == 42,
+        "sub_t must be 4": dataset.get("sub_t") == 4,
+        "sub_x must be 1": dataset.get("sub_x") == 1,
         "the nominal batch_size must be 1 for every split": all(
             value == 1 for value in batch_sizes.values()
         ),
+        "physics-informed loss must be used": loss.get("type")
+        == "physics-informed",
+        "loss fallback nu and eta must both be 1e-3": loss.get("nu") == 1.0e-3
+        and loss.get("eta") == 1.0e-3,
+        "loss group weights must be [10, 1, 0.001, 0.1]": [
+            loss.get(name)
+            for name in (
+                "data_weight",
+                "ic_weight",
+                "pde_weight",
+                "constraint_weight",
+            )
+        ]
+        == [10.0, 1.0, 0.001, 0.1],
+        "field weights must be [1, 1, 5]": [
+            loss.get(name) for name in ("u_weight", "v_weight", "A_weight")
+        ]
+        == [1.0, 1.0, 5.0],
+        "PDE weights must be [1, 1, 100]": [
+            loss.get(name) for name in ("Du_weight", "Dv_weight", "DA_weight")
+        ]
+        == [1.0, 1.0, 100.0],
+        "divergence weights must be [1, 0]": [
+            loss.get(name) for name in ("div_vel_weight", "div_B_weight")
+        ]
+        == [1.0, 0.0],
+        "AdamW with the locked base hyperparameters must be used": optimizer.get(
+            "optimizer_type"
+        )
+        == "adamw"
+        and optimizer.get("lr") == 1.0e-5
+        and optimizer.get("weight_decay") == 1.0e-2
+        and optimizer.get("betas") == [0.9, 0.999],
         "optimizer parameter groups must be enabled": groups.get("enabled", False),
         "pretrained_lr must be 1e-7": groups.get("pretrained_lr") == 1.0e-7,
         "new_lr must be 1e-3": groups.get("new_lr") == 1.0e-3,
@@ -221,6 +281,14 @@ def _validate_naive_multi_re_ablation(config):
         )
         == 1.0e-2,
         "new_weight_decay must be zero": groups.get("new_weight_decay") == 0.0,
+        "the scheduler must be disabled": not optimizer.get(
+            "use_scheduler", True
+        ),
+        "the locked run must target 100 epochs": train.get("epochs") == 100,
+        "checkpoint selection must use normalized validation loss": train.get(
+            "checkpoint_metric"
+        )
+        == "normalized_validation_loss",
         "warm_start_checkpoint must be set": bool(
             str(train.get("warm_start_checkpoint", "")).strip()
         ),

@@ -40,6 +40,11 @@ The consolidation audit verified that:
   bit-identical; and
 - the existing Batch 6 and Batch 7 recipe guards still pass.
 
+The historical job targeted 100 epochs but its surviving log contains complete
+summaries only through epoch 61, followed by a partial epoch 62. The reported
+epoch-59 checkpoint is byte-identical to the final mutable best-checkpoint file;
+there is therefore no ambiguity in the weights used for the ablation result.
+
 The established Apptainer image does not include pytest. The pytest suites are
 committed, and equivalent direct assertions plus full source compilation were
 run successfully in that image.

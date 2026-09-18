@@ -8,6 +8,13 @@
 - Selection metric: normalized validation loss, `5.424514629364014`
 - Warm start: corrected single-Re Batch 7 checkpoint, epoch 98
 
+The historical configuration targeted 100 fresh multi-regime epochs. Its
+surviving runtime log records complete summaries for epochs 0--61 and then a
+partial epoch 62; it does not record normal completion of the 100-epoch
+schedule. The reported artifact is nevertheless unambiguous: the mutable best
+checkpoint and the separately preserved epoch-59 checkpoint are byte-identical
+and both contain epoch 59 with the validation loss reported above.
+
 The reported Re=1000 held-out test relative-L2 errors were `0.02982249` for
 `u_x`, `0.03143512` for `u_y`, `0.2266609` for `B_x`, `0.2317148` for `B_y`,
 `0.1333956` for vorticity, and `1.277696` for current density.

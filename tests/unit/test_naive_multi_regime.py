@@ -86,6 +86,25 @@ def test_naive_multi_regime_guard_rejects_regime_drift(monkeypatch, tmp_path):
         _validate_naive_multi_re_ablation(config)
 
 
+def test_naive_multi_regime_guard_rejects_scientific_recipe_drift(
+    monkeypatch, tmp_path
+):
+    config = deepcopy(_config(monkeypatch, tmp_path))
+    config["normalization_params"]["output_norm"][-1] = 0.01
+    with pytest.raises(ValueError, match="output normalization"):
+        _validate_naive_multi_re_ablation(config)
+
+    config = deepcopy(_config(monkeypatch, tmp_path))
+    config["loss_params"]["pde_weight"] = 1.0
+    with pytest.raises(ValueError, match="loss group weights"):
+        _validate_naive_multi_re_ablation(config)
+
+    config = deepcopy(_config(monkeypatch, tmp_path))
+    config["train_params"]["checkpoint_metric"] = "denorm_rel_l2"
+    with pytest.raises(ValueError, match="checkpoint selection"):
+        _validate_naive_multi_re_ablation(config)
+
+
 def test_naive_multi_regime_guard_requires_weight_only_warm_start(
     monkeypatch, tmp_path
 ):

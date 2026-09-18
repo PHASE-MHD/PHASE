@@ -50,6 +50,7 @@ of 10 and equal regime representation. The loss receives per-sample
 `nu=1/Re` and `eta=1/Rm` values.
 
 The two new conditioning channels use learning rate `1e-3`; warm-started
-weights use an effective learning rate of `1e-7`. The run lasts 100 fresh
-multi-regime epochs and saves the checkpoint with the lowest normalized
-validation objective.
+weights use an effective learning rate of `1e-7`. The public recipe targets
+100 fresh multi-regime epochs and saves the checkpoint with the lowest
+normalized validation objective. The historical artifact used for the reported
+ablation is described separately in `provenance/ablations/naive_multi_regime.md`.

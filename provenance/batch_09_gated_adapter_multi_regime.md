@@ -60,3 +60,30 @@ complete summaries only through epoch 50 and no normal-completion marker. The
 reported epoch-44 checkpoint is byte-identical to the mutable best-checkpoint
 file, so its provenance is unambiguous without claiming that the schedule
 finished.
+
+## Paranoid validation pass
+
+A second end-to-end audit additionally verified the following:
+
+- the consolidated model and canonical legacy model load the same reported
+  epoch-44 checkpoint strictly and produce bit-for-bit identical outputs for a
+  deterministic batch conditioned at both `Re=80` and `Re=4500`;
+- the public and legacy physics-informed objectives produce identical data,
+  initial-condition, PDE, divergence, magnetic-field, and total loss values on
+  a mixed-Re synthetic batch; their gradients with respect to every prediction
+  element are also bit-for-bit identical;
+- all ten real arrays have shape `(1000, 101, 128, 128, 3)` and resolve through
+  the public path template without special cases;
+- each regime has disjoint and exhaustive 800/100/100 train/validation/test
+  memberships, and `sub_t=4` yields 26 trajectory frames;
+- the balanced sampler produces 800 optimization batches per epoch, each with
+  exactly one sample from every locked regime; and
+- batch metadata carries exact float32 `nu=1/Re` and `eta=1/Rm`, so the PDE
+  residual does not use the fallback Re=1000 coefficients for other regimes.
+
+The legacy and public loaders both pin host memory for validation and test even
+though the historical YAML records `pin_memory: false` for those splits. This
+legacy runtime detail affects transfer mechanics only; it does not alter split
+membership, tensors, optimization, validation values, or checkpoint selection.
+Batch 9 uses global physics normalization, so denormalized validation metrics do
+not require regime metadata.

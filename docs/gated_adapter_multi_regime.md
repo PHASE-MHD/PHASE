@@ -55,4 +55,4 @@ Warm-started operator parameters use learning rate `1e-7` and weight decay
 decay. The public recipe targets 100 fresh multi-regime epochs and keeps the
 checkpoint with the lowest normalized validation objective. The historical
 reported artifact is documented in
-`provenance/ablations/gated_adapter_multi_regime.md`.
+`provenance/batch_09_gated_adapter_multi_regime.md`.

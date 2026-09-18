@@ -113,3 +113,12 @@ The test constructs the public U-Net on the meta device, strict-loads both large
 checkpoints with mmap-backed tensors, and verifies their selected metrics and
 349-key state schema. Unit tests lock the KH time contract, residual mode,
 normalization, warm-start boundary, validation cadence, and full-state resume.
+
+## Batch 14 evaluation
+
+`unit/test_evaluation.py` verifies the common vector-potential/direct-B Fourier
+derivatives, exact-field metrics, KH metric scope, duplicate sample protection,
+model-family dispatch, and the test-only report contract.
+The synthetic integration test in `integration/test_evaluation_inference.py`
+exercises deterministic tFNO/scOT inference, full-field DINO sampling, and
+residual PHASE reconstruction without requiring external checkpoints.

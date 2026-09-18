@@ -56,3 +56,5 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
   `docs/kh_scot.md`
 - Single- and multi-Re Kelvin-Helmholtz residual diffusion, canonical `t=[0,5]`:
   `docs/kh_residual_diffusion.md`
+- Unified held-out-test evaluation for tFNO, DINO, scOT, and PHASE:
+  `docs/evaluation.md`

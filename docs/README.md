@@ -11,6 +11,7 @@ Public, path-independent reproduction guides:
 - four-channel DT models: `turbulence_single_re_scot.md`,
   `four_channel_hp_physics.md`, and `turbulence_residual_diffusion.md`;
 - Kelvin-Helmholtz models: `kh_scot.md` and
-  `kh_residual_diffusion.md`.
+  `kh_residual_diffusion.md`;
+- unified held-out-test metrics: `evaluation.md`.
 
 Checkpoint and historical-run details live under `provenance/`.

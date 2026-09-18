@@ -368,7 +368,10 @@ class PoseidonMHDReFinetune(PoseidonMHDFinetune):
                 pretrained_params.append(param)
 
         if boundary_params and new_lr != 0:
-            self._register_old_slice_gradient_scaling(pretrained_lr / new_lr)
+            self._register_old_slice_gradient_scaling(
+                pretrained_lr / new_lr,
+                param_group_config.get("magnetic_output_lr", new_lr) / new_lr,
+            )
 
         groups = []
         if pretrained_params:
@@ -416,7 +419,8 @@ class PoseidonMHDReFinetune(PoseidonMHDFinetune):
         try:
             prediction = super().forward_transition(x, time)
             prediction = self.apply_re_conditioning(prediction, re=re, rem=rem)
-            return prediction
+            # Conditioning can reintroduce divergence after the base projection.
+            return self.project_fields_helmholtz(prediction)
         finally:
             self._active_re = previous_re
             self._active_rem = previous_rem
@@ -477,6 +481,7 @@ def create_poseidon_mhd_re_finetune(params):
             params.get("poseidon_output_channel_map", [1, 2])
         ),
         magnetic_channel_index=params.get("magnetic_channel_index", 4),
+        magnetic_channel_indices=params.get("magnetic_channel_indices", None),
         use_poseidon_fluid_normalization=params.get(
             "use_poseidon_fluid_normalization", True
         ),
@@ -486,6 +491,28 @@ def create_poseidon_mhd_re_finetune(params):
         velocity_residual_scale=params.get("velocity_residual_scale", 1.0),
         magnetic_residual=params.get("magnetic_residual", True),
         magnetic_residual_scale=params.get("magnetic_residual_scale", 1.0),
+        helmholtz_projection=params.get("helmholtz_projection", False),
+        project_velocity=params.get("project_velocity", True),
+        project_magnetic=params.get("project_magnetic", True),
+        helmholtz_domain_size_x=params.get("helmholtz_domain_size_x", 1.0),
+        helmholtz_domain_size_y=params.get("helmholtz_domain_size_y", 1.0),
+        freeze_pretrained_backbone=params.get("freeze_pretrained_backbone", False),
+        train_patch_embedding=params.get("train_patch_embedding", True),
+        train_patch_recovery=params.get("train_patch_recovery", True),
+        fallback_poseidon_num_channels=params.get("fallback_poseidon_num_channels", 5),
+        fallback_poseidon_num_out_channels=params.get(
+            "fallback_poseidon_num_out_channels", 5
+        ),
+        fallback_poseidon_embed_dim=params.get("fallback_poseidon_embed_dim", 48),
+        fallback_poseidon_depths=params.get("fallback_poseidon_depths", [2, 2, 2, 2]),
+        fallback_poseidon_num_heads=params.get(
+            "fallback_poseidon_num_heads", [3, 6, 12, 24]
+        ),
+        fallback_poseidon_skip_connections=params.get(
+            "fallback_poseidon_skip_connections", None
+        ),
+        window_size=params.get("window_size", 7),
+        skip_connections=params.get("skip_connections", [2, 2, 2, 0]),
         re_conditioning_enabled=re_config.get("enabled", True),
         re_conditioning_type=re_config.get("type", "output_film"),
         re_hidden_dim=re_config.get("hidden_dim", 128),

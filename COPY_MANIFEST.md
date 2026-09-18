@@ -1,7 +1,7 @@
 # PHASE copy manifest
 
-Status: assembly in progress. Batches 1--9 are implemented; later model and
-diffusion batches remain inventory entries until their provenance checks are complete.
+Status: assembly in progress. Batches 1--10 are implemented; later diffusion
+and KH batches remain inventory entries until their provenance checks are complete.
 
 This is the literal legacy-source manifest for rebuilding the public PHASE
 repository from MHD data through preprocessing, deterministic training,
@@ -368,11 +368,11 @@ at the destinations shown.
 ### Four-channel DT models
 
 - `MHD-World/configs/config_poseidon_mhd_finetune_bfield_p99_bheavy_batch16_100ep_4h30_plots.yaml`
-  -> `configs/turbulence/single_re/scot_re1000.yaml`
+  -> `configs/turbulence/single_re/scot_re1000.yaml` (**implemented in Batch 10**)
 - `DINOs/configs/model_mag/poseidon_bfield/config_diffusion_Re1000_mag_helmholtz_poseidon_bfield_p99_bheavy_100ep.yaml`
   -> `configs/turbulence/single_re/diffusion_re1000.yaml`
 - `MHD-World-new/configs/config_poseidon_mhd_re_finetune_bfield_p99_bheavy_warm_deep_adapters_gadi_continue48h.yaml`
-  -> `configs/turbulence/multi_re/scot.yaml`
+  -> `configs/ablations/four_channel_hp_physics/multi_re.yaml` (**implemented in Batch 10**)
 - `DINOs/configs/model_mag/poseidon_multi_re_bfield_full_physics_epoch91_residual_no_recond_resume_epoch45_per_re_norm_full_fullfieldproj_diagfix_pdf_48h_lr5e5/config_diffusion_multiRe_helmholtz_poseidon_bfield_full_physics_epoch91_residual_no_recond_resume_epoch45_per_re_norm_full_fullfieldproj_diagfix_pdf_48h_lr5e5.yaml`
   -> `configs/turbulence/multi_re/residual_diffusion.yaml`
 

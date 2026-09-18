@@ -6,8 +6,9 @@ repository for incompressible magnetohydrodynamics models.
 The repository is being assembled incrementally from audited legacy implementations,
 with checkpoint-compatibility and regression tests at each stage. The current
 package includes canonical data preprocessing, the previous tFNO and DINO
-baselines, the single-regime three-channel scOT ablations, and both naive and
-gated-adapter multi-regime conditioning.
+baselines, the single-regime three-channel scOT ablations, naive and
+gated-adapter multi-regime conditioning, and the four-channel deterministic
+PHASE chain with Helmholtz projection and direct-field physics losses.
 
 ## Current status
 
@@ -45,3 +46,7 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
   `docs/naive_multi_regime.md`
 - Gated-adapter multi-regime scOT with deep Re/Rm conditioning:
   `docs/gated_adapter_multi_regime.md`
+- Best four-channel single-Re DT scOT prerequisite:
+  `docs/turbulence_single_re_scot.md`
+- Four-channel multi-regime Helmholtz/physics-loss ablation:
+  `docs/four_channel_hp_physics.md`

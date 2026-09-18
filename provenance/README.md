@@ -7,5 +7,7 @@ large generated artifacts.
 
 Implemented ablation provenance currently includes the previous tFNO/DINO
 baselines, single-Re scOT without/with transfer learning, naive
-multi-regime input conditioning, and gated-adapter multi-regime conditioning. Batch-level validation records are stored as
-`batch_*.md`.
+multi-regime input conditioning, gated-adapter multi-regime conditioning, and
+the four-channel Helmholtz/physics-loss ablation. Run provenance also records
+the four-channel single-Re DT warm-start prerequisite. Batch-level validation
+records are stored as `batch_*.md`.

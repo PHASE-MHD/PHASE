@@ -1,7 +1,10 @@
-"""scOT backbone adapted to three-channel vector-potential MHD data.
+"""Poseidon scOT expanded with trainable magnetic channels.
 
-The same wrapper supports training from scratch and transfer learning. Batch 6
-uses the from-scratch path and does not load POSEIDON weights.
+This model is a direct fine-tuning baseline: start from pretrained Poseidon
+fluid weights, expand the input/output channel count from [rho, u, v, p] to
+[rho, u, v, p, magnetic...], and train the expanded scOT on MHD data. The
+public forward API stays compatible with DINOs and returns either [u, v, A] or
+[u, v, Bx, By].
 """
 
 from copy import deepcopy
@@ -27,6 +30,7 @@ class PoseidonMHDFinetune(nn.Module):
         poseidon_input_channel_map: Tuple[int, int] = (1, 2),
         poseidon_output_channel_map: Tuple[int, int] = (1, 2),
         magnetic_channel_index: int = 4,
+        magnetic_channel_indices: Optional[Sequence[int]] = None,
         use_poseidon_fluid_normalization: bool = True,
         magnetic_input_init: str = "zero",
         magnetic_output_init: str = "zero",
@@ -34,6 +38,11 @@ class PoseidonMHDFinetune(nn.Module):
         velocity_residual_scale: float = 1.0,
         magnetic_residual: bool = False,
         magnetic_residual_scale: float = 1.0,
+        helmholtz_projection: bool = False,
+        project_velocity: bool = True,
+        project_magnetic: bool = True,
+        helmholtz_domain_size_x: float = 1.0,
+        helmholtz_domain_size_y: float = 1.0,
         freeze_pretrained_backbone: bool = False,
         train_patch_embedding: bool = True,
         train_patch_recovery: bool = True,
@@ -48,8 +57,11 @@ class PoseidonMHDFinetune(nn.Module):
         **kwargs,
     ):
         super().__init__()
-        if out_channels != 3:
-            raise ValueError("PoseidonMHDFinetune expects out_channels=3: [u, v, A].")
+        if out_channels not in (3, 4):
+            raise ValueError(
+                "PoseidonMHDFinetune expects out_channels=3 ([u, v, A]) "
+                "or out_channels=4 ([u, v, Bx, By])."
+            )
 
         try:
             from scOT.model import ScOT, ScOTConfig
@@ -59,15 +71,33 @@ class PoseidonMHDFinetune(nn.Module):
                 "package or make sure it is on PYTHONPATH."
             ) from exc
 
-        self.out_channels = int(out_channels)
         self.poseidon_input_channel_map = tuple(poseidon_input_channel_map)
         self.poseidon_output_channel_map = tuple(poseidon_output_channel_map)
-        self.magnetic_channel_index = int(magnetic_channel_index)
+        self.out_channels = int(out_channels)
+        self.num_magnetic_channels = self.out_channels - 2
+        if magnetic_channel_indices is None:
+            start = int(magnetic_channel_index)
+            magnetic_channel_indices = tuple(
+                range(start, start + self.num_magnetic_channels)
+            )
+        self.magnetic_channel_indices = tuple(int(idx) for idx in magnetic_channel_indices)
+        if len(self.magnetic_channel_indices) != self.num_magnetic_channels:
+            raise ValueError(
+                f"Expected {self.num_magnetic_channels} magnetic channel indices "
+                f"for out_channels={self.out_channels}, got "
+                f"{self.magnetic_channel_indices}."
+            )
+        self.magnetic_channel_index = self.magnetic_channel_indices[0]
         self.use_poseidon_fluid_normalization = use_poseidon_fluid_normalization
         self.velocity_residual = velocity_residual
         self.velocity_residual_scale = velocity_residual_scale
         self.magnetic_residual = magnetic_residual
         self.magnetic_residual_scale = magnetic_residual_scale
+        self.helmholtz_projection = bool(helmholtz_projection)
+        self.project_velocity = bool(project_velocity)
+        self.project_magnetic = bool(project_magnetic)
+        self.helmholtz_domain_size_x = float(helmholtz_domain_size_x)
+        self.helmholtz_domain_size_y = float(helmholtz_domain_size_y)
         self._optimizer_hooks_registered = False
 
         if load_pretrained_poseidon:
@@ -78,12 +108,13 @@ class PoseidonMHDFinetune(nn.Module):
             pretrained = ScOT.from_pretrained(poseidon_model)
             expanded_config = deepcopy(pretrained.config)
             expanded_config.num_channels = max(
-                int(pretrained.config.num_channels) + 1,
-                self.magnetic_channel_index + 1,
+                int(pretrained.config.num_channels) + self.num_magnetic_channels,
+                max(self.magnetic_channel_indices) + 1,
             )
             expanded_config.num_out_channels = max(
-                int(pretrained.config.num_out_channels) + 1,
-                self.magnetic_channel_index + 1,
+                int(pretrained.config.num_out_channels)
+                + self.num_magnetic_channels,
+                max(self.magnetic_channel_indices) + 1,
             )
             self.poseidon = ScOT(expanded_config)
             self._copy_expanded_poseidon_weights(
@@ -192,28 +223,36 @@ class PoseidonMHDFinetune(nn.Module):
 
         self.poseidon.load_state_dict(expanded_state)
 
-    def _register_old_slice_gradient_scaling(self, old_to_new_lr_ratio: float) -> None:
-        """Scale copied channel slices when boundary tensors use the new-channel LR."""
+    def _register_old_slice_gradient_scaling(
+        self,
+        old_to_new_lr_ratio: float,
+        magnetic_output_lr_ratio: float = 1.0,
+    ) -> None:
+        """Scale boundary tensor slices to give copied and new channels different effective LRs."""
         if self._optimizer_hooks_registered:
             return
-        ratio = float(old_to_new_lr_ratio)
+        old_ratio = float(old_to_new_lr_ratio)
+        output_ratio = float(magnetic_output_lr_ratio)
 
         def scale_patch_embedding_grad(grad: torch.Tensor) -> torch.Tensor:
             grad = grad.clone()
-            grad[:, : self.pretrained_num_channels] *= ratio
+            grad[:, : self.pretrained_num_channels] *= old_ratio
             return grad
 
         def scale_recovery_projection_grad(grad: torch.Tensor) -> torch.Tensor:
             grad = grad.clone()
             if grad.shape[0] == self.poseidon_num_out_channels:
-                grad[: self.pretrained_num_out_channels] *= ratio
+                grad[: self.pretrained_num_out_channels] *= old_ratio
+                grad[self.pretrained_num_out_channels :] *= output_ratio
             else:
-                grad[:, : self.pretrained_num_out_channels] *= ratio
+                grad[:, : self.pretrained_num_out_channels] *= old_ratio
+                grad[:, self.pretrained_num_out_channels :] *= output_ratio
             return grad
 
         def scale_recovery_mixup_grad(grad: torch.Tensor) -> torch.Tensor:
             grad = grad.clone()
-            grad[: self.pretrained_num_out_channels] *= ratio
+            grad[: self.pretrained_num_out_channels] *= old_ratio
+            grad[self.pretrained_num_out_channels :] *= output_ratio
             return grad
 
         self.poseidon.embeddings.patch_embeddings.projection.weight.register_hook(
@@ -247,6 +286,7 @@ class PoseidonMHDFinetune(nn.Module):
             "pretrained_lr", optimizer_params.get("lr", 1e-5)
         )
         new_lr = param_group_config.get("new_lr", optimizer_params.get("lr", 1e-5))
+        magnetic_output_lr = param_group_config.get("magnetic_output_lr", new_lr)
         weight_decay = optimizer_params.get("weight_decay", 0.0)
         new_weight_decay = param_group_config.get("new_weight_decay", weight_decay)
         pretrained_weight_decay = param_group_config.get(
@@ -269,7 +309,10 @@ class PoseidonMHDFinetune(nn.Module):
                 pretrained_params.append(param)
 
         if new_lr != 0:
-            self._register_old_slice_gradient_scaling(pretrained_lr / new_lr)
+            self._register_old_slice_gradient_scaling(
+                pretrained_lr / new_lr,
+                magnetic_output_lr / new_lr,
+            )
 
         groups = []
         if pretrained_params:
@@ -315,8 +358,75 @@ class PoseidonMHDFinetune(nn.Module):
             adapted[:, self.poseidon_input_channel_map[0]] = fields[:, 0]
             adapted[:, self.poseidon_input_channel_map[1]] = fields[:, 1]
 
-        adapted[:, self.magnetic_channel_index] = fields[:, 2]
+        adapted[:, list(self.magnetic_channel_indices)] = fields[
+            :, 2 : 2 + self.num_magnetic_channels
+        ]
         return adapted
+
+    def _project_pair_helmholtz(
+        self, fields: torch.Tensor, x_channel: int, y_channel: int
+    ) -> torch.Tensor:
+        """Project one vector channel pair to divergence-free with spectral Helmholtz."""
+        orig_dtype = fields.dtype
+        qx = fields[:, x_channel].double()
+        qy = fields[:, y_channel].double()
+        height, width = qx.shape[-2:]
+        device = qx.device
+
+        kx = 2.0 * torch.pi * torch.fft.fftfreq(
+            height,
+            d=self.helmholtz_domain_size_x / height,
+            device=device,
+            dtype=qx.dtype,
+        ).reshape(1, height, 1)
+        ky = 2.0 * torch.pi * torch.fft.fftfreq(
+            width,
+            d=self.helmholtz_domain_size_y / width,
+            device=device,
+            dtype=qx.dtype,
+        ).reshape(1, 1, width)
+
+        qx_hat = torch.fft.fft2(qx, dim=(-2, -1))
+        qy_hat = torch.fft.fft2(qy, dim=(-2, -1))
+        k2 = kx.square() + ky.square()
+        k2[..., 0, 0] = 1.0
+
+        k_dot_q = kx * qx_hat + ky * qy_hat
+        qx_hat_proj = qx_hat - kx * k_dot_q / k2
+        qy_hat_proj = qy_hat - ky * k_dot_q / k2
+
+        if height % 2 == 0:
+            qx_hat_proj[:, height // 2, :] = 0.0
+            qy_hat_proj[:, height // 2, :] = 0.0
+        if width % 2 == 0:
+            qx_hat_proj[:, :, width // 2] = 0.0
+            qy_hat_proj[:, :, width // 2] = 0.0
+
+        qx_proj = torch.fft.ifft2(qx_hat_proj, dim=(-2, -1)).real
+        qy_proj = torch.fft.ifft2(qy_hat_proj, dim=(-2, -1)).real
+
+        projected = fields.clone()
+        projected[:, x_channel] = qx_proj.to(orig_dtype)
+        projected[:, y_channel] = qy_proj.to(orig_dtype)
+        return projected
+
+    def project_fields_helmholtz(self, fields: torch.Tensor) -> torch.Tensor:
+        """Project configured vector pairs before losses or rollout consumers see them."""
+        if not self.helmholtz_projection:
+            return fields
+        if self.project_velocity:
+            if fields.shape[1] < 2:
+                raise ValueError(
+                    "Velocity Helmholtz projection expects channels [u, v]."
+                )
+            fields = self._project_pair_helmholtz(fields, 0, 1)
+        if self.project_magnetic and self.out_channels == 4:
+            if fields.shape[1] < 4:
+                raise ValueError(
+                    "Magnetic Helmholtz projection expects channels [Bx, By]."
+                )
+            fields = self._project_pair_helmholtz(fields, 2, 3)
+        return fields
 
     def extract_mhd_prediction(
         self, prediction: torch.Tensor, initial_fields: Optional[torch.Tensor] = None
@@ -343,14 +453,18 @@ class PoseidonMHDFinetune(nn.Module):
                 )
             velocity = initial_fields[:, :2] + self.velocity_residual_scale * velocity
 
-        magnetic = prediction[:, self.magnetic_channel_index : self.magnetic_channel_index + 1]
+        magnetic = prediction[:, list(self.magnetic_channel_indices)]
         if self.magnetic_residual:
             if initial_fields is None:
                 raise ValueError(
                     "initial_fields must be provided when magnetic_residual=True."
                 )
-            magnetic = initial_fields[:, 2:3] + self.magnetic_residual_scale * magnetic
-        return torch.cat([velocity, magnetic], dim=1)
+            magnetic = (
+                initial_fields[:, 2 : 2 + self.num_magnetic_channels]
+                + self.magnetic_residual_scale * magnetic
+            )
+        fields = torch.cat([velocity, magnetic], dim=1)
+        return self.project_fields_helmholtz(fields)
 
     def forward_transition(
         self, x: torch.Tensor, time: torch.Tensor
@@ -367,18 +481,19 @@ class PoseidonMHDFinetune(nn.Module):
 
         if x.dim() != 5:
             raise ValueError(
-                "Expected x with shape [B, 3, H, W] or [B, C, T, H, W], "
+                "Expected x with shape [B, out_channels, H, W] or [B, C, T, H, W], "
                 f"got {tuple(x.shape)}."
             )
-        if x.shape[1] < 6:
+        expected_input_channels = 3 + self.out_channels
+        if x.shape[1] < expected_input_channels:
             raise ValueError(
-                "5D compatibility mode expects at least 6 channels: "
-                "[t, x, y, u0, v0, A0]."
+                f"5D compatibility mode expects at least {expected_input_channels} "
+                "channels: [t, x, y] plus repeated initial condition fields."
             )
 
         predictions = []
         for time_index in range(x.shape[2]):
-            transition_input = x[:, 3:6, time_index]
+            transition_input = x[:, 3 : 3 + self.out_channels, time_index]
             if time is None:
                 step_time = x[:, 0, time_index, 0, 0]
             elif time.dim() == 2:
@@ -403,6 +518,7 @@ def create_poseidon_mhd_finetune(params):
             params.get("poseidon_output_channel_map", [1, 2])
         ),
         magnetic_channel_index=params.get("magnetic_channel_index", 4),
+        magnetic_channel_indices=params.get("magnetic_channel_indices", None),
         use_poseidon_fluid_normalization=params.get(
             "use_poseidon_fluid_normalization", True
         ),
@@ -412,6 +528,11 @@ def create_poseidon_mhd_finetune(params):
         velocity_residual_scale=params.get("velocity_residual_scale", 1.0),
         magnetic_residual=params.get("magnetic_residual", False),
         magnetic_residual_scale=params.get("magnetic_residual_scale", 1.0),
+        helmholtz_projection=params.get("helmholtz_projection", False),
+        project_velocity=params.get("project_velocity", True),
+        project_magnetic=params.get("project_magnetic", True),
+        helmholtz_domain_size_x=params.get("helmholtz_domain_size_x", 1.0),
+        helmholtz_domain_size_y=params.get("helmholtz_domain_size_y", 1.0),
         freeze_pretrained_backbone=params.get("freeze_pretrained_backbone", False),
         train_patch_embedding=params.get("train_patch_embedding", True),
         train_patch_recovery=params.get("train_patch_recovery", True),

@@ -59,3 +59,19 @@ pytest -m checkpoint \
 The test verifies strict final-checkpoint loading, model-only warm-start keys,
 zero-correction initialization, exact warm-start prediction preservation,
 optimizer grouping, and scheduler/checkpoint metadata.
+
+
+## Batch 10 checkpoint compatibility
+
+Set `PHASE_SINGLE_RE_FOUR_CHANNEL_CHECKPOINT` to the epoch-98 single-Re
+four-channel checkpoint and `PHASE_MULTI_RE_FOUR_CHANNEL_CHECKPOINT` to the
+reported epoch-91 multi-Re checkpoint, then run:
+
+```bash
+pytest -m checkpoint tests/checkpoint_compatibility/test_four_channel_scot_legacy_checkpoints.py
+```
+
+The test checks strict loading, model-only warm-start keys, checkpoint metadata,
+parameter counts, and optimizer grouping. Unit tests additionally lock the two
+recipes, direct-B transport metadata, Helmholtz divergence, mean-mode
+preservation, and paired-normalization commutation.

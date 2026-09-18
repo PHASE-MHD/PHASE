@@ -2,11 +2,12 @@
 
 from .loss_factory import LOSS_REGISTRY, create_loss, register_loss
 from .lp_loss import LpLoss
-from .physics_informed import MHDVecPotLoss
+from .physics_informed import MHDDirectBFieldLoss, MHDVecPotLoss
 
 __all__ = [
     "LOSS_REGISTRY",
     "LpLoss",
+    "MHDDirectBFieldLoss",
     "MHDVecPotLoss",
     "create_loss",
     "register_loss",

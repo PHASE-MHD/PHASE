@@ -11,7 +11,12 @@ from torch import Tensor
 from .loss_factory import register_loss
 from .lp_loss import LpLoss
 from ..physics.constraints import compute_constraints, compute_constraint_loss
-from ..physics.pde_solvers import compute_mhd_pde, compute_pde_loss
+from ..physics.pde_solvers import (
+    compute_bfield_pde_loss,
+    compute_mhd_bfield_pde,
+    compute_mhd_pde,
+    compute_pde_loss,
+)
 from ..utils.fourier_utils import create_wavenumbers, compute_derivative
 
 from ..utils import (
@@ -464,3 +469,399 @@ def create_physics_informed_loss(params: Dict[str, Any]) -> MHDVecPotLoss:
 
     # Or simply pass all params which is fine since we added **kwargs to the constructor
     return MHDVecPotLoss(**params)
+
+class MHDDirectBFieldLoss(nn.Module):
+    """Physics-aware loss for direct magnetic-field representation [u, v, Bx, By]."""
+
+    requires_input_data: bool = True
+
+    def __init__(
+        self,
+        nu: float = 1e-4,
+        eta: float = 1e-4,
+        rho0: float = 1.0,
+        data_weight: float = 1.0,
+        ic_weight: float = 1.0,
+        pde_weight: float = 1.0,
+        constraint_weight: float = 1.0,
+        vorticity_weight: float = 0.0,
+        current_weight: float = 0.0,
+        delta_B_weight: float = 0.0,
+        use_data_loss: bool = True,
+        use_ic_loss: bool = True,
+        use_pde_loss: bool = False,
+        use_constraint_loss: bool = True,
+        u_weight: float = 1.0,
+        v_weight: float = 1.0,
+        Bx_weight: float = 1.0,
+        By_weight: float = 1.0,
+        Du_weight: float = 1.0,
+        Dv_weight: float = 1.0,
+        DBx_weight: float = 1.0,
+        DBy_weight: float = 1.0,
+        delta_Bx_weight: float = 1.0,
+        delta_By_weight: float = 1.0,
+        div_vel_weight: float = 1.0,
+        div_B_weight: float = 1.0,
+        Lx: float = 1.0,
+        Ly: float = 1.0,
+        tend: float = 1.0,
+        use_weighted_mean: bool = False,
+        **kwargs,
+    ):
+        super().__init__()
+        self.nu = nu
+        self.eta = eta
+        self.rho0 = rho0
+        self.data_weight = data_weight
+        self.ic_weight = ic_weight
+        self.pde_weight = pde_weight
+        self.constraint_weight = constraint_weight
+        self.vorticity_weight = vorticity_weight
+        self.current_weight = current_weight
+        self.delta_B_weight = delta_B_weight
+        self.use_data_loss = use_data_loss
+        self.use_ic_loss = use_ic_loss
+        self.use_pde_loss = use_pde_loss
+        self.use_constraint_loss = use_constraint_loss
+        self.u_weight = u_weight
+        self.v_weight = v_weight
+        self.Bx_weight = Bx_weight
+        self.By_weight = By_weight
+        self.Du_weight = Du_weight
+        self.Dv_weight = Dv_weight
+        self.DBx_weight = DBx_weight
+        self.DBy_weight = DBy_weight
+        self.delta_Bx_weight = delta_Bx_weight
+        self.delta_By_weight = delta_By_weight
+        self.div_vel_weight = div_vel_weight
+        self.div_B_weight = div_B_weight
+        self.Lx = Lx
+        self.Ly = Ly
+        self.tend = tend
+        self.use_weighted_mean = use_weighted_mean
+        self.last_components = {}
+
+    def forward(
+        self,
+        dataloader: DataLoader,
+        pred: Tensor,
+        target: Tensor,
+        inputs: Tensor,
+        metadata: Optional[Dict[str, Tensor]] = None,
+    ) -> Tensor:
+        normalizer = get_dataset_normalizer(dataloader)
+        data_channel_indices, has_grid_embeddings, _ = identify_data_channels(
+            inputs, target
+        )
+        inputs_denorm, target_denorm, pred_denorm = apply_denormalization(
+            inputs, target, pred, normalizer, data_channel_indices, has_grid_embeddings
+        )
+        return self.compute_loss(pred_denorm, target_denorm, inputs_denorm, metadata)
+
+    def _transport_coefficients(
+        self, metadata: Optional[Dict[str, Tensor]], pred: Tensor
+    ) -> Tuple[Union[float, Tensor], Union[float, Tensor]]:
+        if metadata is None:
+            return self.nu, self.eta
+
+        nu = metadata.get("nu")
+        eta = metadata.get("eta")
+        if nu is None and metadata.get("re") is not None:
+            nu = 1.0 / metadata["re"].to(pred.device, dtype=pred.dtype)
+        if eta is None:
+            if metadata.get("rem") is not None:
+                eta = 1.0 / metadata["rem"].to(pred.device, dtype=pred.dtype)
+            elif metadata.get("re") is not None:
+                eta = 1.0 / metadata["re"].to(pred.device, dtype=pred.dtype)
+
+        if nu is None:
+            nu = self.nu
+        if eta is None:
+            eta = self.eta
+
+        if torch.is_tensor(nu):
+            nu = nu.to(pred.device, dtype=pred.dtype).view(-1, 1, 1, 1)
+        if torch.is_tensor(eta):
+            eta = eta.to(pred.device, dtype=pred.dtype).view(-1, 1, 1, 1)
+        return nu, eta
+
+    def compute_loss(
+        self,
+        pred: Tensor,
+        target: Tensor,
+        inputs: Tensor,
+        metadata: Optional[Dict[str, Tensor]] = None,
+    ) -> Tensor:
+        if pred.size(1) < 4 or target.size(1) < 4 or inputs.size(1) < 4:
+            raise ValueError(
+                "MHDDirectBFieldLoss expects channel layout [u, v, Bx, By]."
+            )
+
+        loss_components = {}
+        zero = torch.tensor(0.0, device=pred.device)
+
+        if self.use_data_loss:
+            loss_data, data_components = self.data_loss(
+                pred, target, return_components=True
+            )
+            loss_components["data"] = loss_data.item()
+            loss_components.update({f"data_{k}": v for k, v in data_components.items()})
+        else:
+            loss_data = zero
+            loss_components["data"] = 0.0
+
+        if self.use_ic_loss:
+            loss_ic, ic_components = self.ic_loss(pred, inputs, return_components=True)
+            loss_components["ic"] = loss_ic.item()
+            loss_components.update({f"ic_{k}": v for k, v in ic_components.items()})
+        else:
+            loss_ic = zero
+            loss_components["ic"] = 0.0
+
+        if self.use_constraint_loss:
+            div_vel = self.divergence_2d(pred[:, 0], pred[:, 1])
+            div_B = self.divergence_2d(pred[:, 2], pred[:, 3])
+            loss_constraint, constraint_components = self.constraint_loss(div_vel, div_B)
+            loss_components["constraint"] = loss_constraint.item()
+            loss_components.update(
+                {f"constraint_{k}": v for k, v in constraint_components.items()}
+            )
+        else:
+            loss_constraint = zero
+            loss_components["constraint"] = 0.0
+
+        if self.use_pde_loss:
+            nu, eta = self._transport_coefficients(metadata, pred)
+            Du, Dv, DBx, DBy = compute_mhd_bfield_pde(
+                pred[:, 0],
+                pred[:, 1],
+                pred[:, 2],
+                pred[:, 3],
+                self.Lx,
+                self.Ly,
+                self.tend,
+                nu,
+                eta,
+                self.rho0,
+            )
+            loss_pde, pde_components = compute_bfield_pde_loss(
+                Du,
+                Dv,
+                DBx,
+                DBy,
+                self.Du_weight,
+                self.Dv_weight,
+                self.DBx_weight,
+                self.DBy_weight,
+                self.use_weighted_mean,
+            )
+            loss_components["pde"] = loss_pde.item()
+            loss_components.update({f"pde_{k}": v for k, v in pde_components.items()})
+        else:
+            loss_pde = zero
+            loss_components["pde"] = 0.0
+
+        if self.vorticity_weight > 0:
+            loss_vorticity = self.vorticity_loss(
+                pred[:, 0], pred[:, 1], target[:, 0], target[:, 1]
+            )
+            loss_components["vorticity"] = loss_vorticity.item()
+        else:
+            loss_vorticity = zero
+            loss_components["vorticity"] = 0.0
+
+        if self.current_weight > 0:
+            loss_current = self.current_loss(
+                pred[:, 2], pred[:, 3], target[:, 2], target[:, 3]
+            )
+            loss_components["current"] = loss_current.item()
+        else:
+            loss_current = zero
+            loss_components["current"] = 0.0
+
+        if self.delta_B_weight > 0:
+            loss_delta_B, delta_B_components = self.delta_B_loss(
+                pred, target, inputs, return_components=True
+            )
+            loss_components["delta_B"] = loss_delta_B.item()
+            loss_components.update(
+                {f"delta_B_{k}": v for k, v in delta_B_components.items()}
+            )
+        else:
+            loss_delta_B = zero
+            loss_components["delta_B"] = 0.0
+
+        if self.use_weighted_mean:
+            active_weights = (
+                (self.data_weight if self.use_data_loss else 0.0)
+                + (self.ic_weight if self.use_ic_loss else 0.0)
+                + (self.pde_weight if self.use_pde_loss else 0.0)
+                + (self.constraint_weight if self.use_constraint_loss else 0.0)
+                + self.vorticity_weight
+                + self.current_weight
+                + self.delta_B_weight
+            )
+            weight_sum = max(active_weights, 1.0)
+        else:
+            weight_sum = 1.0
+
+        loss = (
+            self.data_weight * loss_data
+            + self.ic_weight * loss_ic
+            + self.pde_weight * loss_pde
+            + self.constraint_weight * loss_constraint
+            + self.vorticity_weight * loss_vorticity
+            + self.current_weight * loss_current
+            + self.delta_B_weight * loss_delta_B
+        ) / weight_sum
+
+        loss_components["total"] = loss.item()
+        self.last_components = loss_components
+        return loss
+
+    def data_loss(
+        self, pred: Tensor, target: Tensor, return_components: bool = False
+    ) -> Union[Tensor, Tuple[Tensor, Dict[str, float]]]:
+        lploss = LpLoss(size_average=True)
+        losses = {
+            "u": lploss(pred[:, 0], target[:, 0]),
+            "v": lploss(pred[:, 1], target[:, 1]),
+            "Bx": lploss(pred[:, 2], target[:, 2]),
+            "By": lploss(pred[:, 3], target[:, 3]),
+        }
+        weight_sum = (
+            self.u_weight + self.v_weight + self.Bx_weight + self.By_weight
+            if self.use_weighted_mean
+            else 1.0
+        )
+        loss_data = (
+            self.u_weight * losses["u"]
+            + self.v_weight * losses["v"]
+            + self.Bx_weight * losses["Bx"]
+            + self.By_weight * losses["By"]
+        ) / weight_sum
+        if return_components:
+            return loss_data, {k: v.item() for k, v in losses.items()}
+        return loss_data
+
+    def ic_loss(
+        self, pred: Tensor, inputs: Tensor, return_components: bool = False
+    ) -> Union[Tensor, Tuple[Tensor, Dict[str, float]]]:
+        lploss = LpLoss(size_average=True)
+        ic_pred = pred[:, :, 0]
+        ic_target = inputs[:, :, 0]
+        losses = {
+            "u": lploss(ic_pred[:, 0], ic_target[:, 0]),
+            "v": lploss(ic_pred[:, 1], ic_target[:, 1]),
+            "Bx": lploss(ic_pred[:, 2], ic_target[:, 2]),
+            "By": lploss(ic_pred[:, 3], ic_target[:, 3]),
+        }
+        weight_sum = (
+            self.u_weight + self.v_weight + self.Bx_weight + self.By_weight
+            if self.use_weighted_mean
+            else 1.0
+        )
+        loss_ic = (
+            self.u_weight * losses["u"]
+            + self.v_weight * losses["v"]
+            + self.Bx_weight * losses["Bx"]
+            + self.By_weight * losses["By"]
+        ) / weight_sum
+        if return_components:
+            return loss_ic, {k: v.item() for k, v in losses.items()}
+        return loss_ic
+
+    def constraint_loss(
+        self, div_vel: Tensor, div_B: Tensor
+    ) -> Tuple[Tensor, Dict[str, float]]:
+        loss_div_vel = F.mse_loss(div_vel, torch.zeros_like(div_vel))
+        loss_div_B = F.mse_loss(div_B, torch.zeros_like(div_B))
+        weight_sum = (
+            self.div_vel_weight + self.div_B_weight
+            if self.use_weighted_mean
+            else 1.0
+        )
+        loss_constraint = (
+            self.div_vel_weight * loss_div_vel + self.div_B_weight * loss_div_B
+        ) / weight_sum
+        return loss_constraint, {
+            "div_vel": loss_div_vel.item(),
+            "div_B": loss_div_B.item(),
+        }
+
+    def _wavenumbers(self, q: Tensor) -> Tuple[Tensor, Tensor]:
+        nx = q.size(2)
+        ny = q.size(3)
+        return create_wavenumbers(nx, ny, self.Lx, self.Ly, q.device)
+
+    def divergence_2d(self, qx: Tensor, qy: Tensor) -> Tensor:
+        k_x, k_y = self._wavenumbers(qx)
+        qx_h = torch.fft.fftn(qx, dim=[2, 3])
+        qy_h = torch.fft.fftn(qy, dim=[2, 3])
+        div_h = compute_derivative(qx_h, k_x) + compute_derivative(qy_h, k_y)
+        return torch.fft.ifftn(div_h, dim=[2, 3]).real
+
+    def curl_2d(self, qx: Tensor, qy: Tensor) -> Tensor:
+        k_x, k_y = self._wavenumbers(qx)
+        qx_h = torch.fft.fftn(qx, dim=[2, 3])
+        qy_h = torch.fft.fftn(qy, dim=[2, 3])
+        curl_h = compute_derivative(qy_h, k_x) - compute_derivative(qx_h, k_y)
+        return torch.fft.ifftn(curl_h, dim=[2, 3]).real
+
+    def vorticity_loss(
+        self,
+        u_pred: Tensor,
+        v_pred: Tensor,
+        u_target: Tensor,
+        v_target: Tensor,
+    ) -> Tensor:
+        lploss = LpLoss(size_average=True)
+        omega_pred = self.curl_2d(u_pred, v_pred)
+        omega_target = self.curl_2d(u_target, v_target)
+        return lploss(omega_pred, omega_target)
+
+    def current_loss(
+        self,
+        Bx_pred: Tensor,
+        By_pred: Tensor,
+        Bx_target: Tensor,
+        By_target: Tensor,
+    ) -> Tensor:
+        lploss = LpLoss(size_average=True)
+        j_pred = self.curl_2d(Bx_pred, By_pred)
+        j_target = self.curl_2d(Bx_target, By_target)
+        return lploss(j_pred, j_target)
+
+    def delta_B_loss(
+        self,
+        pred: Tensor,
+        target: Tensor,
+        inputs: Tensor,
+        return_components: bool = False,
+    ) -> Union[Tensor, Tuple[Tensor, Dict[str, float]]]:
+        """Relative L2 loss on magnetic increments B(t) - B(0)."""
+        lploss = LpLoss(size_average=True)
+        B0x = inputs[:, 2, 0].unsqueeze(1)
+        B0y = inputs[:, 3, 0].unsqueeze(1)
+        losses = {
+            "Bx": lploss(pred[:, 2] - B0x, target[:, 2] - B0x),
+            "By": lploss(pred[:, 3] - B0y, target[:, 3] - B0y),
+        }
+        weight_sum = (
+            self.delta_Bx_weight + self.delta_By_weight
+            if self.use_weighted_mean
+            else 1.0
+        )
+        loss_delta_B = (
+            self.delta_Bx_weight * losses["Bx"]
+            + self.delta_By_weight * losses["By"]
+        ) / weight_sum
+        if return_components:
+            return loss_delta_B, {k: v.item() for k, v in losses.items()}
+        return loss_delta_B
+
+@register_loss("physics-informed-bfield")
+def create_physics_informed_bfield_loss(params: Dict[str, Any]) -> MHDDirectBFieldLoss:
+    """Create the direct-field MHD objective."""
+    return MHDDirectBFieldLoss(**params)

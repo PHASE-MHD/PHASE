@@ -1,4 +1,14 @@
 # Documentation
 
-Architecture, data preparation, training, evaluation, and reproducibility
-documentation will be maintained here.
+Public, path-independent reproduction guides:
+
+- data contracts and preparation: `data_format.md`, `preprocessing.md`;
+- previous baselines: `previous_baseline_tfno.md` and
+  `previous_baseline_dino.md`;
+- three-channel scOT ablations: `scot_without_transfer_learning.md`,
+  `scot_with_transfer_learning.md`, `naive_multi_regime.md`, and
+  `gated_adapter_multi_regime.md`;
+- four-channel DT models: `turbulence_single_re_scot.md` and
+  `four_channel_hp_physics.md`.
+
+Checkpoint and historical-run details live under `provenance/`.

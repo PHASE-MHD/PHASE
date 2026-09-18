@@ -12,5 +12,6 @@ the four-channel Helmholtz/physics-loss ablation, and DT residual diffusion.
 The corrected SR residual result is explicitly pending; the historical MR warm
 start is preserved without being relabeled. Run provenance also records
 the four-channel single-Re DT warm-start prerequisite and the canonical
-single- and multi-Re Kelvin-Helmholtz scOT chain at t=[0,5]. Batch-level validation
+single- and multi-Re Kelvin-Helmholtz scOT and residual-diffusion chains at
+t=[0,5]. Batch-level validation
 records are stored as `batch_*.md`.

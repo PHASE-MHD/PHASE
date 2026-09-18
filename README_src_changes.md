@@ -309,3 +309,25 @@ uses residual diffusion.
 - The existing low-level residual reconstruction and full-field Helmholtz
   implementation was retained from the audited DINOs source rather than
   duplicated.
+
+
+## Batch 12: Kelvin-Helmholtz scOT
+
+- Added canonical single- and multi-Re KH scOT recipes over t=[0,5].
+- Added opt-in all-time-local primary and derived losses, physical-time guards,
+  deterministic tiny validation, and strict legacy checkpoint checks.
+- Kept KH-only behavior isolated from all decaying-turbulence defaults.
+
+## Batch 13: Kelvin-Helmholtz residual diffusion
+
+- Extended `src/phase/training/dino_trainer.py` with explicit guarded KH
+  residual recipes and a full-state resume path distinct from model-only warm
+  starts.
+- Added canonical single- and multi-Re KH residual-diffusion configs, both over
+  t=[0,5], with full-field velocity/magnetic projection and 32-step EDM
+  sampling.
+- Reused the shared feature exporter and train-only residual-statistics tools;
+  no KH-specific duplicate diffusion implementation was added.
+- Added reproduction documentation, checkpoint hashes, run provenance, config
+  regression tests, and optional strict loading of both selected epoch-95
+  checkpoints.

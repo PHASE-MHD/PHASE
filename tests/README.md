@@ -96,3 +96,20 @@ full-field diffusion warm start and `PHASE_MULTI_RE_DIFFUSION_CHECKPOINT` to
 the reported epoch-95 MR PHASE checkpoint. The optional test verifies strict
 architecture compatibility and the recorded best metric without committing
 large checkpoint files.
+
+
+## Batch 13 checkpoint compatibility
+
+Set `PHASE_KH_SINGLE_RE_DIFFUSION_CHECKPOINT` to the selected epoch-95
+single-Re KH residual checkpoint and `PHASE_KH_MULTI_RE_DIFFUSION_CHECKPOINT`
+to the selected epoch-95 multi-Re t=[0,5] checkpoint, then run:
+
+```bash
+pytest -m checkpoint \
+  tests/checkpoint_compatibility/test_kh_residual_diffusion_legacy_checkpoints.py
+```
+
+The test constructs the public U-Net on the meta device, strict-loads both large
+checkpoints with mmap-backed tensors, and verifies their selected metrics and
+349-key state schema. Unit tests lock the KH time contract, residual mode,
+normalization, warm-start boundary, validation cadence, and full-state resume.

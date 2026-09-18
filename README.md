@@ -7,8 +7,8 @@ The repository is being assembled incrementally from audited legacy implementati
 with checkpoint-compatibility and regression tests at each stage. The current
 package includes canonical data preprocessing, the previous tFNO and DINO
 baselines, the single-regime three-channel scOT ablations, naive and
-gated-adapter multi-regime conditioning, and the four-channel deterministic
-PHASE chain with Helmholtz projection and direct-field physics losses.
+gated-adapter multi-regime conditioning, and the four-channel PHASE chain with Helmholtz projection,
+direct-field physics losses, and residual diffusion for both decaying turbulence and KH.
 
 ## Current status
 
@@ -54,3 +54,5 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
   `docs/turbulence_residual_diffusion.md`
 - Single- and multi-Re Kelvin-Helmholtz deterministic scOT, canonical `t=[0,5]`:
   `docs/kh_scot.md`
+- Single- and multi-Re Kelvin-Helmholtz residual diffusion, canonical `t=[0,5]`:
+  `docs/kh_residual_diffusion.md`

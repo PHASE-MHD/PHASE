@@ -19,7 +19,19 @@ from phase.utils.diffusion_tensor_normalization import (
 )
 
 
-_RESIDUAL_RECIPES = {"phase_residual_single_re", "phase_residual_multi_re"}
+_SINGLE_RE_RESIDUAL_RECIPES = {
+    "phase_residual_single_re",
+    "kh_phase_residual_single_re",
+}
+_MULTI_RE_RESIDUAL_RECIPES = {
+    "phase_residual_multi_re",
+    "kh_phase_residual_multi_re",
+}
+_KH_RESIDUAL_RECIPES = {
+    "kh_phase_residual_single_re",
+    "kh_phase_residual_multi_re",
+}
+_RESIDUAL_RECIPES = _SINGLE_RE_RESIDUAL_RECIPES | _MULTI_RE_RESIDUAL_RECIPES
 
 
 def _metadata_re(metadata):
@@ -192,13 +204,13 @@ def _validate_recipe(config):
     }
     expected_norm = (
         "paired_minmax"
-        if recipe == "phase_residual_single_re"
+        if recipe in _SINGLE_RE_RESIDUAL_RECIPES
         else "per_re_paired_minmax"
     )
     checks[expected_norm + " normalization"] = (
         config.get("normalization_params", {}).get("type") == expected_norm
     )
-    if recipe == "phase_residual_single_re":
+    if recipe in _SINGLE_RE_RESIDUAL_RECIPES:
         checks["random diffusion initialization"] = not str(
             train.get("warm_start_checkpoint", "")
         ).strip()
@@ -211,6 +223,25 @@ def _validate_recipe(config):
             dataset.get("balanced_re_batches") is True
             and dataset.get("res_per_batch")
             == len(config.get("normalization_params", {}).get("re_values", []))
+        )
+    if recipe in _KH_RESIDUAL_RECIPES:
+        checks.update(
+            {
+                "KH source interval t=[0,5]": dataset.get("source_time_range")
+                == [0.0, 5.0],
+                "51 KH frames after sub_t=5": (
+                    dataset.get("source_sub_t") == 5
+                    and dataset.get("frames_per_trajectory") == 51
+                ),
+                "32-step KH diffusion sampling": model_params.get(
+                    "num_sample_steps"
+                )
+                == 32,
+                "five-epoch KH full validation": train.get(
+                    "validation_interval"
+                )
+                == 5,
+            }
         )
     failed = [name for name, valid in checks.items() if not valid]
     if failed:
@@ -230,7 +261,39 @@ def _warm_start_weights(model, checkpoint_path):
     )
 
 
-def train_dino(config):
+def _resume_training_state(
+    model, optimizer, scheduler, checkpoint_path, metric_key="denorm_loss_rel_l2"
+):
+    checkpoint = torch.load(
+        checkpoint_path, map_location="cpu", weights_only=False
+    )
+    required = {
+        "epoch",
+        "model_state_dict",
+        "optimizer_state_dict",
+        "scheduler_state_dict",
+    }
+    missing = sorted(required.difference(checkpoint))
+    if missing:
+        raise ValueError(
+            f"Resume checkpoint {checkpoint_path} is missing: {missing}"
+        )
+    model.load_state_dict(checkpoint["model_state_dict"], strict=True)
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+    start_epoch = int(checkpoint["epoch"]) + 1
+    best = float(
+        checkpoint.get(metric_key, checkpoint.get("loss", math.inf))
+    )
+    print(
+        f"Resumed full training state from {checkpoint_path} "
+        f"at epoch={checkpoint['epoch']}; next epoch={start_epoch}.",
+        flush=True,
+    )
+    return start_epoch, best
+
+
+def train_dino(config, resume_checkpoint=None):
     """Train a locked full-field DINO or residual PHASE diffusion recipe."""
     recipe = _validate_recipe(config)
     train = config["train_params"]
@@ -243,11 +306,28 @@ def train_dino(config):
     )
     model = create_diffusion_model(config).to(device)
     warm_start = str(train.get("warm_start_checkpoint", "")).strip()
-    if warm_start:
+    if warm_start and not resume_checkpoint:
         _warm_start_weights(model, warm_start)
     parameters = model.get_optimizer_parameters(config["optimizer_params"])
     optimizer = create_optimizer(parameters, config)
     scheduler = create_scheduler(optimizer, config)
+    start_epoch = 0
+    best = math.inf
+    if resume_checkpoint:
+        start_epoch, best = _resume_training_state(
+            model,
+            optimizer,
+            scheduler,
+            resume_checkpoint,
+            metric_key=(
+                "denorm_loss_rel_l2"
+                if recipe in _RESIDUAL_RECIPES
+                else "model_val_loss"
+            ),
+        )
+    selected_checkpoint_path = (
+        resume_checkpoint if resume_checkpoint else train["checkpoint_path"]
+    )
     clip_norm = (
         float(train.get("clip_grad_max_norm", 1.0))
         if train.get("clip_grad", True)
@@ -255,10 +335,9 @@ def train_dino(config):
     )
     interval = int(train.get("validation_interval", 10))
     sample_steps = int(model_params.get("num_sample_steps", 32))
-    best = math.inf
     history = []
 
-    for epoch in range(int(train["epochs"])):
+    for epoch in range(start_epoch, int(train["epochs"])):
         train_loss = _train_epoch(model, train_loader, optimizer, device, clip_norm)
         if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
             scheduler.step(train_loss)
@@ -288,10 +367,13 @@ def train_dino(config):
                         1 if recipe in _RESIDUAL_RECIPES else 0
                     ),
                 )
+                selected_checkpoint_path = train["checkpoint_path"]
         history.append(row)
         print(row, flush=True)
 
-    saved = torch.load(train["checkpoint_path"], map_location=device, weights_only=False)
+    saved = torch.load(
+        selected_checkpoint_path, map_location=device, weights_only=False
+    )
     model.load_state_dict(saved["model_state_dict"], strict=True)
     test_metrics = _validate(model, test_loader, device, sample_steps)
     result = {

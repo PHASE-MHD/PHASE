@@ -67,6 +67,8 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
 
     phase-validate-configs configs
     pytest -q -m "not gpu and not checkpoint"
+    python scripts/verify_artifact_manifest.py --artifact-root /path/to/artifacts
 
 Set the paths in `docs/reproduction.md` and add `--check-paths` before an
-experiment.
+experiment. The artifact verifier checks the canonical external checkpoint
+sizes and SHA-256 digests recorded in `provenance/checkpoint_manifest.yaml`.

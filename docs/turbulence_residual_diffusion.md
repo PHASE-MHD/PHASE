@@ -49,8 +49,9 @@ python scripts/train_dino.py \
 This is the corrected SR PHASE recipe: paired normalization, random diffusion
 initialization, and checkpoint selection by denormalized relative L2.
 Validation follows the legacy schedule and begins at epoch 10; epoch 0 and an
-unscheduled final epoch are not evaluated for checkpoint selection. Its
-reported result remains pending until the audited rerun completes.
+unscheduled final epoch are not evaluated for checkpoint selection. The
+audited rerun completed epochs 0--99 and selected epoch 90 with denormalized
+relative L2 `0.028242717292159797`.
 
 ## Generate multi-Re features
 
@@ -89,6 +90,6 @@ optimizer, and scheduler and then trained on four-field residual targets. The
 public `phase.yaml` preserves that historical provenance exactly.
 
 For a clean future experiment, replace `warm_start_checkpoint` with the
-checkpoint produced by the corrected single-Re residual recipe after that run
-finishes. Record that experiment as a new run; do not relabel it as the
-reported MR PHASE result.
+canonical corrected single-Re residual checkpoint recorded in
+`provenance/checkpoint_manifest.yaml`. Record that experiment as a new run; do
+not relabel it as the reported MR PHASE result.

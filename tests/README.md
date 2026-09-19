@@ -94,11 +94,13 @@ boundary. Unit tests lock the KH configs, time-local loss semantics, and the
 five-sample-per-regime tiny-validation subset.
 
 For Batch 11 checkpoint compatibility, set
+`PHASE_SINGLE_RE_DIFFUSION_CHECKPOINT` to the corrected epoch-90 residual
+checkpoint, or set both
 `PHASE_HISTORICAL_SR_DIFFUSION_CHECKPOINT` to the historical Re=1000
 full-field diffusion warm start and `PHASE_MULTI_RE_DIFFUSION_CHECKPOINT` to
-the reported epoch-95 MR PHASE checkpoint. The optional test verifies strict
-architecture compatibility and the recorded best metric without committing
-large checkpoint files.
+the reported epoch-95 MR PHASE checkpoint. The optional tests verify strict
+architecture compatibility and recorded best metrics without committing large
+checkpoint files.
 
 
 ## Batch 13 checkpoint compatibility
@@ -125,3 +127,34 @@ model-family dispatch, and the test-only report contract.
 The synthetic integration test in `integration/test_evaluation_inference.py`
 exercises deterministic tFNO/scOT inference, full-field DINO sampling, and
 residual PHASE reconstruction without requiring external checkpoints.
+
+## Batch 16 artifact and GPU acceptance
+
+Verify all canonical checkpoint identities from the parent directory that
+contains the audited legacy repositories:
+
+```bash
+python scripts/verify_artifact_manifest.py \
+  --artifact-root /path/to/artifact/root
+```
+
+Use `--emit-exports` to produce the environment assignments consumed by all
+marked checkpoint tests. Run the complete checkpoint gate with:
+
+```bash
+eval "$(python scripts/verify_artifact_manifest.py \
+  --artifact-root /path/to/artifact/root --size-only --emit-exports)"
+pytest -m checkpoint tests/checkpoint_compatibility
+```
+
+The real-GPU gate is:
+
+```bash
+pytest -m gpu tests/integration/test_gpu_acceptance.py
+```
+
+It performs CUDA forward/backward checks for tFNO, scOT, previous-DINO
+full-field diffusion, and PHASE residual diffusion. The residual test mirrors
+production inference: `sample()` returns a normalized residual; the runtime
+then denormalizes it, adds it to the conditioner, and Helmholtz-projects the
+reconstructed full velocity and magnetic fields.

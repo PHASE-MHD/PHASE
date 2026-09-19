@@ -1,0 +1,116 @@
+version: 1
+artifact_root_env: PHASE_ARTIFACT_ROOT
+artifact_root_description: Parent directory containing the audited legacy repositories.
+artifacts:
+  - id: tfno_re1000_epoch99
+    role: Previous tFNO baseline trained from scratch
+    env_var: PHASE_LEGACY_TFNO_CHECKPOINT
+    path_from_artifact_root: DINOs/checkpoints/prev_SOTA/tFNO/dinos_repro/tFNO_Re1000_prev_SOTA_dinos_repro_100ep.pt
+    bytes: 203997634
+    sha256: 8ce9246d4df5436bab55030f34826d809dd695135fd1cae404645fe62af1176e
+    epoch: 99
+  - id: official_tfno_re1000
+    role: Released tFNO conditioner used by the previous DINO baseline
+    env_var: PHASE_OFFICIAL_TFNO_CHECKPOINT
+    path_from_artifact_root: DINOs/DINOs_paper_chkpt/tfno_Re1000.pt
+    bytes: 203967364
+    sha256: a96152ba4dc4b341d9a336c4c619e55835e1776bda8655824f96d25398d59e7d
+    epoch: null
+  - id: dino_re1000_epoch100
+    role: Previous full-field DINO baseline conditioned on the released tFNO
+    env_var: PHASE_LEGACY_DINO_CHECKPOINT
+    path_from_artifact_root: DINOs/prev_SOTA/diffusion/Re1000/checkpoints/diffusion_Re1000_prev_SOTA_full_from_official_tfno_epoch100.pt
+    bytes: 5143929638
+    sha256: 6bcf22161dfe5c96d32dcde6da8d0e3f5b5f582687828b465b66e98fadd7d72b
+    epoch: 100
+  - id: scot_without_tl_re1000_epoch95
+    role: Three-channel scOT without POSEIDON transfer learning
+    env_var: PHASE_SCOT_WITHOUT_TL_CHECKPOINT
+    path_from_artifact_root: MHD-World-scratch/checkpoints/poseidon_mhd_scratch_Re1000_physics_nueta1e3_corrected_bs1_lr5e4_wd0_100ep_48h.pt
+    bytes: 135420614
+    sha256: 15dfe9b88cf6a93589b14ec6425f2ba82c563c6dc0da716447362523cfc33648
+    epoch: 95
+  - id: scot_with_tl_re1000_epoch98
+    role: Three-channel scOT with POSEIDON transfer learning
+    env_var: PHASE_SCOT_WITH_TL_CHECKPOINT
+    path_from_artifact_root: MHD-World/checkpoints/poseidon_mhd_finetune_Re1000_vecpot_TL_bs16_nueta1e3_corrected_100ep.pt
+    bytes: 250665214
+    sha256: b298e6762f7322c5806668224683e9f95a200359f9781c8a88bb8262800c8d8d
+    epoch: 98
+  - id: naive_multi_re_epoch59
+    role: Naive multi-regime three-channel scOT
+    env_var: PHASE_NAIVE_MULTI_RE_CHECKPOINT
+    path_from_artifact_root: MHD-World-Re-naive/checkpoints/naive_multi_re/corrected_Re1000_warm/poseidon_mhd_re_input_vecpot_TL_corrected_Re1000_warm_bs1_100ep_best_epoch59.pt
+    bytes: 250613160
+    sha256: 887d7d0507b70581194f772de2103ac01478b4c0a12ebd29bc8ea547dd368fdc
+    epoch: 59
+  - id: gated_adapter_multi_re_epoch44
+    role: Gated-adapter multi-regime three-channel scOT
+    env_var: PHASE_GATED_ADAPTER_MULTI_RE_CHECKPOINT
+    path_from_artifact_root: MHD-World-new/checkpoints/ablation_table/corrected_Re1000_warm/poseidon_mhd_re_vecpot_TL_corrected_Re1000_warm_FiLMAdapter_bs1_100ep_best_epoch44.pt
+    bytes: 269511548
+    sha256: cf814721e618601bf73abe9b4aea1bde92c689344c57ce39f8ef7dd4b0ace01f
+    epoch: 44
+  - id: four_channel_scot_re1000_epoch98
+    role: Single-Re four-channel scOT warm start
+    env_var: PHASE_SINGLE_RE_FOUR_CHANNEL_CHECKPOINT
+    path_from_artifact_root: MHD-World/checkpoints/poseidon_mhd_finetune_Re1000_bfield_p99_bheavy_batch16_100ep_4h30_plots.pt
+    bytes: 250852058
+    sha256: f226e9982211eb08888d8f4c6ee372b544a24fcc25ac3324dc3fe37723148ee9
+    epoch: 98
+  - id: four_channel_multi_re_scot_epoch91
+    role: Multi-Re four-channel scOT with Helmholtz projection and physics losses
+    env_var: PHASE_MULTI_RE_FOUR_CHANNEL_CHECKPOINT
+    path_from_artifact_root: MHD-World-new/checkpoints/poseidon_mhd_re_finetune_bfield_p99_bheavy_warm_deep_adapters_100ep_res10_gadi_continue48h.pt
+    bytes: 269690554
+    sha256: c492c1c1b9a106df4bce556b01d94843995843cdf05c2705a76dbb7947ef1ea1
+    epoch: 91
+  - id: historical_full_field_diffusion_re1000_epoch90
+    role: Historical single-Re full-field diffusion warm start for MR PHASE
+    env_var: PHASE_HISTORICAL_SR_DIFFUSION_CHECKPOINT
+    path_from_artifact_root: DINOs/checkpoints/mag/poseidon_bfield_p99_bheavy/Diffusion_MHDmag_Re1000_helmholtz_poseidon_bfield_p99_bheavy_100ep.pt
+    bytes: 5144107502
+    sha256: 133f67e0552b652ec343c4412e0db01d65f5a6e7f4814c70e89d9ef17444c67a
+    epoch: 90
+  - id: single_re_phase_dt_residual_epoch90
+    role: Canonical corrected single-Re DT PHASE residual diffusion
+    env_var: PHASE_SINGLE_RE_DIFFUSION_CHECKPOINT
+    path_from_artifact_root: DINOs/checkpoints/mag/singleRe_DT_SR_PHASE_residual/Diffusion_DT_Re1000_SR_PHASE_residual_fullfield_100ep.pt
+    bytes: 5144073110
+    sha256: ff57dd73a0ba31a43f65acdda6cf0bb188128a71700cf39204b22bc7fcdf998e
+    epoch: 90
+  - id: multi_re_phase_dt_epoch95
+    role: Canonical decaying-turbulence MR PHASE residual diffusion
+    env_var: PHASE_MULTI_RE_DIFFUSION_CHECKPOINT
+    path_from_artifact_root: DINOs/checkpoints/mag/poseidon_multi_re_bfield_full_physics_epoch91_residual_no_recond_resume_epoch45_per_re_norm_full_fullfieldproj_diagfix_pdf_48h_lr5e5/Diffusion_MHDmag_multiRe_helmholtz_poseidon_bfield_full_physics_epoch91_residual_no_recond_resume_epoch45_per_re_norm_full_fullfieldproj_diagfix_pdf_48h_lr5e5.pt
+    bytes: 5144388174
+    sha256: 97c24e526430889c173472770d97389531885599696dad6d1c514dc6094fd1b4
+    epoch: 95
+  - id: kh_single_re_scot_epoch95
+    role: Canonical single-Re KH scOT
+    env_var: PHASE_KH_SINGLE_RE_SCOT_CHECKPOINT
+    path_from_artifact_root: MHD-World/checkpoints/poseidon_mhd_finetune_KH_Re1000_bfield_p99_bheavy_alltimerel_batch1_subt5_100ep_resume_epoch58_48h.pt
+    bytes: 250945494
+    sha256: 11353c2a6400a536774b1dc9403d15fdddf7573942af3902de4edc9f7f463c47
+    epoch: 95
+  - id: kh_multi_re_scot_t0_5_epoch55
+    role: Canonical multi-Re KH scOT on t=[0,5]
+    env_var: PHASE_KH_MULTI_RE_SCOT_CHECKPOINT
+    path_from_artifact_root: MHD-World-new/checkpoints/KH_multiRe/poseidon_mhd_re_finetune_KH_bfield_globalP99_t0_5_resume_epoch45_100ep_48h_denormrel.pt
+    bytes: 269660502
+    sha256: ef3f02b6aa714d15a1c6577dfcea845ef8a57b9ca38eff48e0dc8de0313ee065
+    epoch: 55
+  - id: kh_single_re_phase_epoch95
+    role: Canonical single-Re KH residual diffusion
+    env_var: PHASE_KH_SINGLE_RE_DIFFUSION_CHECKPOINT
+    path_from_artifact_root: DINOs/checkpoints/mag/singleRe_KH_diffusion_best/Diffusion_KH_Re1000_bestscot_helmholtz_bfield_residual_fullfield_100ep.pt
+    bytes: 5144171214
+    sha256: f919181c8a5491600abdb6c087e7c466cdc1c272bc0485ed3beb4e8e42581da3
+    epoch: 95
+  - id: kh_multi_re_phase_t0_5_epoch95
+    role: Canonical multi-Re KH residual diffusion on t=[0,5]
+    env_var: PHASE_KH_MULTI_RE_DIFFUSION_CHECKPOINT
+    path_from_artifact_root: DINOs/checkpoints/mag/KH_multiRe_diffusion_globalP99_t0_5_epoch55_no_recond_warmstart_Re1000_per_re_norm_workers8_restart_epoch75_48h/Diffusion_KH_multiRe_globalP99_t0_5_epoch55_residual_no_recond_warmstart_Re1000_per_re_norm_workers8_restart_epoch75_48h.pt
+    bytes: 5144256638
+    sha256: 204bdebdd99150fbbb6c7e9c2e62e594e5389fd3f6b10d38b0649bae08799d5c
+    epoch: 95

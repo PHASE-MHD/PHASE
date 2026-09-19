@@ -19,9 +19,22 @@
 
 ## Reported artifacts
 
+- Every canonical external checkpoint is listed in
+  `provenance/checkpoint_manifest.yaml` with its byte size and SHA-256 digest.
+- `scripts/verify_artifact_manifest.py` passes before checkpoint compatibility
+  tests or reported-result evaluation.
 - Paper results use the held-out test split unless labeled otherwise.
 - Reports record checkpoint and config hashes.
 - Multi-Re evaluations state the evaluated Re.
 - DNS/model derivatives use one periodic spectral convention.
 - Figures record source sample IDs and arguments.
 - No result is called reproduced until its checkpoint/report are verified.
+
+## Runtime acceptance
+
+- The full ordinary CPU suite passes.
+- All canonical checkpoint families strict-load through the public runtime.
+- Real-CUDA forward/backward acceptance passes for tFNO, deterministic scOT,
+  previous DINO full-field diffusion, and PHASE residual diffusion.
+- Residual sampling is reconstructed in physical units and Helmholtz projection
+  is applied to the full velocity and magnetic fields before evaluation.

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 import torch
@@ -42,15 +43,15 @@ def nonnegative_int(value: str) -> int:
 
 def positive_float(value: str) -> float:
     parsed = float(value)
-    if parsed <= 0:
-        raise argparse.ArgumentTypeError("must be positive")
+    if not math.isfinite(parsed) or parsed <= 0:
+        raise argparse.ArgumentTypeError("must be finite and positive")
     return parsed
 
 
 def nonnegative_float(value: str) -> float:
     parsed = float(value)
-    if parsed < 0:
-        raise argparse.ArgumentTypeError("must be nonnegative")
+    if not math.isfinite(parsed) or parsed < 0:
+        raise argparse.ArgumentTypeError("must be finite and nonnegative")
     return parsed
 
 
@@ -111,7 +112,7 @@ def _time_range(config: dict, problem: str, override) -> tuple[float, float]:
             values = (0.0, 5.0 if problem == "kh" else 1.0)
         start, stop = values
     start, stop = float(start), float(stop)
-    if stop <= start:
+    if not math.isfinite(start) or not math.isfinite(stop) or stop <= start:
         raise ValueError(f"Time range must satisfy STOP > START, got {(start, stop)}.")
     return start, stop
 
@@ -139,6 +140,7 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
     config = load_config(config_path)
     products = _products(args.problem, args.products)
+    time_range = _time_range(config, args.problem, args.time_range)
     if args.device == "auto":
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     else:
@@ -167,7 +169,6 @@ def main():
     if record.sample_id != args.sample_id:
         raise RuntimeError("Inference returned a different sample than requested.")
 
-    time_range = _time_range(config, args.problem, args.time_range)
     times, time_indices = resolve_time_indices(
         record.prediction.shape[1], time_range, args.times
     )
@@ -228,6 +229,8 @@ def main():
             times,
             delta=args.tracer_delta,
             diffusivity=diffusivity,
+            lx=args.lx,
+            ly=args.ly,
         )
         tracer_true = advect_tracer(
             fields_true["ux"],
@@ -235,6 +238,8 @@ def main():
             times,
             delta=args.tracer_delta,
             diffusivity=diffusivity,
+            lx=args.lx,
+            ly=args.ly,
         )
         tracer_path = output_dir / "tracer" / f"sample_{record.sample_id}_tracer.npz"
         tracer_path.parent.mkdir(parents=True, exist_ok=True)
@@ -262,6 +267,8 @@ def main():
                     ),
                     formats=formats,
                     dpi=args.dpi,
+                    lx=args.lx,
+                    ly=args.ly,
                 )
             )
 
@@ -273,9 +280,17 @@ def main():
             "device": str(device),
             "sample_id": record.sample_id,
             "time_range": list(time_range),
+            "requested_times": (
+                [float(value) for value in args.times]
+                if args.times is not None
+                else None
+            ),
             "time_indices": time_indices,
             "time_values": [float(times[index]) for index in time_indices],
             "products": products,
+            "formats": list(formats),
+            "dpi": args.dpi,
+            "num_workers": args.num_workers,
             "domain": {"lx": args.lx, "ly": args.ly},
             "tracer": (
                 {

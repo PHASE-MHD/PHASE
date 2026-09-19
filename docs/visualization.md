@@ -5,17 +5,23 @@ reconstruction, full-field Helmholtz projection, and Fourier derivatives as
 `scripts/evaluate_error.py`. It has no train/validation split option. Every
 invocation requires an explicit Reynolds number and test-sample ID.
 
+Install the plotting dependency before using the command:
+
+```bash
+pip install -e '.[visualization]'
+```
+
 ## Turbulence
 
 ```bash
-python scripts/visualize.py \\
-  --config configs/turbulence/multi_re/phase.yaml \\
-  --checkpoint /path/to/checkpoint.pt \\
-  --problem turbulence \\
-  --re 1000 \\
-  --sample-id 977 \\
-  --times 1.0 \\
-  --products fields spectra pdfs \\
+python scripts/visualize.py \
+  --config configs/turbulence/multi_re/phase.yaml \
+  --checkpoint /path/to/checkpoint.pt \
+  --problem turbulence \
+  --re 1000 \
+  --sample-id 977 \
+  --times 1.0 \
+  --products fields spectra pdfs \
   --output-dir results/dt_re1000_sample977
 ```
 
@@ -33,15 +39,15 @@ the plotted curves, never the quantitative evaluation report.
 ## Kelvin-Helmholtz instability
 
 ```bash
-python scripts/visualize.py \\
-  --config configs/kh/multi_re/residual_diffusion_t0_5.yaml \\
-  --checkpoint /path/to/checkpoint.pt \\
-  --problem kh \\
-  --re 2050 \\
-  --sample-id 977 \\
-  --times 0.5 1.8 3.5 \\
-  --products fields tracer \\
-  --output-dir results/kh_re2050_sample977
+python scripts/visualize.py \
+  --config configs/kh/multi_re/residual_diffusion_t0_5.yaml \
+  --checkpoint /path/to/checkpoint.pt \
+  --problem kh \
+  --re 2050 \
+  --sample-id 62 \
+  --times 0.5 1.8 3.5 \
+  --products fields tracer \
+  --output-dir results/kh_re2050_sample62
 ```
 
 The tracer is reconstructed independently from the model and DNS velocity
@@ -52,11 +58,16 @@ dye diagnostic, not the original Dedalus tracer state: exact reconstruction is
 impossible without velocities at every internal solver step. The saved NPZ and
 manifest preserve this distinction.
 
+Sample IDs are source-simulation IDs and are split-specific. The example IDs
+above were verified against the canonical held-out feature stores; use an ID
+present in the test store generated for a new dataset.
+
 ## Provenance
 
 PNG and PDF are emitted by default. `visualization_manifest.json` records the
 model family, held-out split, Re, exact sample-ID source, checkpoint epoch,
 config/checkpoint hashes, stochastic diffusion seed and sampling steps,
-physical times and frame indices, domain size, tracer parameters, and hashes
-of every generated artifact. Legacy diffusion feature stores without source
-IDs remain explicitly identified as test-split positions.
+requested and resolved physical times, frame indices, formats, DPI, domain
+size, tracer parameters, and hashes of every generated artifact. Legacy
+diffusion feature stores without source IDs remain explicitly identified as
+test-split positions.

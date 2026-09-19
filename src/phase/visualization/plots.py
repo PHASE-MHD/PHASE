@@ -45,15 +45,17 @@ def resolve_time_indices(
     if nt <= 0:
         raise ValueError("A trajectory must contain at least one frame.")
     start, stop = (float(value) for value in time_range)
-    if stop < start:
+    if not np.isfinite(start) or not np.isfinite(stop) or stop < start:
         raise ValueError(f"Invalid time range {time_range}.")
     times = np.linspace(start, stop, nt)
     if requested_times is None:
         return times, [nt - 1]
     indices = []
-    tolerance = (times[1] - times[0]) / 2 + 1.0e-9 if nt > 1 else 1.0e-9
+    tolerance = 1.0e-9 * max(1.0, abs(start), abs(stop))
     for requested in requested_times:
         requested = float(requested)
+        if not np.isfinite(requested):
+            raise ValueError("Requested visualization times must be finite.")
         if requested < start - tolerance or requested > stop + tolerance:
             raise ValueError(
                 f"Requested time {requested} is outside [{start}, {stop}]."
@@ -90,12 +92,12 @@ def _scientific_colorbar(colorbar, fontsize: int) -> None:
     colorbar.update_ticks()
 
 
-def _imshow(ax, field, **kwargs):
+def _imshow(ax, field, *, lx: float = 1.0, ly: float = 1.0, **kwargs):
     # Arrays are stored [x,y]; imshow expects image rows/columns [y,x].
     return ax.imshow(
         field.detach().cpu().numpy().T,
         origin="lower",
-        extent=(0.0, 1.0, 0.0, 1.0),
+        extent=(0.0, lx, 0.0, ly),
         aspect="equal",
         **kwargs,
     )
@@ -134,6 +136,8 @@ def plot_field_comparison(
                 image = _imshow(
                     axes[row, column],
                     field,
+                    lx=lx,
+                    ly=ly,
                     cmap=FIELD_CMAPS[name],
                     vmin=-limit,
                     vmax=limit,
@@ -142,6 +146,8 @@ def plot_field_comparison(
                 image = _imshow(
                     axes[row, column],
                     field,
+                    lx=lx,
+                    ly=ly,
                     cmap="viridis",
                     vmin=-error_limit,
                     vmax=error_limit,
@@ -270,16 +276,26 @@ def plot_pdf_comparison(
     return _save_figure(fig, output_stem, formats, dpi)
 
 
-def initial_kh_tracer(nx: int, ny: int, delta: float = 0.05) -> np.ndarray:
-    y = np.linspace(0.0, 1.0, ny, endpoint=False)
-    profile = np.tanh((y - 0.25) / delta) - np.tanh((y - 0.75) / delta) - 1.0
+def initial_kh_tracer(
+    nx: int,
+    ny: int,
+    delta: float = 0.05,
+    *,
+    ly: float = 1.0,
+) -> np.ndarray:
+    y = np.linspace(0.0, ly, ny, endpoint=False)
+    profile = (
+        np.tanh((y - 0.25 * ly) / delta)
+        - np.tanh((y - 0.75 * ly) / delta)
+        - 1.0
+    )
     return np.broadcast_to(profile, (nx, ny)).copy()
 
 
-def _bilinear_periodic(field, x_query, y_query):
+def _bilinear_periodic(field, x_query, y_query, lx: float, ly: float):
     nx, ny = field.shape
-    x = (x_query % 1.0) * nx
-    y = (y_query % 1.0) * ny
+    x = (x_query % lx) * nx / lx
+    y = (y_query % ly) * ny / ly
     i0 = np.floor(x).astype(np.int64) % nx
     j0 = np.floor(y).astype(np.int64) % ny
     i1 = (i0 + 1) % nx
@@ -294,12 +310,18 @@ def _bilinear_periodic(field, x_query, y_query):
     )
 
 
-def _diffuse_periodic(field, diffusivity: float, dt: float):
+def _diffuse_periodic(
+    field,
+    diffusivity: float,
+    dt: float,
+    lx: float,
+    ly: float,
+):
     if diffusivity <= 0.0 or dt <= 0.0:
         return field
     nx, ny = field.shape
-    kx = 2.0 * np.pi * np.fft.fftfreq(nx, d=1.0 / nx)
-    ky = 2.0 * np.pi * np.fft.fftfreq(ny, d=1.0 / ny)
+    kx = 2.0 * np.pi * np.fft.fftfreq(nx, d=lx / nx)
+    ky = 2.0 * np.pi * np.fft.fftfreq(ny, d=ly / ny)
     damping = np.exp(-diffusivity * (kx[:, None] ** 2 + ky[None, :] ** 2) * dt)
     return np.fft.ifft2(np.fft.fft2(field) * damping).real
 
@@ -311,26 +333,45 @@ def advect_tracer(
     *,
     delta: float = 0.05,
     diffusivity: float = 0.001,
+    lx: float = 1.0,
+    ly: float = 1.0,
 ) -> np.ndarray:
     """Post-process a passive KH dye using periodic semi-Lagrangian advection."""
     ux = np.asarray(torch.as_tensor(ux).cpu(), dtype=np.float64)
     uy = np.asarray(torch.as_tensor(uy).cpu(), dtype=np.float64)
     if ux.shape != uy.shape or ux.ndim != 3:
         raise ValueError("Tracer velocities must have matching [time,x,y] shapes.")
-    if len(times) != ux.shape[0] or np.any(np.diff(times) <= 0.0):
+    times = np.asarray(times, dtype=np.float64)
+    if ux.shape[0] == 0 or ux.shape[1] == 0 or ux.shape[2] == 0:
+        raise ValueError("Tracer velocity trajectories must be nonempty.")
+    if (
+        len(times) != ux.shape[0]
+        or not np.isfinite(times).all()
+        or np.any(np.diff(times) <= 0.0)
+    ):
         raise ValueError("Tracer times must be strictly increasing and match velocity.")
+    if not np.isfinite(ux).all() or not np.isfinite(uy).all():
+        raise ValueError("Tracer velocities must be finite.")
+    if not np.isfinite(delta) or delta <= 0.0:
+        raise ValueError("Tracer interface width must be finite and positive.")
+    if not np.isfinite(diffusivity) or diffusivity < 0.0:
+        raise ValueError("Tracer diffusivity must be finite and nonnegative.")
+    if not np.isfinite(lx) or not np.isfinite(ly) or lx <= 0.0 or ly <= 0.0:
+        raise ValueError("Tracer domain lengths must be finite and positive.")
     nt, nx, ny = ux.shape
-    x = np.linspace(0.0, 1.0, nx, endpoint=False)
-    y = np.linspace(0.0, 1.0, ny, endpoint=False)
+    x = np.linspace(0.0, lx, nx, endpoint=False)
+    y = np.linspace(0.0, ly, ny, endpoint=False)
     xx, yy = np.meshgrid(x, y, indexing="ij")
     tracer = np.empty((nt, nx, ny), dtype=np.float32)
-    tracer[0] = initial_kh_tracer(nx, ny, delta)
+    tracer[0] = initial_kh_tracer(nx, ny, delta, ly=ly)
     for index in range(nt - 1):
         dt = float(times[index + 1] - times[index])
         back_x = xx - dt * ux[index]
         back_y = yy - dt * uy[index]
-        step = _bilinear_periodic(tracer[index], back_x, back_y)
-        tracer[index + 1] = _diffuse_periodic(step, diffusivity, dt)
+        step = _bilinear_periodic(tracer[index], back_x, back_y, lx, ly)
+        tracer[index + 1] = _diffuse_periodic(
+            step, diffusivity, dt, lx, ly
+        )
     return tracer
 
 
@@ -343,6 +384,8 @@ def plot_tracer_comparison(
     output_stem: str | Path,
     formats=("png", "pdf"),
     dpi: int = 240,
+    lx: float = 1.0,
+    ly: float = 1.0,
 ) -> list[Path]:
     """Plot model, DNS, and DNS-model passive-tracer fields."""
     error = truth[time_index] - prediction[time_index]
@@ -357,7 +400,7 @@ def plot_tracer_comparison(
             image = ax.imshow(
                 field.T,
                 origin="lower",
-                extent=(0, 1, 0, 1),
+                extent=(0, lx, 0, ly),
                 cmap="viridis",
                 vmin=-error_limit,
                 vmax=error_limit,
@@ -366,7 +409,7 @@ def plot_tracer_comparison(
             image = ax.imshow(
                 field.T,
                 origin="lower",
-                extent=(0, 1, 0, 1),
+                extent=(0, lx, 0, ly),
                 cmap="RdBu_r",
                 vmin=-1.0,
                 vmax=1.0,

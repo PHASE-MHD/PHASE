@@ -16,7 +16,8 @@ Locked behavior:
 - DNS-RMS normalization and evaluation histogram ranges for displayed PDFs;
 - KH-only passive-tracer post-processing with periodic interpolation and
   spectral diffusion; and
-- JSON provenance with hashes for every generated artifact.
+- JSON provenance with plotting arguments and hashes for every generated
+  artifact.
 
 The tracer implementation is adapted from
 `DINOs/analysis_scripts/plot_kh_diffusion_fields_tracer.py`. Field,
@@ -35,3 +36,27 @@ tracer invariance, and all four synthetic plot products pass; and the rendered
 field, spectrum, and tracer panels were inspected directly. The container does
 not include `pytest`, so the committed pytest cases were exercised through
 equivalent direct checks rather than through the pytest runner.
+
+## Paranoid audit
+
+A second source-to-artifact audit found and corrected the following release
+hardening issues:
+
+- the development extra now installs Matplotlib, which the visualization tests
+  import;
+- requested times must lie inside the physical interval rather than within
+  half a stored-frame spacing outside it;
+- non-unit domain lengths now propagate consistently to field extents, tracer
+  interpolation, and tracer spectral diffusion;
+- Re, domain, time, and tracer arguments reject NaN and infinity;
+- exact diffusion sample filtering is regression-tested before EDM sampling;
+- manifests now include requested times, formats, DPI, and worker count; and
+- the KH documentation now uses source sample 62, verified to belong to the
+  canonical Re=2050 held-out test split.
+
+The canonical multi-Re KH test feature store was inspected without loading the
+field arrays into memory. It has shape `[1000,4,51,128,128]`, contains all ten
+Re values, and carries 100 unique source IDs for every Re. The canonical
+multi-Re turbulence store has shape `[1000,4,26,128,128]`; source sample 977
+was verified in its Re=1000 held-out split. All 15 public configs pass model
+family, representation, and physical-time-range detection.

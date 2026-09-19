@@ -200,3 +200,63 @@ def test_full_field_dino_and_residual_phase_adapters(monkeypatch, tmp_path):
         else:
             assert details["model"] == "DINO"
             assert results["aggregate"]["rel_l2_ux"] == 0.0
+
+
+def test_diffusion_adapter_filters_before_sampling(monkeypatch, tmp_path):
+    conditions = [torch.ones(3, 3, 8, 8), torch.full((3, 3, 8, 8), 2.0)]
+    metadata = [
+        {
+            "re": torch.full((3,), 1000.0),
+            "rem": torch.full((3,), 1000.0),
+            "sample_id": torch.full((3,), sample_id, dtype=torch.long),
+        }
+        for sample_id in (101, 977)
+    ]
+
+    class Dataset:
+        residual_target = False
+        channel_indices = None
+        input_normalizer = _IdentityNormalizer()
+        target_normalizer = _IdentityNormalizer()
+        sample_id_per_sample = torch.tensor([101, 977])
+
+    class Loader:
+        dataset = Dataset()
+
+        def __iter__(self):
+            for condition, batch_metadata in zip(conditions, metadata):
+                yield condition, condition.clone(), batch_metadata
+
+    model = _FakeModel(3)
+    calls = []
+
+    def sample(condition, num_sample_steps, re=None, rem=None):
+        calls.append(condition.clone())
+        return condition
+
+    model.sample = sample
+    monkeypatch.setattr(
+        inference,
+        "get_diffusion_test_dataloader",
+        lambda config, num_workers=0: Loader(),
+    )
+    monkeypatch.setattr(inference, "create_diffusion_model", lambda config: model)
+    checkpoint = tmp_path / "diffusion.pt"
+    torch.save({"model_state_dict": model.state_dict(), "epoch": 12}, checkpoint)
+    config = {
+        "config_type": "diffusion",
+        "model_params": {"channels": 3},
+        "train_params": {"recipe": "previous_dino"},
+    }
+    records, details = inference.build_test_inference(
+        config,
+        checkpoint,
+        target_re=1000,
+        device=torch.device("cpu"),
+        sample_ids={977},
+    )
+    records = list(records)
+    assert [record.sample_id for record in records] == [977]
+    assert len(calls) == 1
+    assert torch.all(calls[0] == 2.0)
+    assert details["requested_sample_ids"] == [977]

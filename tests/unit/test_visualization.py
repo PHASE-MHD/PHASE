@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import torch
+import matplotlib.pyplot as plt
 
 from phase.visualization import (
     advect_tracer,
@@ -13,6 +14,11 @@ from phase.visualization import (
     plot_spectrum_comparison,
     plot_tracer_comparison,
     resolve_time_indices,
+)
+from phase.visualization.plots import (
+    _imshow,
+    _normalized_spectrum,
+    initial_kh_tracer,
 )
 
 
@@ -27,6 +33,33 @@ def test_time_resolution_uses_physical_nearest_frames():
     assert times[indices].tolist() == pytest.approx([0.5, 1.8, 3.5])
     with pytest.raises(ValueError, match="outside"):
         resolve_time_indices(51, (0.0, 5.0), [6.0])
+    with pytest.raises(ValueError, match="outside"):
+        resolve_time_indices(51, (0.0, 5.0), [-0.01])
+    with pytest.raises(ValueError, match="finite"):
+        resolve_time_indices(51, (0.0, 5.0), [float("nan")])
+
+
+def test_image_orientation_and_physical_extent():
+    field = torch.arange(12).reshape(3, 4)
+    fig, ax = plt.subplots()
+    image = _imshow(ax, field, lx=2.0, ly=3.0)
+    assert np.array_equal(np.asarray(image.get_array()), field.numpy().T)
+    assert tuple(image.get_extent()) == (0.0, 2.0, 0.0, 3.0)
+    plt.close(fig)
+
+
+def test_spectrum_display_normalization_is_per_curve():
+    values = _normalized_spectrum(torch.tensor([1.0, 2.0, 3.0]))
+    assert float(values.sum()) == pytest.approx(1.0)
+    zeros = _normalized_spectrum(torch.zeros(3))
+    assert torch.isfinite(zeros).all()
+    assert torch.count_nonzero(zeros) == 0
+
+
+def test_initial_tracer_marks_y_layers_not_x_layers():
+    tracer = initial_kh_tracer(8, 16)
+    assert np.allclose(tracer, tracer[0:1, :])
+    assert not np.allclose(tracer[:, 0:1], tracer)
 
 
 def test_zero_velocity_preserves_postprocessed_tracer_without_diffusion():
@@ -37,6 +70,10 @@ def test_zero_velocity_preserves_postprocessed_tracer_without_diffusion():
     )
     for index in range(1, len(times)):
         assert np.array_equal(tracer[index], tracer[0])
+    with pytest.raises(ValueError, match="nonnegative"):
+        advect_tracer(velocity, velocity, times, diffusivity=-0.1)
+    with pytest.raises(ValueError, match="finite"):
+        advect_tracer(velocity, velocity, times, diffusivity=float("nan"))
 
 
 def test_all_plot_products_write_nonempty_files(tmp_path):

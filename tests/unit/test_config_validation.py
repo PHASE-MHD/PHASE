@@ -53,6 +53,89 @@ def test_malformed_config_reports_errors_instead_of_crashing():
     assert "missing config.dataset_params" in errors
 
 
+@pytest.mark.parametrize(
+    "config, expected",
+    [
+        (
+            {
+                "model_params": [],
+                "dataset_params": {},
+                "optimizer_params": {},
+                "train_params": {},
+            },
+            "config.model_params must be a mapping",
+        ),
+        (
+            {
+                "config_type": "conditioner",
+                "model_params": [],
+                "dataset_params": {},
+                "normalization_params": {},
+            },
+            "config.model_params must be a mapping",
+        ),
+        (
+            {
+                "config_type": "diffusion",
+                "model_params": {"model_type": "diffusion"},
+                "dataset_params": {},
+                "optimizer_params": {},
+                "train_params": {},
+                "normalization_params": [],
+            },
+            "config.normalization_params must be a mapping",
+        ),
+    ],
+)
+def test_non_mapping_sections_report_errors(config, expected):
+    assert expected in validate_config(config)
+
+
+def test_malformed_sequences_report_errors():
+    path = ROOT / "configs/ablations/four_channel_hp_physics/multi_re.yaml"
+    config = yaml.safe_load(path.read_text())
+    config["dataset_params"]["re_values"] = 1000
+    config["normalization_params"]["input_norm"] = 1.0
+    errors = validate_config(config)
+    assert "dataset_params.re_values must be a sequence" in errors
+    assert "normalization_params.input_norm must be a sequence" in errors
+
+
+def test_invalid_yaml_reports_error(tmp_path):
+    path = tmp_path / "broken.yaml"
+    path.write_text("model_params: [\n", encoding="utf-8")
+    errors = validate_config_file(path)
+    assert len(errors) == 1
+    assert errors[0].startswith("could not load YAML config")
+
+
+@pytest.mark.parametrize(
+    "key, value, expected",
+    [
+        (
+            "source_output_dt",
+            "0.02",
+            "dataset_params.source_output_dt must be finite and positive",
+        ),
+        (
+            "source_sub_t",
+            "5",
+            "dataset_params.source_sub_t must be a positive integer",
+        ),
+        (
+            "frames_per_trajectory",
+            51.0,
+            "dataset_params.frames_per_trajectory must be a positive integer",
+        ),
+    ],
+)
+def test_kh_time_contract_rejects_wrong_types(key, value, expected):
+    path = ROOT / "configs/kh/multi_re/residual_diffusion_t0_5.yaml"
+    config = yaml.safe_load(path.read_text())
+    config["dataset_params"][key] = value
+    assert expected in validate_config(config)
+
+
 def test_per_re_path_templates_are_expanded(tmp_path):
     for re_value in (80, 1000):
         (tmp_path / f"Re{re_value}.npz").touch()

@@ -14,7 +14,7 @@ Selected implementation components are adapted from:
 - [MHD-World](https://github.com/rhaldarpurdue/MHD-World) and its project
   development variants
 
-Every adapted file or component will be identified in the repository's
+Every adapted file or component is identified in the repository's
 file-level provenance records. The original MIT notice applicable to those
 portions is reproduced below.
 
@@ -42,6 +42,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-See `COPY_MANIFEST.md` and `README_src_changes.md` for the current provenance
-inventory. These records will be refined as each source component is admitted
-to the public package.
+See `COPY_MANIFEST.md`, `README_src_changes.md`, and `provenance/` for the
+audited source inventory and the intentional changes made during admission to
+the public package.

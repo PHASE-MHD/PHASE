@@ -8,11 +8,14 @@ version = "0.1.0"
 description = "PHASE"
 readme = "README.md"
 license = {file = "LICENSE"}
+authors = [
+  {name = "Radhika Achikanath Chirakkara", email = "radhika.ac.97@gmail.com"},
+]
 requires-python = ">=3.11,<3.12"
 dependencies = [
   "h5py>=3.8,<4",
-  "numpy>=1.24,<3",
-  "torch>=2.1,<3",
+  "numpy>=1.24,<2",
+  "torch>=2.1,<2.2",
   "PyYAML>=6,<7",
 ]
 

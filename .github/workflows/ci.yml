@@ -1,5 +1,5 @@
 name: CI
-on:
+"on":
   push:
   pull_request:
 jobs:
@@ -14,7 +14,9 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,tfno,dino,visualization]"
+          python -m pip install -e ".[dev,tfno,dino,scot,visualization]"
+          python -m pip install --no-deps \
+            "scOT @ git+https://github.com/camlab-ethz/poseidon.git@b8fa28f59bd7f7673323f28d11a12c6f3a215c61"
       - name: Validate recipes
         run: phase-validate-configs configs
       - name: Compile

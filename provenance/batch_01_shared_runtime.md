@@ -9,7 +9,7 @@ datasets, normalization, PDE losses, models, trainers, or diffusion.
 ## Upstream provenance
 
 - Repository: https://github.com/semihkacmaz/DINOs
-- Local source tree: /scratch/ek9/rc4680/ML/DINOs
+- Local source tree: private legacy checkout (not distributed)
 - Source commit: cf2b2c31220fee4f6f3d221f9d2b87572c3e58e0
 - License: MIT; see THIRD_PARTY_NOTICES.md
 

@@ -6,7 +6,10 @@ import pytest
 import torch
 
 
-def test_historical_single_re_warm_start_and_multi_re_checkpoint(monkeypatch, tmp_path):
+@pytest.mark.checkpoint
+def test_historical_single_re_warm_start_and_multi_re_checkpoint(
+    monkeypatch, tmp_path
+):
     warm_path = os.environ.get("PHASE_HISTORICAL_SR_DIFFUSION_CHECKPOINT")
     final_path = os.environ.get("PHASE_MULTI_RE_DIFFUSION_CHECKPOINT")
     if not warm_path or not final_path:

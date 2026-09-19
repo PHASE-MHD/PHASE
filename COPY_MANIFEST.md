@@ -1,6 +1,6 @@
 # PHASE copy manifest
 
-Status: Batches 1--14b are implemented and audited. Release hardening remains.
+Status: Batches 1--15 are implemented and audited.
 
 This is the literal legacy-source manifest for rebuilding the public PHASE
 repository from MHD data through preprocessing, deterministic training,

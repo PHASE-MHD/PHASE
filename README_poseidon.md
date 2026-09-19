@@ -20,9 +20,9 @@ python -m pip install \
 ```
 
 POSEIDON pins several older package versions in its own metadata. When using a
-PHASE environment that already provides compatible versions of PyTorch,
-Transformers, Accelerate, and the other dependencies, install only the scOT
-package itself to avoid replacing that environment:
+PHASE environment, which already provides the dependencies used by PHASE's
+scOT model path, install only the scOT package itself to avoid replacing the
+pinned PyTorch environment:
 
 ```bash
 git clone https://github.com/camlab-ethz/poseidon.git external/poseidon

@@ -16,6 +16,7 @@ def _load_mmap(path):
         return torch.load(path, map_location="cpu", weights_only=False)
 
 
+@pytest.mark.checkpoint
 def test_kh_single_and_multi_re_diffusion_checkpoints(monkeypatch, tmp_path):
     single_path = os.environ.get("PHASE_KH_SINGLE_RE_DIFFUSION_CHECKPOINT")
     multi_path = os.environ.get("PHASE_KH_MULTI_RE_DIFFUSION_CHECKPOINT")

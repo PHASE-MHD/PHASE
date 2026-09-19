@@ -99,7 +99,12 @@ def _walk_paths(mapping, prefix=""):
 def _multi_re_data_paths(dataset):
     root = dataset.get("data_root") or dataset.get("data_dir")
     re_values = dataset.get("re_values")
-    if not root or not re_values:
+    if (
+        not isinstance(root, str)
+        or not root
+        or not isinstance(re_values, (list, tuple))
+        or not re_values
+    ):
         return []
     data_file = dataset.get("data_file", "mhd_data_3channel.npy")
     n_value = dataset.get("n", dataset.get("N", 1000))
@@ -121,18 +126,34 @@ def _required_sections_present(config, sections):
     return all(isinstance(config.get(name), dict) for name in sections)
 
 
+def _mapping(config, name, errors, *, required=True):
+    """Return a mapping section, recording a readable error when malformed."""
+    value = config.get(name)
+    if value is None:
+        if required:
+            errors.append(f"missing config.{name}")
+        return None
+    if not isinstance(value, dict):
+        errors.append(f"config.{name} must be a mapping")
+        return None
+    return value
+
+
 def _validate_common(config, errors):
-    _require(
-        config,
-        ("model_params", "dataset_params", "optimizer_params", "train_params"),
-        "config",
-        errors,
-    )
-    if errors:
+    sections = {
+        name: _mapping(config, name, errors)
+        for name in (
+            "model_params",
+            "dataset_params",
+            "optimizer_params",
+            "train_params",
+        )
+    }
+    if any(section is None for section in sections.values()):
         return
-    model = config["model_params"]
-    optimizer = config["optimizer_params"]
-    train = config["train_params"]
+    model = sections["model_params"]
+    optimizer = sections["optimizer_params"]
+    train = sections["train_params"]
     _require(model, ("model_type",), "model_params", errors)
     _require(optimizer, ("optimizer_type", "lr"), "optimizer_params", errors)
     _require(train, ("epochs", "checkpoint_path"), "train_params", errors)
@@ -145,15 +166,11 @@ def _validate_common(config, errors):
 def _validate_operator(config, errors):
     model = config["model_params"]
     data = config["dataset_params"]
-    loss = config.get("loss_params", {})
-    loaders = config.get("dataloader_params", {})
-    norm = config.get("normalization_params", {})
-    _require(
-        config,
-        ("normalization_params", "loss_params", "dataloader_params"),
-        "config",
-        errors,
-    )
+    loss = _mapping(config, "loss_params", errors)
+    loaders = _mapping(config, "dataloader_params", errors)
+    norm = _mapping(config, "normalization_params", errors)
+    if loss is None or loaders is None or norm is None:
+        return
     _require(data, ("sub_t", "sub_x"), "dataset_params", errors)
     _require(
         loss,
@@ -182,23 +199,37 @@ def _validate_operator(config, errors):
     out_channels = model.get("out_channels")
     for key in ("input_norm", "output_norm"):
         values = norm.get(key)
-        if out_channels in (3, 4) and values is not None and len(values) != out_channels:
-            errors.append(
-                f"normalization_params.{key} length must match "
-                "model_params.out_channels"
-            )
+        if out_channels in (3, 4) and values is not None:
+            if not isinstance(values, (list, tuple)):
+                errors.append(f"normalization_params.{key} must be a sequence")
+            elif len(values) != out_channels:
+                errors.append(
+                    f"normalization_params.{key} length must match "
+                    "model_params.out_channels"
+                )
 
     re_values = data.get("re_values")
     rem_values = data.get("rem_values")
     if re_values is not None:
-        if not re_values:
+        if not isinstance(re_values, (list, tuple)):
+            errors.append("dataset_params.re_values must be a sequence")
+            re_values = None
+        elif not re_values:
             errors.append("dataset_params.re_values must not be empty")
-        if rem_values is not None and len(re_values) != len(rem_values):
+        if rem_values is not None and not isinstance(rem_values, (list, tuple)):
+            errors.append("dataset_params.rem_values must be a sequence")
+            rem_values = None
+        if (
+            re_values is not None
+            and rem_values is not None
+            and len(re_values) != len(rem_values)
+        ):
             errors.append(
                 "dataset_params.re_values and rem_values must have equal length"
             )
         if (
-            data.get("balanced_re_batches")
+            re_values is not None
+            and data.get("balanced_re_batches")
             and data.get("res_per_batch") != len(re_values)
         ):
             errors.append(
@@ -209,9 +240,10 @@ def _validate_operator(config, errors):
 def _validate_diffusion(config, errors):
     model = config["model_params"]
     data = config["dataset_params"]
-    norm = config.get("normalization_params", {})
+    norm = _mapping(config, "normalization_params", errors)
     train = config["train_params"]
-    _require(config, ("normalization_params",), "config", errors)
+    if norm is None:
+        return
     _require(
         model, ("channels", "image_size", "num_sample_steps"), "model_params", errors
     )
@@ -256,7 +288,23 @@ def _validate_diffusion(config, errors):
         errors.append("previous DINO must not enable PHASE Helmholtz projection")
 
     if "source_time_range" in data:
-        start, stop = data["source_time_range"]
+        time_range = data["source_time_range"]
+        if not isinstance(time_range, (list, tuple)) or len(time_range) != 2:
+            errors.append("dataset_params.source_time_range must contain [start, stop]")
+            return
+        start, stop = time_range
+        if not all(
+            isinstance(value, (int, float)) and not isinstance(value, bool)
+            for value in time_range
+        ):
+            errors.append("dataset_params.source_time_range values must be numeric")
+            return
+        if not all(math.isfinite(float(value)) for value in time_range):
+            errors.append("dataset_params.source_time_range values must be finite")
+            return
+        if stop <= start:
+            errors.append("dataset_params.source_time_range stop must exceed start")
+            return
         dt = data.get("source_output_dt")
         sub_t = data.get("source_sub_t")
         frames = data.get("frames_per_trajectory")
@@ -266,6 +314,24 @@ def _validate_diffusion(config, errors):
                 "frames_per_trajectory"
             )
         else:
+            if (
+                not isinstance(dt, (int, float))
+                or isinstance(dt, bool)
+                or not math.isfinite(float(dt))
+                or dt <= 0
+            ):
+                errors.append(
+                    "dataset_params.source_output_dt must be finite and positive"
+                )
+                return
+            if not isinstance(sub_t, int) or isinstance(sub_t, bool) or sub_t <= 0:
+                errors.append("dataset_params.source_sub_t must be a positive integer")
+                return
+            if not isinstance(frames, int) or isinstance(frames, bool) or frames <= 0:
+                errors.append(
+                    "dataset_params.frames_per_trajectory must be a positive integer"
+                )
+                return
             expected = int(round((stop - start) / (dt * sub_t))) + 1
             if frames != expected:
                 errors.append(
@@ -275,14 +341,11 @@ def _validate_diffusion(config, errors):
 
 
 def _validate_conditioner(config, errors):
-    _require(
-        config,
-        ("model_params", "normalization_params", "dataset_params"),
-        "config",
-        errors,
-    )
-    model = config.get("model_params", {})
-    data = config.get("dataset_params", {})
+    model = _mapping(config, "model_params", errors)
+    data = _mapping(config, "dataset_params", errors)
+    norm = _mapping(config, "normalization_params", errors)
+    if model is None or data is None or norm is None:
+        return
     _require(
         model,
         ("model_type", "in_channels", "out_channels", "num_fno_layers"),
@@ -309,7 +372,7 @@ def validate_config(config, *, check_paths=False):
         _validate_conditioner(config, errors)
     else:
         _validate_common(config, errors)
-    if "model_params" not in config:
+    if not isinstance(config.get("model_params"), dict):
         return errors
     model_type = config.get("model_params", {}).get("model_type")
     if config_type == "diffusion":
@@ -344,8 +407,11 @@ def validate_config(config, *, check_paths=False):
             for location, value in _walk_paths(config):
                 candidates = [value]
                 if "{re}" in value:
-                    re_values = config.get("normalization_params", {}).get(
-                        "re_values", []
+                    normalization = config.get("normalization_params")
+                    re_values = (
+                        normalization.get("re_values", [])
+                        if isinstance(normalization, dict)
+                        else []
                     )
                     if not re_values:
                         errors.append(
@@ -366,7 +432,10 @@ def validate_config(config, *, check_paths=False):
                         errors.append(
                             f"path does not exist for {location}: {path}"
                         )
-            for path in _multi_re_data_paths(config.get("dataset_params", {})):
+            dataset = config.get("dataset_params")
+            for path in _multi_re_data_paths(
+                dataset if isinstance(dataset, dict) else {}
+            ):
                 if not path.expanduser().exists():
                     errors.append(f"multi-Re data file does not exist: {path}")
     return errors
@@ -375,8 +444,11 @@ def validate_config(config, *, check_paths=False):
 def validate_config_file(path, *, check_paths=False, expand_environment=True):
     """Load and validate one YAML config without importing ML dependencies."""
     path = Path(path)
-    with path.open("r", encoding="utf-8") as handle:
-        config = yaml.safe_load(handle)
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            config = yaml.safe_load(handle)
+    except (OSError, yaml.YAMLError) as exc:
+        return [f"could not load YAML config {path}: {exc}"]
     if expand_environment:
         config = _expand_environment(config)
     return validate_config(config, check_paths=check_paths)

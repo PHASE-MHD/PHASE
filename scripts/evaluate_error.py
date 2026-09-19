@@ -43,6 +43,13 @@ def parse_args():
     parser.add_argument("--problem", choices=("turbulence", "kh"), required=True)
     parser.add_argument("--re", type=positive_float, required=True, help="Evaluation Re=Rm.")
     parser.add_argument("--max-samples", type=positive_int, default=None)
+    parser.add_argument(
+        "--sample-id",
+        type=nonnegative_int,
+        action="append",
+        default=None,
+        help="Evaluate only this source sample ID; repeat for multiple IDs.",
+    )
     parser.add_argument("--num-workers", type=nonnegative_int, default=0)
     parser.add_argument("--num-sample-steps", type=positive_int, default=32)
     parser.add_argument("--diffusion-seed", type=int, default=42)
@@ -73,6 +80,7 @@ def main():
         max_samples=args.max_samples,
         diffusion_seed=args.diffusion_seed,
         num_sample_steps=args.num_sample_steps,
+        sample_ids=set(args.sample_id) if args.sample_id is not None else None,
     )
     results = evaluate_records(records, problem=args.problem, lx=args.lx, ly=args.ly)
     metadata.update(

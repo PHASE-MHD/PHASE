@@ -109,6 +109,7 @@ def _deterministic_records(
     device: torch.device,
     num_workers: int,
     max_samples: int | None,
+    sample_ids: set[int] | None,
 ) -> tuple[Iterator[EvaluationRecord], dict]:
     loader = _deterministic_test_loader(config, num_workers)
     model = create_model(config).to(device)
@@ -135,6 +136,8 @@ def _deterministic_records(
                 else:
                     batch_re = target_re
                     sample_id = int(loader.dataset.indices[batch_index])
+                if sample_ids is not None and sample_id not in sample_ids:
+                    continue
                 inputs = inputs.to(device, non_blocking=True).contiguous()
                 truth = truth.to(device, non_blocking=True)
                 prediction = model_forward(model, inputs, metadata)
@@ -187,6 +190,7 @@ def _diffusion_records(
     max_samples: int | None,
     diffusion_seed: int,
     num_sample_steps: int,
+    sample_ids: set[int] | None,
 ) -> tuple[Iterator[EvaluationRecord], dict]:
     configured_sigma_data = config.get("model_params", {}).get("sigma_data")
     test_loader = get_diffusion_test_dataloader(config, num_workers=num_workers)
@@ -215,6 +219,8 @@ def _diffusion_records(
                     sample_id = (
                         int(ids[trajectory_index]) if ids is not None else trajectory_index
                     )
+                if sample_ids is not None and sample_id not in sample_ids:
+                    continue
                 torch.manual_seed(diffusion_seed + int(sample_id))
                 if device.type == "cuda":
                     torch.cuda.manual_seed_all(diffusion_seed + int(sample_id))
@@ -288,6 +294,7 @@ def build_test_inference(
     max_samples: int | None = None,
     diffusion_seed: int = 42,
     num_sample_steps: int = 32,
+    sample_ids: set[int] | None = None,
 ) -> tuple[Iterator[EvaluationRecord], dict]:
     """Build a held-out-test iterator and immutable run provenance."""
     checkpoint_path = Path(checkpoint_path).resolve()
@@ -304,6 +311,7 @@ def build_test_inference(
             max_samples=max_samples,
             diffusion_seed=diffusion_seed,
             num_sample_steps=num_sample_steps,
+            sample_ids=sample_ids,
         )
     else:
         records, details = _deterministic_records(
@@ -313,6 +321,7 @@ def build_test_inference(
             device=device,
             num_workers=num_workers,
             max_samples=max_samples,
+            sample_ids=sample_ids,
         )
     return records, {
         "model": family,
@@ -320,5 +329,10 @@ def build_test_inference(
         "re": float(target_re),
         "checkpoint": str(checkpoint_path),
         "checkpoint_sha256": sha256_file(checkpoint_path),
+        "requested_sample_ids": (
+            sorted(int(value) for value in sample_ids)
+            if sample_ids is not None
+            else None
+        ),
         **details,
     }

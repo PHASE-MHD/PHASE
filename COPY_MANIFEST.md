@@ -1,7 +1,6 @@
 # PHASE copy manifest
 
-Status: assembly in progress. Batches 1--11 are implemented; KH batches remain
-inventory entries until their provenance checks are complete.
+Status: Batches 1--14b are implemented and audited. Release hardening remains.
 
 This is the literal legacy-source manifest for rebuilding the public PHASE
 repository from MHD data through preprocessing, deterministic training,

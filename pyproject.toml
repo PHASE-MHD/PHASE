@@ -36,6 +36,9 @@ scot = [
   "accelerate==0.31.0",
   "transformers==4.29.2",
 ]
+visualization = [
+  "matplotlib>=3.7,<4",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -58,3 +58,5 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
   `docs/kh_residual_diffusion.md`
 - Unified held-out-test evaluation for tFNO, DINO, scOT, and PHASE:
   `docs/evaluation.md`
+- Unified held-out-test visualization for all model families:
+  `docs/visualization.md`

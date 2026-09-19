@@ -21,3 +21,6 @@ locked previous DINO full-field recipe and the guarded PHASE residual recipes.
 - `evaluate_error.py`: run the unified held-out-test evaluator for tFNO, DINO,
   deterministic scOT, or residual PHASE. It requires an explicit Re and writes
   JSON, aggregate CSV, per-sample CSV, and text reports.
+- `visualize.py`: generate held-out-test DNS/model/error fields, turbulence
+  spectra and RMS-normalized PDFs, or KH passive-tracer post-processing. It
+  requires an explicit Re and sample ID and records artifact hashes.

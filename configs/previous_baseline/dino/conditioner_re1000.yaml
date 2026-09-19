@@ -1,4 +1,6 @@
 # Architecture used to load the external DINOs-paper tFNO conditioner.
+config_type: conditioner
+
 model_params:
   model_type: tfno
   model_variant: 3d

@@ -24,3 +24,6 @@ locked previous DINO full-field recipe and the guarded PHASE residual recipes.
 - `visualize.py`: generate held-out-test DNS/model/error fields, turbulence
   spectra and RMS-normalized PDFs, or KH passive-tracer post-processing. It
   requires an explicit Re and sample ID and records artifact hashes.
+- `validate_configs.py`: audit one recipe or the complete config tree. Add
+  `--check-paths` after setting environment variables to catch missing inputs
+  before requesting a GPU.

@@ -15,3 +15,5 @@ the four-channel single-Re DT warm-start prerequisite and the canonical
 single- and multi-Re Kelvin-Helmholtz scOT and residual-diffusion chains at
 t=[0,5]. Batch-level validation
 records are stored as `batch_*.md`.
+Batch 15 release hardening is recorded in
+`batch_15_release_hardening.md`.

@@ -66,6 +66,7 @@ predictions and DNS or residual targets have different distributions.
 ## Raw simulation conversion
 
 Dedalus HDF5 conversion and statistics fitting are preprocessing operations,
-not dataloader responsibilities. Public scripts for those operations will be
-added in the preprocessing batch. Generated NPY, NPZ, HDF5, checkpoint, log,
-and output files remain excluded from Git.
+not dataloader responsibilities. Public scripts for those operations are in
+`scripts/prepare_data.py` and `scripts/compute_statistics.py`.
+Generated NPY, NPZ, HDF5, checkpoint, log, and output files remain excluded
+from Git.

@@ -1,9 +1,26 @@
 # Reproducible environments
 
-Exact Python 3.11 environment files for the supported Gadi GPU platforms will
-be added after dependency reconciliation. Portable dependency ranges belong in
-`pyproject.toml`; CUDA-specific pins belong here.
+PHASE supports Python 3.11. The Gadi login-node Python is not supported.
 
-The default Python executable on the Gadi login node is currently Python
-3.7.7 and is not supported by PHASE. Installation, tests, and training must be
-run inside one of the documented Python 3.11 environments or containers.
+Create the pinned CUDA 12.1 environment from the repository root:
+
+    conda env create -f environments/phase-cuda121.yml
+    conda activate phase
+    python -m pip install -e .
+
+The environment pins direct dependencies used by the audited paths. Record the
+realized environment for every production run:
+
+    conda list --explicit > "${OUTPUT_ROOT}/environment-explicit.txt"
+    python -m pip freeze > "${OUTPUT_ROOT}/pip-freeze.txt"
+
+scOT is deliberately installed separately. Use the audited no-dependency
+command in README_poseidon.md so upstream metadata cannot replace PyTorch.
+
+Before requesting a GPU, run:
+
+    phase-validate-configs configs
+    pytest -q -m "not gpu and not checkpoint"
+
+The legacy consolidation container uses Python 3.10 and is provenance only,
+not the public release environment.

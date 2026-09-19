@@ -1,7 +1,7 @@
 """Shared PHASE utilities."""
 
 from .batches import model_forward, move_metadata_to_device, unpack_batch
-from .config import load_config
+from .config import load_config, save_config
 from .data_utils import (
     apply_denormalization,
     get_dataset_normalizer,
@@ -16,4 +16,5 @@ __all__ = [
     "model_forward",
     "move_metadata_to_device",
     "unpack_batch",
+    "save_config",
 ]

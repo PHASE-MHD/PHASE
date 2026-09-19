@@ -634,7 +634,10 @@ def _validate_four_channel_common(
             "fallback_poseidon_num_channels"
         ) == 6
         and model.get("fallback_poseidon_num_out_channels") == 6,
-        "the model must predict [u, v, Bx, By]": model.get("out_channels") == 4,
+        "the model must predict four physical fields [u, v, Bx, By]": model.get(
+            "out_channels"
+        )
+        == 4,
         "magnetic channels must map to POSEIDON channels [4, 5]": model.get(
             "magnetic_channel_indices"
         ) == [4, 5],

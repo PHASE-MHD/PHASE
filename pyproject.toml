@@ -23,8 +23,9 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
+  "build>=1.2,<2",
   "matplotlib>=3.7,<4",
-  "pytest",
+  "pytest>=8,<9",
 ]
 tfno = [
   "tensorly-torch==0.5.0",
@@ -42,6 +43,9 @@ scot = [
 visualization = [
   "matplotlib>=3.7,<4",
 ]
+
+[project.scripts]
+phase-validate-configs = "phase.cli.validate_configs:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -1,0 +1,121 @@
+"""Release-level checks for every public experiment recipe."""
+
+from pathlib import Path
+
+import pytest
+import yaml
+
+from phase.config_validation import (
+    discover_config_paths,
+    validate_config,
+    validate_config_file,
+)
+
+
+ROOT = Path(__file__).parents[2]
+
+
+@pytest.mark.parametrize("path", discover_config_paths(ROOT / "configs"))
+def test_every_public_config_passes_static_validation(path):
+    assert validate_config_file(path, expand_environment=False) == []
+
+
+def test_residual_recipe_rejects_direct_targets():
+    path = ROOT / "configs/turbulence/single_re/phase_re1000.yaml"
+    config = yaml.safe_load(path.read_text())
+    config["dataset_params"]["prediction_mode"] = "direct"
+    errors = validate_config(config)
+    assert any("prediction_mode='residual'" in error for error in errors)
+
+
+def test_conditioner_is_not_treated_as_a_training_recipe():
+    path = ROOT / "configs/previous_baseline/dino/conditioner_re1000.yaml"
+    assert validate_config_file(path, expand_environment=False) == []
+
+
+def test_kh_time_contract_is_checked():
+    path = ROOT / "configs/kh/multi_re/residual_diffusion_t0_5.yaml"
+    config = yaml.safe_load(path.read_text())
+    config["dataset_params"]["frames_per_trajectory"] = 41
+    errors = validate_config(config)
+    assert any("frames_per_trajectory must be 51" in error for error in errors)
+
+
+def test_check_paths_reports_unexpanded_environment_variables():
+    path = ROOT / "configs/previous_baseline/tfno/re1000.yaml"
+    config = yaml.safe_load(path.read_text())
+    errors = validate_config(config, check_paths=True)
+    assert any("unresolved environment variables" in error for error in errors)
+
+
+def test_malformed_config_reports_errors_instead_of_crashing():
+    errors = validate_config({"model_params": {"model_type": "tfno"}})
+    assert "missing config.dataset_params" in errors
+
+
+def test_per_re_path_templates_are_expanded(tmp_path):
+    for re_value in (80, 1000):
+        (tmp_path / f"Re{re_value}.npz").touch()
+    config = {
+        "config_type": "conditioner",
+        "model_params": {
+            "model_type": "tfno",
+            "in_channels": 6,
+            "out_channels": 3,
+            "num_fno_layers": 8,
+        },
+        "normalization_params": {
+            "re_values": [80, 1000],
+            "inputs_stats_template": str(tmp_path / "Re{re}.npz"),
+        },
+        "dataset_params": {
+            "data_path": str(tmp_path),
+            "train_size": 1,
+            "val_plus_test_size": 1,
+            "sub_t": 1,
+            "sub_x": 1,
+        },
+    }
+    assert validate_config(config, check_paths=True) == []
+
+
+def test_multi_re_data_files_are_checked(tmp_path):
+    data_root = tmp_path / "data"
+    output_root = tmp_path / "output"
+    output_root.mkdir()
+    for re_value in (80, 1000):
+        directory = data_root / f"mhd_Re{re_value}_N2"
+        directory.mkdir(parents=True)
+        (directory / "fields.npy").touch()
+    config = {
+        "model_params": {"model_type": "poseidon-mhd-re-finetune"},
+        "normalization_params": {},
+        "dataset_params": {
+            "data_root": str(data_root),
+            "data_file": "fields.npy",
+            "n": 2,
+            "re_values": [80, 1000],
+            "rem_values": [80, 1000],
+            "sub_t": 1,
+            "sub_x": 1,
+        },
+        "loss_params": {
+            "nu": 0.001,
+            "eta": 0.001,
+            "data_weight": 1.0,
+            "ic_weight": 1.0,
+            "pde_weight": 1.0,
+        },
+        "dataloader_params": {
+            name: {"batch_size": 1} for name in ("train", "validation", "test")
+        },
+        "optimizer_params": {"optimizer_type": "adamw", "lr": 1e-4},
+        "train_params": {
+            "epochs": 1,
+            "checkpoint_path": str(output_root / "model.pt"),
+        },
+    }
+    assert validate_config(config, check_paths=True) == []
+    (data_root / "mhd_Re80_N2" / "fields.npy").unlink()
+    errors = validate_config(config, check_paths=True)
+    assert any("mhd_Re80_N2/fields.npy" in error for error in errors)

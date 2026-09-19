@@ -15,5 +15,7 @@ Public, path-independent reproduction guides:
 - unified held-out-test metrics: `evaluation.md`;
 - held-out-test fields, turbulence spectra/PDFs, and KH tracer diagnostics:
   `visualization.md`.
+- clean-checkout experiment order: `reproduction.md`;
+- publication/release checks: `release_checklist.md`.
 
 Checkpoint and historical-run details live under `provenance/`.

@@ -7,6 +7,9 @@
 
 GPU and checkpoint tests must use their corresponding pytest markers.
 
+Batch 15 adds `unit/test_config_validation.py` to validate every public YAML
+and guard DINO/PHASE mode, paired four-channel normalization, and KH time.
+
 The external tFNO compatibility test is enabled with:
 
 ```bash

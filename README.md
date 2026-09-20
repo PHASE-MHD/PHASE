@@ -27,6 +27,8 @@ are tracked in Git. Small synthetic fixtures may be stored under
 
 See `COPY_MANIFEST.md` for the audited legacy-source inventory and
 `README_src_changes.md` for the rationale behind the required consolidation.
+See `README_file_provenance.md` for the directory-by-directory and
+file-by-file description of purpose, origin, and intentional source changes.
 Canonical array layouts and normalization rules are documented in
 `docs/data_format.md`. Data conversion and train-only statistics are
 documented in `docs/preprocessing.md`.

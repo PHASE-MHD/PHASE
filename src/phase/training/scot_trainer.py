@@ -944,8 +944,9 @@ def _validate_kh_single_re(config):
         and groups.get("pretrained_weight_decay") == 1.0e-2
         and groups.get("new_weight_decay") == 0.0
         and not optimizer.get("use_scheduler", True),
-        "single-Re KH training must start fresh for 100 epochs": train.get("epochs")
-        == 100
+        "single-Re KH training window must match the declared mode": (
+            _valid_dt_training_window(train, dataset)
+        )
         and train.get("is_finetune", False)
         and not str(train.get("warm_start_checkpoint", "")).strip()
         and not str(train.get("load_checkpoint", "")).strip(),
@@ -1028,9 +1029,9 @@ def _validate_kh_multi_re(config):
         and groups.get("pretrained_weight_decay") == 1.0e-2
         and groups.get("new_weight_decay") == 0.0
         and not optimizer.get("use_scheduler", True),
-        "multi-Re KH must warm-start weights and begin at epoch zero": train.get(
-            "epochs"
-        ) == 100
+        "multi-Re KH must warm-start weights and begin at epoch zero": (
+            _valid_dt_training_window(train, dataset)
+        )
         and not train.get("is_finetune", True)
         and bool(str(train.get("warm_start_checkpoint", "")).strip())
         and not str(train.get("load_checkpoint", "")).strip(),
@@ -1038,12 +1039,25 @@ def _validate_kh_multi_re(config):
             "checkpoint_metric"
         ) == "denorm_rel_l2"
         and train.get("validation_interval") == 5,
-        "tiny KH validation must use five samples per Re every epoch": train.get(
-            "tiny_validation_interval"
-        ) == 1
-        and train.get("tiny_validation_samples_per_re") == 5
-        and train.get("tiny_validation_batch_size") == 10
-        and train.get("tiny_validation_seed") == 42,
+        "tiny KH validation must match the declared mode": (
+            train.get("acceptance_run") is True
+            and all(
+                key not in train
+                for key in (
+                    "tiny_validation_interval",
+                    "tiny_validation_samples_per_re",
+                    "tiny_validation_batch_size",
+                    "tiny_validation_seed",
+                )
+            )
+        )
+        or (
+            train.get("acceptance_run") is not True
+            and train.get("tiny_validation_interval") == 1
+            and train.get("tiny_validation_samples_per_re") == 5
+            and train.get("tiny_validation_batch_size") == 10
+            and train.get("tiny_validation_seed") == 42
+        ),
     }
     failed = [message for message, passed in checks.items() if not passed]
     if failed:

@@ -47,3 +47,19 @@ jobs `179452368`--`179452373` with shorter limits. KH acceptance is an optional
 integration sanity check and is not a public-release gate: the canonical
 `t=[0,5]` KH artifacts already passed strict checkpoint compatibility in Batch
 16. Final outcomes may be appended if the replacement chain is allowed to run.
+
+## First replacement outcome
+
+The first replacement job, `179452368.gadi-pbs`, started on 2026-09-21 and
+failed before training because the runtime KH guard still required 100 epochs.
+PBS then removed the five strict `afterok` dependents without running them. The
+static validator had accepted the reduced recipe, so this exposed a missing
+runtime-guard regression test rather than a model or data failure.
+
+The runtime guards now accept only the explicit reduced contract of ten epochs
+and sample fractions `[0.2, 0.1, 0.1]`; production recipes remain locked to 100
+epochs and full data. The multi-Re acceptance recipe also intentionally omits
+the expensive tiny-validation diagnostic while production retains its exact
+five-samples-per-Re cadence. Direct runtime-guard regression coverage was added
+for both KH scOT acceptance recipes. No KH jobs were resubmitted as part of
+this source correction.

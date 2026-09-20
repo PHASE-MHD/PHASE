@@ -6,6 +6,11 @@ import pytest
 import yaml
 
 from phase.config_validation import validate_config
+from phase.training.scot_trainer import (
+    _validate_kh_multi_re,
+    _validate_kh_single_re,
+)
+from phase.utils import load_config
 
 
 ROOT = Path(__file__).parents[2]
@@ -72,3 +77,14 @@ def test_kh_acceptance_diffusion_is_four_field_residual_projection():
         assert model["re_conditioning"]["enabled"] is False
         assert data["prediction_mode"] == "residual"
         assert data["residual_target"] is True
+
+
+def test_kh_acceptance_scot_recipes_pass_runtime_guards(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATA_ROOT", str(tmp_path / "data"))
+    monkeypatch.setenv("OUTPUT_ROOT", str(tmp_path / "output"))
+
+    single_re = load_config(CONFIG_ROOT / "single_re_scot.yaml")
+    multi_re = load_config(CONFIG_ROOT / "multi_re_scot.yaml")
+
+    _validate_kh_single_re(single_re)
+    _validate_kh_multi_re(multi_re)

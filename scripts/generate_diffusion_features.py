@@ -65,6 +65,11 @@ def generate_features(config, checkpoint_path, output_root, batch_size=4, num_wo
         num_workers=num_workers,
         train_size=dataset["train_size"],
         val_plus_test_size=dataset["val_plus_test_size"],
+        train_sample_fraction=dataset.get("train_sample_fraction", 1.0),
+        validation_sample_fraction=dataset.get(
+            "validation_sample_fraction", 1.0
+        ),
+        test_sample_fraction=dataset.get("test_sample_fraction", 1.0),
         seed=dataset.get("seed", 42),
         sub_t=dataset.get("sub_t", 1),
         sub_x=dataset.get("sub_x", 1),

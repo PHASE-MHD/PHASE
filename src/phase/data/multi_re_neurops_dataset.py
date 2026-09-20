@@ -51,6 +51,7 @@ class MultiReMHDDataset(Dataset):
         split: str = "train",
         train_size_per_re: Optional[int] = None,
         val_plus_test_size_per_re: Optional[int] = None,
+        sample_fraction: float = 1.0,
         seed: int = 42,
         sub_t: int = 1,
         sub_x: int = 1,
@@ -73,6 +74,9 @@ class MultiReMHDDataset(Dataset):
         self.split = split
         self.sub_t = sub_t
         self.sub_x = sub_x
+        self.sample_fraction = float(sample_fraction)
+        if self.sample_fraction <= 0.0 or self.sample_fraction > 1.0:
+            raise ValueError("sample_fraction must be in (0, 1].")
 
         first = self.datasets[0]
         self.channel_last = first.ndim == 5 and first.shape[-1] in (3, 4)
@@ -132,6 +136,9 @@ class MultiReMHDDataset(Dataset):
                 selected = shuffled[train_size : train_size + val_size]
             else:
                 selected = shuffled[train_size + val_size : train_size + val_plus_test]
+
+            keep = max(1, int(round(len(selected) * self.sample_fraction)))
+            selected = selected[:keep]
 
             for sample_idx in selected:
                 flat_idx = len(self.samples)
@@ -338,9 +345,21 @@ def get_multi_re_dataloaders(
         y_range=tuple(dataset_params.get("y_range", (0, 1.0))),
     )
 
-    train_dataset = MultiReMHDDataset(split="train", **common_kwargs)
-    val_dataset = MultiReMHDDataset(split="val", **common_kwargs)
-    test_dataset = MultiReMHDDataset(split="test", **common_kwargs)
+    train_dataset = MultiReMHDDataset(
+        split="train",
+        sample_fraction=dataset_params.get("train_sample_fraction", 1.0),
+        **common_kwargs,
+    )
+    val_dataset = MultiReMHDDataset(
+        split="val",
+        sample_fraction=dataset_params.get("validation_sample_fraction", 1.0),
+        **common_kwargs,
+    )
+    test_dataset = MultiReMHDDataset(
+        split="test",
+        sample_fraction=dataset_params.get("test_sample_fraction", 1.0),
+        **common_kwargs,
+    )
 
     balanced = dataset_params.get("balanced_re_batches", False)
     res_per_batch = dataset_params.get("res_per_batch")

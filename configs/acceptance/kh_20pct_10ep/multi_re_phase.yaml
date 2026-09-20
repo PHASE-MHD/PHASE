@@ -1,0 +1,101 @@
+# End-to-end KH acceptance: clean MR residual warm start, t=[0,5], 10 epochs.
+config_type: diffusion
+
+model_params:
+  model_type: elucidated
+  base_dim: 128
+  dim_mults: [1, 2, 3, 5, 8, 12]
+  channels: 4
+  self_condition: true
+  learned_variance: false
+  learned_sinusoidal_cond: false
+  random_fourier_features: false
+  sinusoidal_pos_emb_theta: 10000
+  learned_sinusoidal_dim: 16
+  dropout: 0.0
+  attn_heads: 8
+  attn_dim_head: 64
+  flash_attn: true
+  image_size: 128
+  num_sample_steps: 32
+  sigma_min: 0.002
+  sigma_max: 80
+  sigma_data: 0.5
+  rho: 7
+  P_mean: -1.2
+  P_std: 1.2
+  S_churn: 80
+  S_tmin: 0.05
+  S_tmax: 50
+  S_noise: 1.003
+  field_representation: magnetic
+  helmholtz_projection: true
+  project_velocity: true
+  project_B: true
+  projection_mode: full_field_residual
+  domain_size_x: 1.0
+  domain_size_y: 1.0
+  use_vorticity_loss: false
+  use_current_loss: false
+  vorticity_loss_weight: 0.0
+  current_loss_weight: 0.0
+  # The reported diffusion U-Net is not Reynolds-number conditioned.
+  re_conditioning: {enabled: false}
+
+normalization_params:
+  type: per_re_paired_minmax
+  channel_groups: [[0, 1], [2, 3]]
+  feature_range: [-1, 1]
+  re_values: [80, 200, 400, 650, 1000, 1500, 2050, 2750, 3600, 4500]
+  default_re: 1000.0
+  inputs_stats_template: ${STATS_ROOT}/acceptance/kh_20pct_10ep/multi_re/phase_t0_5/Re{re}_inputs_stats.npz
+  targets_stats_template: ${STATS_ROOT}/acceptance/kh_20pct_10ep/multi_re/phase_t0_5/Re{re}_residual_targets_stats.npz
+
+dataset_params:
+  train_path: ${FEATURE_ROOT}/acceptance/kh_20pct_10ep/multi_re/phase_t0_5/train
+  val_path: ${FEATURE_ROOT}/acceptance/kh_20pct_10ep/multi_re/phase_t0_5/val
+  test_path: ${FEATURE_ROOT}/acceptance/kh_20pct_10ep/multi_re/phase_t0_5/test
+  seed: 42
+  source_train_sample_fraction: 0.2
+  source_validation_sample_fraction: 0.1
+  source_test_sample_fraction: 0.1
+  return_metadata: true
+  balanced_re_batches: true
+  res_per_batch: 10
+  prediction_mode: residual
+  residual_target: true
+  source_time_range: [0.0, 5.0]
+  source_output_dt: 0.02
+  source_sub_t: 5
+  frames_per_trajectory: 51
+
+dataloader_params:
+  train: {batch_size: 64, num_workers: 8, shuffle: true, pin_memory: true}
+train_loader_params:
+  batch_size: 64
+  shuffle: true
+  num_workers: 8
+  pin_memory: true
+
+optimizer_params:
+  optimizer_type: adamw
+  lr: 5.0e-5
+  weight_decay: 1.0e-4
+  betas: [0.9, 0.999]
+  param_groups: {enabled: false}
+  use_scheduler: true
+  scheduler_type: cosine
+  T_max: 1000
+  eta_min: 2.5e-5
+
+train_params:
+  recipe: kh_phase_residual_multi_re
+  epochs: 10
+  acceptance_run: true
+  checkpoint_path: ${OUTPUT_ROOT}/checkpoints/kh_20pct_10ep/multi_re_phase_t0_5.pt
+  warm_start_checkpoint: ${OUTPUT_ROOT}/checkpoints/kh_20pct_10ep/single_re_phase_re1000.pt
+  warm_start_mode: model_weights_only
+  validation_interval: 5
+  checkpoint_metric: denorm_rel_l2
+  clip_grad: true
+  clip_grad_max_norm: 1.0

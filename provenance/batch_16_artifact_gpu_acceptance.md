@@ -58,3 +58,22 @@ then frozen as the sixteenth manifest artifact, independently hashed, and
 strict-loaded through the public single-Re residual recipe. It records
 denormalized relative L2 `0.028242717292159797` and SHA-256
 `ff57dd73a0ba31a43f65acdda6cf0bb188128a71700cf39204b22bc7fcdf998e`.
+
+## Paranoid audit follow-up
+
+The 2026-09-20 follow-up audit independently recomputed all 16 SHA-256
+digests, reran all 12 external-checkpoint compatibility tests, validated all 15
+public recipes, and reran the complete ordinary suite. Results were `12 passed`
+for checkpoint compatibility and `153 passed, 16 deselected` for the ordinary
+suite after hardening.
+
+The audit found no model, checkpoint, normalization, warm-start, residual
+reconstruction, or Helmholtz-projection defect. It did find that the manifest
+loader trusted individual record structure too heavily. The loader and unit
+tests now reject malformed records, duplicate IDs, environment variables and
+paths, invalid sizes, hashes and epochs, absolute paths, and parent traversal.
+
+The real-CUDA source path was unchanged by this hardening. Its retained V100
+acceptance remains `4 passed`; this CPU-side follow-up did not resubmit that
+already successful GPU job. End-to-end data-to-evaluation smoke tests remain
+the explicit pre-release TODO in `docs/release_checklist.md`.

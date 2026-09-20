@@ -201,7 +201,15 @@ def _validate_recipe(config):
         "single optimizer group": not config.get("optimizer_params", {})
         .get("param_groups", {})
         .get("enabled", False),
+        "training length must match its declared mode": train.get("epochs")
+        == (10 if train.get("acceptance_run") is True else 100),
     }
+    if train.get("acceptance_run") is True:
+        checks["acceptance source fractions"] = [
+            dataset.get("source_train_sample_fraction"),
+            dataset.get("source_validation_sample_fraction"),
+            dataset.get("source_test_sample_fraction"),
+        ] == [0.2, 0.1, 0.1]
     expected_norm = (
         "paired_minmax"
         if recipe in _SINGLE_RE_RESIDUAL_RECIPES

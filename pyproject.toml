@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "phase"
 version = "0.1.0"
-description = "PHASE"
+description = "Physics-adapted neural operators for incompressible MHD"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [

@@ -47,6 +47,35 @@ def test_four_channel_configs_are_locked(monkeypatch, tmp_path):
     assert multi["optimizer_params"]["param_groups"]["boundary_group"] == "pretrained"
 
 
+def test_dt_acceptance_scot_configs_keep_production_recipe(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATA_ROOT", str(tmp_path / "data"))
+    monkeypatch.setenv("OUTPUT_ROOT", str(tmp_path / "output"))
+    root = Path(__file__).parents[2]
+    single = load_config(
+        root / "configs/acceptance/dt_20pct_10ep/single_re_scot.yaml"
+    )
+    multi = load_config(
+        root / "configs/acceptance/dt_20pct_10ep/multi_re_scot.yaml"
+    )
+
+    _validate_four_channel_single_re(single)
+    _validate_four_channel_multi_re(multi)
+    for config in (single, multi):
+        assert config["train_params"]["epochs"] == 10
+        assert config["train_params"]["acceptance_run"] is True
+        assert [
+            config["dataset_params"][key]
+            for key in (
+                "train_sample_fraction",
+                "validation_sample_fraction",
+                "test_sample_fraction",
+            )
+        ] == [0.2, 0.1, 0.1]
+    assert multi["train_params"]["warm_start_checkpoint"] == single["train_params"][
+        "checkpoint_path"
+    ]
+
+
 @pytest.mark.parametrize(
     ("which", "path", "value", "message"),
     [

@@ -169,6 +169,7 @@ def _validate_operator(config, errors):
     loss = _mapping(config, "loss_params", errors)
     loaders = _mapping(config, "dataloader_params", errors)
     norm = _mapping(config, "normalization_params", errors)
+    train = config["train_params"]
     if loss is None or loaders is None or norm is None:
         return
     _require(data, ("sub_t", "sub_x"), "dataset_params", errors)
@@ -207,6 +208,33 @@ def _validate_operator(config, errors):
                     f"normalization_params.{key} length must match "
                     "model_params.out_channels"
                 )
+
+    for key in (
+        "train_sample_fraction",
+        "validation_sample_fraction",
+        "test_sample_fraction",
+    ):
+        value = data.get(key)
+        if value is not None and (
+            not isinstance(value, (int, float))
+            or isinstance(value, bool)
+            or not 0.0 < float(value) <= 1.0
+        ):
+            errors.append(f"dataset_params.{key} must be in (0, 1]")
+
+    if train.get("acceptance_run") is True:
+        if train.get("epochs") != 10:
+            errors.append("acceptance scOT recipes must use 10 epochs")
+        fractions = [
+            data.get("train_sample_fraction"),
+            data.get("validation_sample_fraction"),
+            data.get("test_sample_fraction"),
+        ]
+        if fractions != [0.2, 0.1, 0.1]:
+            errors.append(
+                "acceptance scOT recipes require sample fractions "
+                "[0.2, 0.1, 0.1]"
+            )
 
     re_values = data.get("re_values")
     rem_values = data.get("rem_values")
@@ -286,6 +314,33 @@ def _validate_diffusion(config, errors):
             )
     elif model.get("helmholtz_projection"):
         errors.append("previous DINO must not enable PHASE Helmholtz projection")
+
+    if train.get("acceptance_run") is True:
+        if train.get("epochs") != 10:
+            errors.append("acceptance diffusion recipes must use 10 epochs")
+        fractions = [
+            data.get("source_train_sample_fraction"),
+            data.get("source_validation_sample_fraction"),
+            data.get("source_test_sample_fraction"),
+        ]
+        if fractions != [0.2, 0.1, 0.1]:
+            errors.append(
+                "acceptance diffusion recipes require source fractions "
+                "[0.2, 0.1, 0.1]"
+            )
+
+    for key in (
+        "train_sample_fraction",
+        "validation_sample_fraction",
+        "test_sample_fraction",
+    ):
+        value = data.get(key)
+        if value is not None and (
+            not isinstance(value, (int, float))
+            or isinstance(value, bool)
+            or not 0.0 < float(value) <= 1.0
+        ):
+            errors.append(f"dataset_params.{key} must be in (0, 1]")
 
     if "source_time_range" in data:
         time_range = data["source_time_range"]

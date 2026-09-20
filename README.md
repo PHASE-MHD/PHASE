@@ -1,14 +1,16 @@
 # PHASE
 
-PHASE is currently being consolidated into a reproducible public research
-repository for incompressible magnetohydrodynamics models.
+PHASE is a reproducible research implementation of physics-adapted neural
+operators for incompressible magnetohydrodynamics. It includes canonical data
+preprocessing, previous tFNO and DINO baselines, single- and multi-regime scOT
+ablations, gated Reynolds-number adapters, Helmholtz projection, direct-field
+physics losses, and residual diffusion for decaying turbulence and
+Kelvin--Helmholtz instability.
 
-The repository is being assembled incrementally from audited legacy implementations,
-with checkpoint-compatibility and regression tests at each stage. The current
-package includes canonical data preprocessing, the previous tFNO and DINO
-baselines, the single-regime three-channel scOT ablations, naive and
-gated-adapter multi-regime conditioning, and the four-channel PHASE chain with Helmholtz projection,
-direct-field physics losses, and residual diffusion for both decaying turbulence and KH.
+The public package was consolidated from audited research implementations with
+configuration guards, checkpoint-compatibility tests, and explicit provenance
+for every reported model family. Training data and model checkpoints remain
+external artifacts and are never committed to the repository.
 
 ## Current status
 

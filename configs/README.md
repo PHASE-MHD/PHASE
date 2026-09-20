@@ -21,3 +21,8 @@ Implemented ablation configs:
 - `kh/multi_re/scot_t0_5.yaml`: canonical ten-regime KH scOT with global paired P99 normalization, gated adapters, tiny monitoring, and full-validation checkpointing.
 - `kh/single_re/residual_diffusion_re1000.yaml`: four-field KH residual diffusion from random weights.
 - `kh/multi_re/residual_diffusion_t0_5.yaml`: ten-regime KH residual diffusion with per-Re paired normalization and a weights-only single-Re warm start.
+- `acceptance/dt_20pct_10ep/`: reduced end-to-end DT acceptance recipes.
+  These retain the canonical model recipes while using 20% of training data,
+  10% of each held-out split, and 10 epochs. They are not paper-result
+  configurations.
+- `acceptance/kh_20pct_10ep/`: reduced canonical KH `t=[0,5]` recipes with 51 frames, 20% of training data, 10% of each held-out split, and 10 epochs.

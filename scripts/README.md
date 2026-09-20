@@ -30,3 +30,9 @@ locked previous DINO full-field recipe and the guarded PHASE residual recipes.
 - `validate_configs.py`: audit one recipe or the complete config tree. Add
   `--check-paths` after setting environment variables to catch missing inputs
   before requesting a GPU.
+- `submit_ablation_smoke_suite.sh`: generate and optionally submit reduced
+  smoke tests for the first six DT ablations.
+- `submit_dt_acceptance_chain.sh` and `submit_kh_acceptance_chain.sh`: generate
+  and optionally submit six dependent data-to-model acceptance stages for DT
+  or KH. These PBS launchers require explicit site paths and a project code;
+  use `DRY_RUN=1` to inspect generated scripts without submitting jobs.

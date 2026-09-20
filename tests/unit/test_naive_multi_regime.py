@@ -114,6 +114,21 @@ def test_naive_multi_regime_guard_requires_weight_only_warm_start(
         _validate_naive_multi_re_ablation(config)
 
 
+def test_naive_multi_regime_allows_explicit_short_acceptance_run(
+    monkeypatch, tmp_path
+):
+    config = deepcopy(_config(monkeypatch, tmp_path))
+    config["train_params"]["epochs"] = 10
+    with pytest.raises(ValueError, match="training length and sample fractions"):
+        _validate_naive_multi_re_ablation(config)
+
+    config["dataset_params"]["train_sample_fraction"] = 0.2
+    config["dataset_params"]["validation_sample_fraction"] = 0.1
+    config["dataset_params"]["test_sample_fraction"] = 0.1
+    config["train_params"]["acceptance_run"] = True
+    _validate_naive_multi_re_ablation(config)
+
+
 def test_balanced_sampler_emits_one_sample_per_regime():
     dataset = type("Dataset", (), {})()
     dataset.flat_indices_by_re_idx = {

@@ -4,10 +4,23 @@
 import argparse
 import hashlib
 import os
+import re
 import shlex
 from pathlib import Path
 
 import yaml
+
+
+_ARTIFACT_FIELDS = {
+    "id",
+    "role",
+    "env_var",
+    "path_from_artifact_root",
+    "bytes",
+    "sha256",
+    "epoch",
+}
+_ENV_VAR_PATTERN = re.compile(r"^[A-Z_][A-Z0-9_]*$")
 
 
 def sha256(path, chunk_size=16 * 1024 * 1024):
@@ -21,8 +34,72 @@ def sha256(path, chunk_size=16 * 1024 * 1024):
 def load_manifest(path):
     with Path(path).open("r", encoding="utf-8") as stream:
         manifest = yaml.safe_load(stream)
+    if not isinstance(manifest, dict):
+        raise ValueError("Checkpoint manifest must be a mapping.")
     if manifest.get("version") != 1 or not isinstance(manifest.get("artifacts"), list):
         raise ValueError("Unsupported or malformed checkpoint manifest.")
+
+    root_env = manifest.get("artifact_root_env")
+    if not isinstance(root_env, str) or not _ENV_VAR_PATTERN.fullmatch(root_env):
+        raise ValueError("artifact_root_env must be a valid environment variable name.")
+
+    seen_ids = set()
+    seen_env_vars = set()
+    seen_paths = set()
+    for index, artifact in enumerate(manifest["artifacts"]):
+        if not isinstance(artifact, dict):
+            raise ValueError(f"Artifact {index} must be a mapping.")
+        missing = sorted(_ARTIFACT_FIELDS - set(artifact))
+        if missing:
+            raise ValueError(f"Artifact {index} is missing fields: {', '.join(missing)}")
+
+        artifact_id = artifact["id"]
+        env_var = artifact["env_var"]
+        path_value = artifact["path_from_artifact_root"]
+        if not isinstance(path_value, str) or not path_value:
+            raise ValueError(
+                f"Artifact {artifact_id} has an invalid path_from_artifact_root."
+            )
+        relative_path = Path(path_value)
+        digest = artifact["sha256"]
+        byte_size = artifact["bytes"]
+        epoch = artifact["epoch"]
+
+        if not isinstance(artifact_id, str) or not artifact_id:
+            raise ValueError(f"Artifact {index} has an invalid id.")
+        if artifact_id in seen_ids:
+            raise ValueError(f"Duplicate artifact id: {artifact_id}")
+        if not isinstance(artifact["role"], str) or not artifact["role"].strip():
+            raise ValueError(f"Artifact {artifact_id} has an invalid role.")
+        if not isinstance(env_var, str) or not _ENV_VAR_PATTERN.fullmatch(env_var):
+            raise ValueError(f"Artifact {artifact_id} has an invalid env_var.")
+        if env_var in seen_env_vars:
+            raise ValueError(f"Duplicate artifact env_var: {env_var}")
+        if relative_path.is_absolute() or ".." in relative_path.parts:
+            raise ValueError(
+                f"Artifact {artifact_id} path must remain below the artifact root."
+            )
+        normalized_path = relative_path.as_posix()
+        if normalized_path in seen_paths:
+            raise ValueError(f"Duplicate artifact path: {normalized_path}")
+        if (
+            isinstance(byte_size, bool)
+            or not isinstance(byte_size, int)
+            or byte_size <= 0
+        ):
+            raise ValueError(f"Artifact {artifact_id} has an invalid byte size.")
+        if not isinstance(digest, str) or not re.fullmatch(
+            r"[0-9a-fA-F]{64}", digest
+        ):
+            raise ValueError(f"Artifact {artifact_id} has an invalid SHA-256 digest.")
+        if epoch is not None and (
+            isinstance(epoch, bool) or not isinstance(epoch, int) or epoch < 0
+        ):
+            raise ValueError(f"Artifact {artifact_id} has an invalid epoch.")
+
+        seen_ids.add(artifact_id)
+        seen_env_vars.add(env_var)
+        seen_paths.add(normalized_path)
     return manifest
 
 

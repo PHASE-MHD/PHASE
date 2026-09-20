@@ -1,3 +1,4 @@
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -24,7 +25,39 @@ def test_checkpoint_manifest_is_complete_and_unambiguous():
         assert len(artifact["sha256"]) == 64
         int(artifact["sha256"], 16)
         assert artifact["bytes"] > 0
-        assert not Path(artifact["path_from_artifact_root"]).is_absolute()
+        artifact_path = Path(artifact["path_from_artifact_root"])
+        assert not artifact_path.is_absolute()
+        assert ".." not in artifact_path.parts
+
+
+def test_manifest_loader_rejects_unsafe_and_malformed_records(tmp_path):
+    from scripts.verify_artifact_manifest import load_manifest
+
+    source = ROOT / "provenance/checkpoint_manifest.yaml"
+    manifest = yaml.safe_load(source.read_text(encoding="utf-8"))
+
+    cases = []
+    unsafe_path = deepcopy(manifest)
+    unsafe_path["artifacts"][0]["path_from_artifact_root"] = "../outside.pt"
+    cases.append((unsafe_path, "must remain below"))
+
+    duplicate_env = deepcopy(manifest)
+    duplicate_env["artifacts"][1]["env_var"] = duplicate_env["artifacts"][0]["env_var"]
+    cases.append((duplicate_env, "Duplicate artifact env_var"))
+
+    bad_digest = deepcopy(manifest)
+    bad_digest["artifacts"][0]["sha256"] = "not-a-digest"
+    cases.append((bad_digest, "invalid SHA-256"))
+
+    bad_path_type = deepcopy(manifest)
+    bad_path_type["artifacts"][0]["path_from_artifact_root"] = 7
+    cases.append((bad_path_type, "invalid path_from_artifact_root"))
+
+    for index, (candidate, message) in enumerate(cases):
+        path = tmp_path / f"manifest_{index}.yaml"
+        path.write_text(yaml.safe_dump(candidate), encoding="utf-8")
+        with pytest.raises(ValueError, match=message):
+            load_manifest(path)
 
 
 def test_manifest_verifier_checks_size_and_hash(tmp_path):

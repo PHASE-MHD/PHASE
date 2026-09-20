@@ -28,6 +28,25 @@ def test_residual_recipe_rejects_direct_targets():
     assert any("prediction_mode='residual'" in error for error in errors)
 
 
+def test_invalid_operator_sample_fraction_is_rejected():
+    path = ROOT / "configs/acceptance/dt_20pct_10ep/single_re_scot.yaml"
+    config = yaml.safe_load(path.read_text())
+    config["dataset_params"]["train_sample_fraction"] = 0.0
+    assert "dataset_params.train_sample_fraction must be in (0, 1]" in validate_config(
+        config
+    )
+
+
+def test_acceptance_diffusion_source_fractions_are_locked():
+    path = ROOT / "configs/acceptance/dt_20pct_10ep/single_re_phase.yaml"
+    config = yaml.safe_load(path.read_text())
+    config["dataset_params"]["source_test_sample_fraction"] = 1.0
+    assert any(
+        "acceptance diffusion recipes require source fractions" in error
+        for error in validate_config(config)
+    )
+
+
 def test_conditioner_is_not_treated_as_a_training_recipe():
     path = ROOT / "configs/previous_baseline/dino/conditioner_re1000.yaml"
     assert validate_config_file(path, expand_environment=False) == []

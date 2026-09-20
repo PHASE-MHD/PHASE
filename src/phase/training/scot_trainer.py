@@ -370,7 +370,7 @@ def _validate_naive_multi_re_ablation(config):
         "the scheduler must be disabled": not optimizer.get(
             "use_scheduler", True
         ),
-        "the locked run must target 100 epochs": train.get("epochs") == 100,
+        "training length and sample fractions must match the declared mode": _valid_dt_training_window(train, dataset),
         "checkpoint selection must use normalized validation loss": train.get(
             "checkpoint_metric"
         )
@@ -570,7 +570,7 @@ def _validate_gated_adapter_multi_re_ablation(config):
         "the scheduler must be disabled": not optimizer.get(
             "use_scheduler", True
         ),
-        "the locked run must target 100 epochs": train.get("epochs") == 100,
+        "training length and sample fractions must match the declared mode": _valid_dt_training_window(train, dataset),
         "the run must remain a fine-tune": train.get("is_finetune", False),
         "checkpoint selection must use normalized validation loss": train.get(
             "checkpoint_metric"
@@ -708,6 +708,18 @@ def _validate_four_channel_common(
         raise ValueError("Invalid four-channel PHASE config: " + "; ".join(failed))
 
 
+def _valid_dt_training_window(train, dataset):
+    """Keep reduced acceptance runs explicit and production recipes locked."""
+    fractions = [
+        dataset.get("train_sample_fraction", 1.0),
+        dataset.get("validation_sample_fraction", 1.0),
+        dataset.get("test_sample_fraction", 1.0),
+    ]
+    if train.get("acceptance_run") is True:
+        return train.get("epochs") == 10 and fractions == [0.2, 0.1, 0.1]
+    return train.get("epochs") == 100 and fractions == [1.0, 1.0, 1.0]
+
+
 def _validate_four_channel_single_re(config):
     _validate_four_channel_common(config)
     dataset = config["dataset_params"]
@@ -752,8 +764,9 @@ def _validate_four_channel_single_re(config):
             groups.get("pretrained_weight_decay"), groups.get("new_weight_decay")
         ] == [1.0e-2, 0.0],
         "the scheduler must be disabled": not optimizer.get("use_scheduler", True),
-        "single-Re training must start fresh for 100 epochs": train.get("epochs") == 100
-        and train.get("is_finetune", False)
+        "single-Re training length must match its declared mode": _valid_dt_training_window(
+            train, dataset
+        ) and train.get("is_finetune", False)
         and not str(train.get("warm_start_checkpoint", "")).strip()
         and not str(train.get("load_checkpoint", "")).strip(),
         "checkpoint selection must use normalized validation loss": train.get(
@@ -843,9 +856,9 @@ def _validate_four_channel_multi_re(config):
             groups.get("pretrained_weight_decay"), groups.get("new_weight_decay")
         ] == [1.0e-2, 0.0],
         "the scheduler must be disabled": not optimizer.get("use_scheduler", True),
-        "multi-Re training must warm-start weights but begin at epoch zero": train.get(
-            "epochs"
-        ) == 100
+        "multi-Re training must warm-start weights but begin at epoch zero": (
+            _valid_dt_training_window(train, dataset)
+        )
         and train.get("is_finetune", False)
         and bool(str(train.get("warm_start_checkpoint", "")).strip())
         and not str(train.get("load_checkpoint", "")).strip(),
@@ -1087,6 +1100,9 @@ def train_scot(config):
             num_workers=loaders["train"].get("num_workers", 0),
             train_size=dataset["train_size"],
             val_plus_test_size=dataset["val_plus_test_size"],
+            train_sample_fraction=dataset.get("train_sample_fraction", 1.0),
+            validation_sample_fraction=dataset.get("validation_sample_fraction", 1.0),
+            test_sample_fraction=dataset.get("test_sample_fraction", 1.0),
             seed=dataset.get("seed", 42),
             sub_t=dataset.get("sub_t", 1),
             sub_x=dataset.get("sub_x", 1),

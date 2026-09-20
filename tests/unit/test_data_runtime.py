@@ -36,6 +36,34 @@ def test_single_re_splits_are_disjoint():
     assert outputs.shape == (4, 3, 4, 4)
 
 
+def test_single_re_sample_fractions_preserve_canonical_split_boundaries():
+    data = torch.randn(20, 4, 3, 4, 4)
+    common = dict(
+        x_data=data[:, :, :1],
+        y_data=data,
+        train_size=12,
+        val_plus_test_size=8,
+        seed=11,
+    )
+    full = {
+        split: MHDDataset(split=split, **common)
+        for split in ("train", "val", "test")
+    }
+    reduced = {
+        "train": MHDDataset(split="train", sample_fraction=0.5, **common),
+        "val": MHDDataset(split="val", sample_fraction=0.5, **common),
+        "test": MHDDataset(split="test", sample_fraction=0.5, **common),
+    }
+    assert [len(reduced[name]) for name in ("train", "val", "test")] == [6, 2, 2]
+    for name in reduced:
+        assert np.array_equal(
+            reduced[name].indices, full[name].indices[: len(reduced[name])]
+        )
+    assert set(reduced["train"].indices).isdisjoint(reduced["val"].indices)
+    assert set(reduced["train"].indices).isdisjoint(reduced["test"].indices)
+    assert set(reduced["val"].indices).isdisjoint(reduced["test"].indices)
+
+
 def test_multi_re_metadata_and_balanced_batches():
     arrays = [
         np.zeros((6, 3, 4, 4, 4), dtype=np.float32),
@@ -62,6 +90,35 @@ def test_multi_re_metadata_and_balanced_batches():
     for batch in sampler:
         re_indices = {int(dataset.samples[index][0]) for index in batch}
         assert re_indices == {0, 1}
+
+
+def test_multi_re_sample_fraction_is_applied_independently_per_regime():
+    arrays = [
+        np.zeros((10, 3, 4, 4, 4), dtype=np.float32),
+        np.ones((10, 3, 4, 4, 4), dtype=np.float32),
+    ]
+    common = dict(
+        datasets=arrays,
+        re_values=[80.0, 1000.0],
+        rem_values=[80.0, 1000.0],
+        train_size_per_re=6,
+        val_plus_test_size_per_re=4,
+        seed=5,
+    )
+    full = MultiReMHDDataset(split="train", **common)
+    reduced = MultiReMHDDataset(split="train", sample_fraction=0.5, **common)
+    assert len(reduced) == 6
+    assert all(len(indices) == 3 for indices in reduced.flat_indices_by_re_idx.values())
+    for re_idx in (0, 1):
+        reduced_samples = [
+            reduced.samples[index][1]
+            for index in reduced.flat_indices_by_re_idx[re_idx]
+        ]
+        full_samples = [
+            full.samples[index][1]
+            for index in full.flat_indices_by_re_idx[re_idx]
+        ]
+        assert reduced_samples == full_samples[:3]
 
 
 def test_diffusion_residual_targets_preserve_metadata(tmp_path):

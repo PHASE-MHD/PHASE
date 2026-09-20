@@ -16,6 +16,7 @@ Public, path-independent reproduction guides:
 - held-out-test fields, turbulence spectra/PDFs, and KH tracer diagnostics:
   `visualization.md`.
 - clean-checkout experiment order: `reproduction.md`;
+- reduced end-to-end integration chains: `dt_acceptance_chain.md` and `kh_acceptance_chain.md`;
 - publication/release checks: `release_checklist.md`.
 
 Checkpoint and historical-run details live under `provenance/`.

@@ -16,6 +16,7 @@ class MHDDataset(Dataset):
         split="train",
         train_size=1000,
         val_plus_test_size=200,
+        sample_fraction=1.0,
         seed=42,
         sub_t=1,
         sub_x=1,
@@ -65,6 +66,15 @@ class MHDDataset(Dataset):
             raise ValueError(
                 f"Split {split} not recognized. Use 'train', 'val', or 'test'"
             )
+
+        sample_fraction = float(sample_fraction)
+        if sample_fraction <= 0.0 or sample_fraction > 1.0:
+            raise ValueError("sample_fraction must be in (0, 1].")
+        if sample_fraction < 1.0:
+            original_count = len(self.indices)
+            keep = max(1, int(round(original_count * sample_fraction)))
+            self.indices = self.indices[:keep]
+            print(f"Using {sample_fraction:.3f} {split} sample fraction: {keep}/{original_count}")
 
         print(f"Initialized {split} dataset with {len(self.indices)} samples")
 
@@ -141,6 +151,9 @@ def get_dataloaders(
     num_workers=4,
     train_size=1000,
     val_plus_test_size=200,
+    train_sample_fraction=1.0,
+    validation_sample_fraction=1.0,
+    test_sample_fraction=1.0,
     seed=42,
     sub_t=1,
     sub_x=1,
@@ -207,6 +220,7 @@ def get_dataloaders(
         split="train",
         train_size=train_size,
         val_plus_test_size=val_plus_test_size,
+        sample_fraction=train_sample_fraction,
         seed=seed,
         sub_t=sub_t,
         sub_x=sub_x,
@@ -221,6 +235,7 @@ def get_dataloaders(
         split="val",
         train_size=train_size,
         val_plus_test_size=val_plus_test_size,
+        sample_fraction=validation_sample_fraction,
         seed=seed,
         sub_t=sub_t,
         sub_x=sub_x,
@@ -235,6 +250,7 @@ def get_dataloaders(
         split="test",
         train_size=train_size,
         val_plus_test_size=val_plus_test_size,
+        sample_fraction=test_sample_fraction,
         seed=seed,
         sub_t=sub_t,
         sub_x=sub_x,

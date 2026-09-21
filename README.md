@@ -25,8 +25,6 @@ No training datasets, model checkpoints, logs, or generated analysis outputs
 are tracked in Git. Small synthetic fixtures may be stored under
 `tests/fixtures/`.
 
-See `README_src_changes.md` for the audited legacy-source inventory and the
-rationale behind the required consolidation.
 Canonical array layouts and normalization rules are documented in
 `docs/data_format.md`. Data conversion and train-only statistics are
 documented in `docs/preprocessing.md`.

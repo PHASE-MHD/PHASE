@@ -15,9 +15,8 @@ Selected implementation components are adapted from:
 - [MHD-World](https://github.com/rhaldarpurdue/MHD-World) and its project
   development variants
 
-Adapted components and their source origins are summarized in
-`README_src_changes.md`. The original MIT notice applicable to those portions
-is reproduced below.
+The original MIT notice applicable to the adapted portions is reproduced
+below.
 
 ```text
 MIT License
@@ -42,6 +41,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
-
-See `README_src_changes.md` for the source inventory and intentional changes
-made during admission to the public package.

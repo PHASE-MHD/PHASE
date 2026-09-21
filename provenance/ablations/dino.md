@@ -13,8 +13,8 @@
 - Validation: epochs 10, 20, ..., 100; no epoch-zero validation
 - Validation and evaluation sampling: 32 EDM steps
 - Reported checkpoint: epoch 100, selected by denormalized relative L2
-- Training job: `178482355.gadi-pbs`
-- Evaluation job: `178575135.gadi-pbs`, held-out test split
+- Training job: `178482355`
+- Evaluation job: `178575135`, held-out test split
 
 ## External conditioner
 
@@ -47,6 +47,6 @@ The checkpoint is retained only as an external compatibility artifact.
 - legacy conditioner config: `dbc40a3e43466f0bf6b86a891dffd45a6a277f8a88eb1c06f724bc9768c7577d`
 - legacy feature generator: `7bf0e901cc2249f1a3d382990d497433dd6b5fedfbbb5f32595baab48867545a`
 
-The public trainer removes unrelated multi-Re diagnostics and Gadi-specific
+The public trainer removes unrelated multi-Re diagnostics and cluster-specific
 paths but preserves the model constructor, EDM objective, optimizer,
 scheduler, validation cadence, sampling settings, and checkpoint criterion.

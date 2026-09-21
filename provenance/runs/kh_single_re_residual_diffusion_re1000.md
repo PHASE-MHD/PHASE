@@ -30,7 +30,7 @@ It exported physical-unit scOT predictions and DNS targets from the exact
 Legacy feature and statistics roots:
 
 - `DINOs/diffusion_data/mag/singleRe_KH_diffusion_best/Re1000`
-- `DINOs/stats_gadi/mag/singleRe_KH_diffusion_best`
+- `DINOs/stats/mag/singleRe_KH_diffusion_best`
 
 The input statistics are fitted to the 800 training scOT trajectories. Target
 statistics are fitted to `DNS - scOT` from those same trajectories. Paired

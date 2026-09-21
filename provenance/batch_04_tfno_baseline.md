@@ -17,6 +17,6 @@ Excluded intentionally:
 - the downloaded tFNO checkpoint used by DINO;
 - diffusion training;
 - FNO, neuralop-TFNO, and UNO variants;
-- scheduler/cluster launch scripts tied to Gadi.
+- scheduler/cluster launch scripts tied to the legacy scheduler.
 
 Exact run provenance and frozen hashes are in `provenance/ablations/tfno.md`.

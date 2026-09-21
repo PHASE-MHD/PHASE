@@ -12,7 +12,7 @@
 - Validation: every epoch
 - Gradient clipping: maximum norm 1.0
 - Best checkpoint: epoch 99, selected by model validation loss
-- Legacy job: `178392259.gadi-pbs`
+- Legacy job: `178392259`
 
 ## Frozen legacy sources
 

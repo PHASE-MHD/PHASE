@@ -3,8 +3,8 @@
 ## Reported artifact
 
 - Legacy repository: `MHD-World-Re-naive`
-- Initial job: `178899488.gadi-pbs`
-- Continuation job: `179159775.gadi-pbs`
+- Initial job: `178899488`
+- Continuation job: `179159775`
 - Paper checkpoint: continuation-local epoch 53, effective epoch 113
 - Selection metric: normalized validation loss, `4.93993993806839`
 - Checkpoint denormalized relative L2: `0.03595153240114451`

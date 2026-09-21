@@ -19,6 +19,6 @@ Excluded intentionally:
 - PHASE residual diffusion;
 - Helmholtz projection and derivative losses;
 - Re conditioning;
-- Gadi launch scripts and generated features.
+- cluster launch scripts and generated features.
 
 See `docs/previous_baseline_dino.md` and `provenance/ablations/dino.md`.

@@ -3,17 +3,17 @@ SR / single_re = single-regime
 MR / multi_re = multi-regime
 
 Previous baseline configs:
-- `previous_baseline/tfno/re1000.yaml`: three-channel Re=Rm=1000 tFNO trained from scratch without warm start
+- `previous_baseline/tfno/re1000.yaml`: three-channel Re=Rm=1000 tFNO trained from scratch without warm start (Rosofsky and Huerta (2023))
 - `previous_baseline/dino/conditioner_re1000.yaml`: tFNO conditioner used to generate DINO features
-- `previous_baseline/dino/re1000.yaml`: full-field DINO conditioned on the Re=Rm=1000 tFNO
+- `previous_baseline/dino/re1000.yaml`: full-field DINO conditioned on the Re=Rm=1000 tFNO (Kacmaz et al. (2025))
 
 Ablation configs:
 - `ablations/scot_without_tl/re1000.yaml`: three-channel scOT trained from scratch at `Re=Rm=1000`
 - `ablations/scot_with_tl/re1000.yaml`: three-channel scOT initialized with transfer learning from POSEIDON weights `camlab-ethz/Poseidon-T` at `Re=Rm=1000`
 - `ablations/naive_multi_regime/multi_re.yaml`: warm-started three-channel
   scOT with naive Re/Rm input maps
-- `ablations/gated_adapter_multi_regime/multi_re.yaml`: warm-started three-channel
-  scOT with gated adapter Re/Rm conditioning
+- `ablations/gated_adapter_multi_regime/multi_re.yaml`: warm-started three-channel scOT with gated adapter Re/Rm conditioning
+
 Turbulence configs:
 - `turbulence/single_re/scot_re1000.yaml`: four-channel Re=Rm=1000 scOT with
   POSEIDON transfer learning, Helmholtz projection, and physics losses

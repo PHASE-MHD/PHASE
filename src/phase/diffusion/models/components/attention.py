@@ -107,7 +107,7 @@ class Attend(nn.Module):
         dropout_p = self.dropout if self.training else 0.0
 
         # PyTorch 2.1+ exposes torch.nn.attention.sdpa_kernel; older 2.x builds
-        # use torch.backends.cuda.sdp_kernel. Support both so Gadi containers
+        # use torch.backends.cuda.sdp_kernel. Support both so older containers
         # can select the requested backend without crashing during evaluation.
         if hasattr(torch.nn, "attention") and hasattr(torch.nn.attention, "sdpa_kernel"):
             backends = []

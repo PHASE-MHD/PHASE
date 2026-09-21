@@ -359,7 +359,7 @@ at the destinations shown.
   -> `configs/ablations/scot_without_tl/re1000.yaml` (**implemented in Batch 6**)
 - `MHD-World/configs/config_poseidon_mhd_finetune_Re1000_vecpot_TL_bs16_nueta1e3_corrected_100ep.yaml`
   -> `configs/ablations/scot_with_tl/re1000.yaml` (**implemented in Batch 7**)
-- `MHD-World-Re-naive/configs/gadi/config_poseidon_mhd_re_input_vecpot_TL_corrected_Re1000_warm_bs1_100ep.yaml`
+- `MHD-World-Re-naive/configs/config_poseidon_mhd_re_input_vecpot_TL_corrected_Re1000_warm_bs1_100ep.yaml`
   -> `configs/ablations/naive_multi_regime/multi_re.yaml` (**implemented in Batch 8**)
 - `MHD-World-new/configs/config_poseidon_mhd_re_vecpot_TL_corrected_Re1000_warm_FiLMAdapter_bs1_100ep.yaml`
   -> `configs/ablations/gated_adapter_multi_regime/multi_re.yaml` (**implemented in Batch 9**)
@@ -370,7 +370,7 @@ at the destinations shown.
   -> `configs/turbulence/single_re/scot_re1000.yaml` (**implemented in Batch 10**)
 - `DINOs/configs/model_mag/poseidon_bfield/config_diffusion_Re1000_mag_helmholtz_poseidon_bfield_p99_bheavy_100ep.yaml`
   -> `configs/turbulence/single_re/diffusion_re1000.yaml`
-- `MHD-World-new/configs/config_poseidon_mhd_re_finetune_bfield_p99_bheavy_warm_deep_adapters_gadi_continue48h.yaml`
+- `MHD-World-new/configs/config_poseidon_mhd_re_finetune_bfield_p99_bheavy_warm_deep_adapters_continue48h.yaml`
   -> `configs/turbulence/multi_re/scot.yaml` (**implemented in Batch 10**)
 - `DINOs/configs/model_mag/poseidon_multi_re_bfield_full_physics_epoch91_residual_no_recond_resume_epoch45_per_re_norm_full_fullfieldproj_diagfix_pdf_48h_lr5e5/config_diffusion_multiRe_helmholtz_poseidon_bfield_full_physics_epoch91_residual_no_recond_resume_epoch45_per_re_norm_full_fullfieldproj_diagfix_pdf_48h_lr5e5.yaml`
   -> `configs/turbulence/multi_re/residual_diffusion.yaml`

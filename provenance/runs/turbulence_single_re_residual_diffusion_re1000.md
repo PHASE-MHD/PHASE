@@ -5,7 +5,7 @@ at `Re=Rm=1000`. Unlike the historical warm-start artifact, this model learns
 residuals for all four fields `[ux,uy,Bx,By]` from random initialization.
 
 - public recipe: `configs/turbulence/single_re/phase_re1000.yaml`;
-- legacy training job: `179342063.gadi-pbs`;
+- legacy training job: `179342063`;
 - completed epochs: 0--99;
 - checkpoint selection: denormalized relative L2 at scheduled validation;
 - selected epoch: 90;

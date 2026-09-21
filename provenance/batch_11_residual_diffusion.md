@@ -47,7 +47,7 @@ reports source epoch 90; the reported final checkpoint reports epoch 95.
 The earlier historical single-Re diffusion run reconstructed the full field.
 The corrected SR PHASE recipe instead learns `[ux,uy,Bx,By]` residuals and
 starts diffusion from random weights. Feature generation completed in legacy
-job `179342055`; training job `179342063.gadi-pbs` completed epochs 0--99 with
+job `179342055`; training job `179342063` completed epochs 0--99 with
 exit status 0. The checkpoint selected by denormalized relative L2 was written
 at epoch 90 with `denorm_loss_rel_l2=0.028242717292159797` and
 `denorm_loss_mse=1.9426884546192013e-05`. Its SHA-256 digest is

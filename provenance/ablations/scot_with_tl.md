@@ -13,7 +13,7 @@ a three-channel `[u_x,u_y,A]` scOT trained at `Re=Rm=1000` with batch size
   `configs/config_poseidon_mhd_finetune_Re1000_vecpot_TL_bs16_nueta1e3_corrected_100ep.yaml`
 - Model: `src/neurops/poseidon_mhd_finetune.py`
 - Loss: `src/losses/physics_informed.py`
-- Training job: `178884733.gadi-pbs`
+- Training job: `178884733`
 - Selected checkpoint epoch: 98
 - Selection metric: normalized validation loss
 - Evaluation split: held-out test split, 100 trajectories

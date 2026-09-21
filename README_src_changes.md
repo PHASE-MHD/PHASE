@@ -108,7 +108,7 @@ From `MHD-World-Re-naive`:
 - Model-factory registration.
 - Metadata-aware training/loss path with per-sample transport coefficients.
 - Canonical config:
-  `configs/gadi/config_poseidon_mhd_re_input_vecpot_TL_corrected_Re1000_warm_bs1_100ep.yaml`.
+  `configs/config_poseidon_mhd_re_input_vecpot_TL_corrected_Re1000_warm_bs1_100ep.yaml`.
 
 Exclude the unrelated spectral-conditioning experiment from the first release.
 

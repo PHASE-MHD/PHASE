@@ -14,7 +14,7 @@ No legacy repository was modified and no training artifact was copied here.
 ## Validation
 
 - all 15 public YAML files passed static validation;
-- all 22 Batch 15 config tests passed under Gadi Python 3.11.7;
+- all 22 Batch 15 config tests passed under Python 3.11.7;
 - the complete CPU suite passed with 141 passed, 3 dependency-based skips,
   and 9 GPU/checkpoint tests intentionally deselected;
 - Python 3.11 compilation and Git whitespace checks passed; and
@@ -39,7 +39,7 @@ PHASE dependencies are enabled; CI now installs that source revision.
 All public CLIs import and expose help, all 15 recipes validate, YAML/TOML and
 Python compilation pass, and a fresh wheel contains no data, checkpoints,
 logs, caches, or bytecode. The wheel's validator was also executed from
-outside the source checkout under Python 3.11. The Gadi login-node module
+outside the source checkout under Python 3.11. The system Python module
 wrapper did not provide the `build` frontend, so the fresh artifact was built
 with the established project container; CI installs and runs `build` in its
 clean Python 3.11 job.

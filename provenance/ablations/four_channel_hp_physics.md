@@ -3,7 +3,7 @@
 ## Reported artifact
 
 - Legacy repository: `MHD-World-new`
-- Historical checkpoint: `poseidon_mhd_re_finetune_bfield_p99_bheavy_warm_deep_adapters_100ep_res10_gadi_continue48h.pt`
+- Historical checkpoint: `poseidon_mhd_re_finetune_bfield_p99_bheavy_warm_deep_adapters_100ep_res10_continue48h.pt`
 - Best checkpoint: epoch 91
 - Selection metric: normalized validation objective
 - Checkpoint loss: `11.978258913993836`

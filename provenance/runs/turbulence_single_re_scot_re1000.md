@@ -4,7 +4,7 @@
 
 - Repository: `MHD-World`
 - Config: `configs/config_poseidon_mhd_finetune_bfield_p99_bheavy_batch16_100ep_4h30_plots.yaml`
-- Job: `173827086.gadi-pbs`
+- Job: `173827086`
 - Checkpoint: `checkpoints/poseidon_mhd_finetune_Re1000_bfield_p99_bheavy_batch16_100ep_4h30_plots.pt`
 - Completed schedule: epochs 0--99
 - Selected checkpoint: epoch 98

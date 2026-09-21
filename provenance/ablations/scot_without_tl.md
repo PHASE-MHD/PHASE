@@ -12,7 +12,7 @@ model was trained from random initialization at `Re=Rm=1000` with batch size
 - Config: `configs/config_poseidon_mhd_finetune_Re1000_scratch_physics_nueta1e3_corrected.yaml`
 - Model: `src/neurops/poseidon_mhd_finetune.py`
 - Loss: `src/losses/physics_informed.py`
-- Training job: `178884285.gadi-pbs`
+- Training job: `178884285`
 - Selected checkpoint epoch: 95
 - Selection metric: normalized validation loss
 - Evaluation split used for the final ablation record: held-out test split

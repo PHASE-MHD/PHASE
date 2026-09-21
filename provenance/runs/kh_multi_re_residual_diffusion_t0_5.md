@@ -46,7 +46,7 @@ trajectories, with 800/100/100 trajectories from every regime and shape
 Legacy roots:
 
 - `DINOs/diffusion_data/mag/KH_multiRe_globalP99_t0_5_epoch55`
-- `DINOs/stats_gadi/mag/KH_multiRe_globalP99_t0_5_epoch55/per_re_paired_minmax_residual_targets`
+- `DINOs/stats/mag/KH_multiRe_globalP99_t0_5_epoch55/per_re_paired_minmax_residual_targets`
 
 Condition and `DNS - scOT` residual statistics are fitted independently for
 each Re using training features only. Each per-Re normalizer pairs

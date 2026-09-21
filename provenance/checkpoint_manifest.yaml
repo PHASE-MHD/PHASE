@@ -61,7 +61,7 @@ artifacts:
   - id: four_channel_multi_re_scot_epoch91
     role: Multi-Re four-channel scOT with Helmholtz projection and physics losses
     env_var: PHASE_MULTI_RE_FOUR_CHANNEL_CHECKPOINT
-    path_from_artifact_root: MHD-World-new/checkpoints/poseidon_mhd_re_finetune_bfield_p99_bheavy_warm_deep_adapters_100ep_res10_gadi_continue48h.pt
+    path_from_artifact_root: MHD-World-new/checkpoints/poseidon_mhd_re_finetune_bfield_p99_bheavy_warm_deep_adapters_100ep_res10_continue48h.pt
     bytes: 269690554
     sha256: c492c1c1b9a106df4bce556b01d94843995843cdf05c2705a76dbb7947ef1ea1
     epoch: 91

@@ -20,7 +20,7 @@ and has SHA-256
 
 ## Strict checkpoint loading
 
-Final PBS job `179375948.gadi-pbs` resolved all 16 manifest paths, checked
+Final PBS job `179375948` resolved all 16 manifest paths, checked
 their byte sizes, and ran the complete marked checkpoint suite in the project
 container. Result: `12 passed` in 311.99 seconds, exit status 0. The tests cover
 the previous tFNO/DINO artifacts, three-channel scOT ablations, four-channel DT
@@ -29,7 +29,7 @@ scOT/PHASE chains.
 
 ## Real-GPU acceptance
 
-PBS job `179375235.gadi-pbs` ran the four public model families on a V100.
+PBS job `179375235` ran the four public model families on a V100.
 Result: `4 passed` in 16.58 seconds, exit status 0. Each test constructs the
 public model, performs a CUDA forward and backward pass, and checks finite
 outputs and gradients. The diffusion cases also run the public sampler.
@@ -52,7 +52,7 @@ the raw sampler output directly; that was a test error, not a runtime defect.
 - all 15 initial SHA-256 digests were independently recomputed;
 - no checkpoint, generated output, or legacy repository file is committed.
 
-The corrected single-Re DT residual PHASE job `179342063.gadi-pbs` subsequently
+The corrected single-Re DT residual PHASE job `179342063` subsequently
 completed epochs 0--99 with exit status 0. Its selected epoch-90 checkpoint was
 then frozen as the sixteenth manifest artifact, independently hashed, and
 strict-loaded through the public single-Re residual recipe. It records

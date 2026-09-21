@@ -11,12 +11,10 @@ from .multi_re_neurops_dataset import (
     get_multi_re_dataloaders,
 )
 from .neurops_dataset import MHDDataset, get_dataloaders
-from .neurops_embedset import EmbeddedMHDDataset
 
 __all__ = [
     "BalancedReBatchSampler",
     "DiffusionDataset",
-    "EmbeddedMHDDataset",
     "MHDDataset",
     "MultiReMHDDataset",
     "get_dataloaders",

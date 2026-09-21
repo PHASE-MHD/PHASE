@@ -7,9 +7,6 @@
 - `train_tfno.py`: train the previous-study, no-warm-start tFNO baseline.
 - `verify_artifact.py`: check an external checkpoint against its documented
   SHA-256 digest.
-- `verify_artifact_manifest.py`: verify the byte size and SHA-256 digest of
-  canonical external checkpoints in `provenance/checkpoint_manifest.yaml`, or
-  emit the environment exports required by checkpoint compatibility tests.
 - `generate_diffusion_features.py`: generate full-field DINO conditioner/DNS
   pairs from the released tFNO.
 - `train_dino.py`: train the previous-study full-field EDM diffusion baseline.

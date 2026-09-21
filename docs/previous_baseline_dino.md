@@ -23,8 +23,7 @@ python scripts/verify_artifact.py /path/to/tfno_Re1000.pt \
 ```
 
 The artifact metadata reports epoch 234, but its original training job and full
-training history cannot be independently reconstructed. That limitation is retained
-in provenance.
+training history cannot be independently reconstructed. That limitation is documented here.
 
 ## 2. Prepare trajectory normalization
 

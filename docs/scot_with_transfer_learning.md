@@ -56,6 +56,6 @@ Face revision. The local cache currently resolves that model to revision
 the historical training job cannot be verified from its surviving artifacts.
 Seed 42 fixes dataset membership. The legacy entry point did not seed
 PyTorch's shuffled training order, so an independent run is not guaranteed to
-recover the reported weights bit-for-bit. Artifact hashes and strict
-checkpoint/output compatibility checks are recorded in
-`provenance/ablations/scot_with_tl.md`.
+recover the reported weights bit-for-bit. Strict checkpoint compatibility is
+covered by the checkpoint test suite; released artifact metadata will accompany
+the Hugging Face model card.

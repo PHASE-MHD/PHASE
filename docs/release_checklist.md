@@ -12,17 +12,17 @@
 - phase-validate-configs configs passes.
 - Each production recipe passes --check-paths after environment setup.
 - Re/Rm, nu/eta, time range, representation, split, normalization, warm start,
-  and checkpoint metric match provenance.
+  and checkpoint metric match the canonical config and model documentation.
 - Residual PHASE uses four fields and full-field Helmholtz projection.
 - Previous DINO remains labeled as full-field diffusion.
 - CPU tests, target-GPU smokes, and available checkpoint tests pass.
 
 ## Reported artifacts
 
-- Every canonical external checkpoint is listed in
-  `provenance/checkpoint_manifest.yaml` with its byte size and SHA-256 digest.
-- `scripts/verify_artifact_manifest.py` passes before checkpoint compatibility
-  tests or reported-result evaluation.
+- Every released checkpoint has a Hugging Face model card identifying its matching
+  config, selected epoch, byte size, and SHA-256 digest.
+- Downloaded checkpoints are verified with `scripts/verify_artifact.py` before
+  compatibility tests or reported-result evaluation.
 - Paper results use the held-out test split unless labeled otherwise.
 - Reports record checkpoint and config hashes.
 - Multi-Re evaluations state the evaluated Re.

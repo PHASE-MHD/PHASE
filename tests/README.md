@@ -130,20 +130,11 @@ residual PHASE reconstruction without requiring external checkpoints.
 
 ## Batch 16 artifact and GPU acceptance
 
-Verify all canonical checkpoint identities from the parent directory that
-contains the audited legacy repositories:
+Download checkpoints from their Hugging Face model cards, verify their SHA-256
+digests with `scripts/verify_artifact.py`, and set the checkpoint environment
+variables named by `tests/checkpoint_compatibility`. Then run:
 
 ```bash
-python scripts/verify_artifact_manifest.py \
-  --artifact-root /path/to/artifact/root
-```
-
-Use `--emit-exports` to produce the environment assignments consumed by all
-marked checkpoint tests. Run the complete checkpoint gate with:
-
-```bash
-eval "$(python scripts/verify_artifact_manifest.py \
-  --artifact-root /path/to/artifact/root --size-only --emit-exports)"
 pytest -m checkpoint tests/checkpoint_compatibility
 ```
 

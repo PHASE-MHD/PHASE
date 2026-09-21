@@ -90,6 +90,6 @@ optimizer, and scheduler and then trained on four-field residual targets. The
 public `phase.yaml` preserves that historical provenance exactly.
 
 For a clean future experiment, replace `warm_start_checkpoint` with the
-canonical corrected single-Re residual checkpoint recorded in
-`provenance/checkpoint_manifest.yaml`. Record that experiment as a new run; do
+canonical corrected single-Re residual checkpoint published on Hugging Face.
+Record that experiment as a new run; do
 not relabel it as the reported MR PHASE result.

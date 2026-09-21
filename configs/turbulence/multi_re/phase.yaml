@@ -1,4 +1,4 @@
-# Reported multi-Re DT PHASE recipe. See provenance before replacing the warm start.
+# Reported multi-Re DT PHASE recipe. See docs/turbulence_residual_diffusion.md before replacing the warm start.
 config_type: diffusion
 
 model_params:

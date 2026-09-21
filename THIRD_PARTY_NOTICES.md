@@ -42,6 +42,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-See `README_file_provenance.md`, `README_src_changes.md`, and `provenance/`
+See `README_file_provenance.md` and `README_src_changes.md`
 for the audited source inventory and the intentional changes made during
 admission to the public package.

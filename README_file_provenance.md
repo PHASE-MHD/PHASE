@@ -13,8 +13,8 @@ Generated, Git-ignored directories (`build/`, `outputs/`, `.pytest_cache/`,
 - **New**: written for this public repository.
 - **Metadata**: configuration, documentation, provenance, or licensing.
 
-`README_src_changes.md` and `provenance/batch_*.md` contain the detailed source
-paths, hashes, decisions, and validation evidence. “Working tree” is stated
+`README_src_changes.md` contains the detailed source paths and consolidation
+decisions. “Working tree” is stated
 where canonical behavior included uncommitted legacy research changes.
 
 ## Root and CI
@@ -47,9 +47,8 @@ No numerical source behavior was changed in these three generators.
 ## configs
 
 All YAMLs are **New path-independent reconstructions** of audited legacy
-configs. Absolute cluster paths and job/restart names were removed. Scientific
-settings are retained unless the corresponding provenance batch records an
-explicit correction.
+configs. Absolute cluster paths and job/restart names were removed. Scientific settings are retained unless the corresponding model documentation
+records an explicit correction.
 
 | File | Purpose |
 | --- | --- |
@@ -259,7 +258,6 @@ replace machine-specific legacy scripts and PBS launchers.
 | `visualize.py` | Unified test visualization. |
 | `validate_configs.py` | Config audit wrapper. |
 | `verify_artifact.py` | One-artifact digest verification. |
-| `verify_artifact_manifest.py` | Canonical artifact verification and test exports. |
 | `submit_ablation_smoke_suite.sh` | Reduced first-six-ablation jobs. |
 | `submit_dt_acceptance_chain.sh` | Dependent DT acceptance chain. |
 | `submit_kh_acceptance_chain.sh` | Dependent KH acceptance chain. |
@@ -356,53 +354,6 @@ records.
 | `release_checklist.md` | Release checks. |
 | `dt_acceptance_chain.md` | Reduced DT chain. |
 | `kh_acceptance_chain.md` | Reduced KH chain. |
-
-## provenance
-
-All are **New metadata**, not runtime source or weights.
-
-| File | Purpose |
-| --- | --- |
-| `README.md` | Provenance index. |
-| `checkpoint_manifest.yaml` | Canonical external paths, sizes, and SHA-256. |
-| `batch_01_shared_runtime.md` | Shared runtime admission/fixes. |
-| `batch_02_data_normalization.md` | Dataset/normalization hashes and merge. |
-| `batch_03_preprocessing.md` | Conversion/statistics consolidation. |
-| `batch_04_tfno_baseline.md` | tFNO reconstruction. |
-| `batch_05_dino_baseline.md` | DINO reconstruction. |
-| `batch_06_scot_without_tl.md` | No-TL reconstruction. |
-| `batch_07_scot_with_tl.md` | TL reconstruction. |
-| `batch_08_naive_multi_regime.md` | Naive-MR reconstruction. |
-| `batch_09_gated_adapter_multi_regime.md` | Gated-MR reconstruction/audit. |
-| `batch_10_four_channel_scot.md` | Direct-B/HP/physics admission. |
-| `batch_11_residual_diffusion.md` | DT residual diffusion audit. |
-| `batch_12_kh_scot.md` | KH scOT audit. |
-| `batch_13_kh_residual_diffusion.md` | KH diffusion audit. |
-| `batch_14_evaluation.md` | Evaluation implementation. |
-| `batch_14b_visualization.md` | Visualization implementation. |
-| `batch_15_release_hardening.md` | Packaging/config/CPU checks. |
-| `batch_16_artifact_gpu_acceptance.md` | Artifacts/checkpoints/GPU checks. |
-| `batch_17_dt_acceptance.md` | Reduced DT chain and outcomes. |
-| `batch_18_kh_acceptance.md` | Reduced KH chain and outcomes. |
-
-### provenance/ablations
-
-Each **New metadata** file records the legacy config/checkpoint, split,
-training length, reported row, and caveats: `tfno.md`, `dino.md`,
-`scot_without_tl.md`, `scot_with_tl.md`, `naive_multi_regime.md`,
-`gated_adapter_multi_regime.md`, and `four_channel_hp_physics.md`.
-
-### provenance/runs
-
-Each **New metadata** file records one canonical chain:
-`turbulence_single_re_scot_re1000.md`,
-`turbulence_single_re_residual_diffusion_re1000.md`,
-`kh_single_re_scot_re1000.md`,
-`kh_single_re_residual_diffusion_re1000.md`,
-`kh_multi_re_scot_t0_5.md`, and
-`kh_multi_re_residual_diffusion_t0_5.md`.
-
-Provenance `.gitkeep` files are empty placeholders.
 
 ## environments
 

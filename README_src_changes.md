@@ -6,13 +6,12 @@ consolidate the eight paper ablations and the selected decaying-turbulence
 Job scripts, logs, checkpoints, analysis outputs, and paper-only plotting
 scripts are excluded from the source inventory.
 
-The exact file-by-file consolidation inventory is maintained in
-`COPY_MANIFEST.md`. That manifest is authoritative for copying; this file
-explains why the recovered changes are needed.
+The file-by-file consolidation inventory is maintained in
+`README_file_provenance.md`; this file explains why the recovered changes are
+needed.
 
-It was assembled from the working trees, saved git status reports, Git
-history, source diffs, and the provenance records under
-`paper_draft_plots/ablation_table/`. Git cannot identify the author of every
+It was assembled from the legacy working trees, saved Git status reports, Git
+history, source diffs, and evaluation records. Git cannot identify the author of every
 uncommitted line, so changed means present in the recovered working state.
 
 The MHD-World directories are overlapping forks:
@@ -244,9 +243,6 @@ PHASE/
     train_scot.py
     train_diffusion.py
     evaluate.py
-  provenance/
-    ablations/
-    runs/
   tests/
 ```
 

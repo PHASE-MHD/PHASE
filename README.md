@@ -25,8 +25,8 @@ No training datasets, model checkpoints, logs, or generated analysis outputs
 are tracked in Git. Small synthetic fixtures may be stored under
 `tests/fixtures/`.
 
-See `README_src_changes.md` and `provenance/` for the audited legacy-source
-inventory and the rationale behind the required consolidation.
+See `README_src_changes.md` for the audited legacy-source inventory and the
+rationale behind the required consolidation.
 See `README_file_provenance.md` for the directory-by-directory and
 file-by-file description of purpose, origin, and intentional source changes.
 Canonical array layouts and normalization rules are documented in
@@ -36,7 +36,7 @@ The clean-checkout execution order is in `docs/reproduction.md` and release
 verification is in `docs/release_checklist.md`.
 PHASE is MIT-licensed under the project copyright in `LICENSE`. A limited
 number of adapted components retain their original attribution, recorded
-separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
+separately and precisely in `THIRD_PARTY_NOTICES.md` and `README_file_provenance.md`.
 
 ## Implemented training paths
 
@@ -71,8 +71,5 @@ separately and precisely in `THIRD_PARTY_NOTICES.md` and the provenance docs.
 
     phase-validate-configs configs
     pytest -q -m "not gpu and not checkpoint"
-    python scripts/verify_artifact_manifest.py --artifact-root /path/to/artifacts
-
 Set the paths in `docs/reproduction.md` and add `--check-paths` before an
-experiment. The artifact verifier checks the canonical external checkpoint
-sizes and SHA-256 digests recorded in `provenance/checkpoint_manifest.yaml`.
+experiment.

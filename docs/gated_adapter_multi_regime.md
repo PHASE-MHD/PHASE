@@ -53,6 +53,5 @@ each of the ten regimes per optimization step, producing an effective batch of
 Warm-started operator parameters use learning rate `1e-7` and weight decay
 `1e-2`. The new conditioning modules use learning rate `1e-3` and no weight
 decay. The public recipe targets 100 fresh multi-regime epochs and keeps the
-checkpoint with the lowest normalized validation objective. The historical
-reported artifact is documented in
-`provenance/batch_09_gated_adapter_multi_regime.md`.
+checkpoint with the lowest normalized validation objective. The reported checkpoint metadata will be
+published with its Hugging Face model card.

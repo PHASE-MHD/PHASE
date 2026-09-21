@@ -52,8 +52,7 @@ model_params:
 The historical transfer-learning YAMLs did not pin a Hugging Face model
 revision. The local artifact audited for Batch 7 currently resolves to
 `ec976ed5d25883ec9db4e486ebbeeefa9e08303b`, but this cannot be proven to
-be the revision fetched by the original training job. The trained checkpoint
-hash is pinned in the corresponding provenance record.
+be the revision fetched by the original training job. The released checkpoint hash will be published with its Hugging Face model card.
 
 At first use, Hugging Face downloads the model into its local cache. Internet
 access is therefore required unless the cache has already been populated. The

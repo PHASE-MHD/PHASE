@@ -19,4 +19,5 @@ Public, path-independent reproduction guides:
 - reduced end-to-end integration chains: `dt_acceptance_chain.md` and `kh_acceptance_chain.md`;
 - publication/release checks: `release_checklist.md`.
 
-Checkpoint and historical-run details live under `provenance/`.
+Checkpoint metadata and downloads are published with the Hugging Face model
+cards.

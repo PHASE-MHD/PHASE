@@ -9,8 +9,6 @@
 
 ## Recipes and tests
 
-- phase-validate-configs configs passes.
-- Each production recipe passes --check-paths after environment setup.
 - Re/Rm, nu/eta, time range, representation, split, normalization, warm start,
   and checkpoint metric match the canonical config and model documentation.
 - Residual PHASE uses four fields and full-field Helmholtz projection.

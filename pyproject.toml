@@ -49,9 +49,6 @@ visualization = [
   "matplotlib>=3.7,<4",
 ]
 
-[project.scripts]
-phase-validate-configs = "phase.cli.validate_configs:main"
-
 [tool.setuptools]
 package-dir = {"" = "src"}
 

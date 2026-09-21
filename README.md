@@ -65,7 +65,4 @@ separately and precisely in `THIRD_PARTY_NOTICES.md`.
 
 ## Quick validation
 
-    phase-validate-configs configs
     pytest -q -m "not gpu and not checkpoint"
-Set the paths in `docs/reproduction.md` and add `--check-paths` before an
-experiment.

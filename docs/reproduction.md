@@ -3,7 +3,7 @@
 This guide starts from simulation arrays and ends with held-out-test reports.
 DNS data, POSEIDON weights, generated features, and checkpoints are external.
 
-## Install and preflight
+## Install
 
 Create the environment in environments/README.md, install scOT as described in
 README_poseidon.md, and define:
@@ -14,14 +14,6 @@ README_poseidon.md, and define:
     export CHECKPOINT_ROOT=/path/to/external/checkpoints
     export OUTPUT_ROOT=/path/to/phase/outputs
     mkdir -p "${STATS_ROOT}" "${FEATURE_ROOT}" "${OUTPUT_ROOT}/checkpoints"
-
-Validate semantics first and local paths second:
-
-    phase-validate-configs configs
-    phase-validate-configs --check-paths configs/path/to/recipe.yaml
-
-Static validation loads neither models nor data. Path checks require expanded
-environment variables and existing inputs.
 
 ## Data
 

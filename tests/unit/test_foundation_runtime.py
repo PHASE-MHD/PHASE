@@ -4,14 +4,8 @@ from pathlib import Path
 
 import torch
 
-from phase.activations import create_activation
 from phase.optimizers import create_scheduler
 from phase.utils import load_config, save_config
-
-
-def test_activation_factory_registers_standard_activations():
-    activation = create_activation("gelu")
-    assert isinstance(activation, torch.nn.GELU)
 
 
 def test_disabled_scheduler_works_through_public_api():

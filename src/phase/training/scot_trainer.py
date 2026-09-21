@@ -871,7 +871,7 @@ def _validate_four_channel_multi_re(config):
         raise ValueError("Invalid four-channel multi-Re config: " + "; ".join(failed))
 
 
-def _validate_kh_common(config, expected_norm):
+def _validate_kh_common(config, expected_norm, expected_time_modes):
     _validate_four_channel_common(
         config, expected_norm=expected_norm, expected_tend=5.0
     )
@@ -881,22 +881,19 @@ def _validate_kh_common(config, expected_norm):
         "KH data must retain all 51 frames after sub_t=5": dataset.get("sub_t") == 5
         and dataset.get("sub_x") == 1
         and dataset.get("t_range") == [0.0, 5.0],
-        "all KH primary and derived losses must be time-relative": all(
-            loss.get(name) == "time_relative"
-            for name in (
-                "u_time_loss_mode",
-                "v_time_loss_mode",
-                "magnetic_time_loss_mode",
-                "derived_time_loss_mode",
-            )
+        "KH time-loss modes must match the reported objective": all(
+            loss.get(name) == mode
+            for name, mode in expected_time_modes.items()
         ),
-        "all KH time-relative epsilons must be 1e-6": all(
+        "all KH time-loss epsilons must be 1e-6": all(
             loss.get(name) == 1.0e-6
             for name in (
                 "u_time_loss_eps",
                 "v_time_loss_eps",
                 "magnetic_time_loss_eps",
                 "derived_time_loss_eps",
+                "vorticity_time_loss_eps",
+                "current_time_loss_eps",
             )
         ),
     }
@@ -907,7 +904,18 @@ def _validate_kh_common(config, expected_norm):
 
 def _validate_kh_single_re(config):
     expected_norm = [1.0, 1.0, 6.69424514e-02, 6.69424514e-02]
-    _validate_kh_common(config, expected_norm)
+    _validate_kh_common(
+        config,
+        expected_norm,
+        {
+            "u_time_loss_mode": "time_relative",
+            "v_time_loss_mode": "time_relative",
+            "magnetic_time_loss_mode": "time_relative",
+            "derived_time_loss_mode": "global",
+            "vorticity_time_loss_mode": "global",
+            "current_time_loss_mode": "time_relative",
+        },
+    )
     model = config["model_params"]
     dataset = config["dataset_params"]
     loaders = config["dataloader_params"]
@@ -961,7 +969,18 @@ def _validate_kh_single_re(config):
 
 def _validate_kh_multi_re(config):
     expected_norm = [1.0, 1.0, 8.06614549e-02, 8.06614549e-02]
-    _validate_kh_common(config, expected_norm)
+    _validate_kh_common(
+        config,
+        expected_norm,
+        {
+            "u_time_loss_mode": "global",
+            "v_time_loss_mode": "global",
+            "magnetic_time_loss_mode": "global",
+            "derived_time_loss_mode": "global",
+            "vorticity_time_loss_mode": "global",
+            "current_time_loss_mode": "global",
+        },
+    )
     model = config["model_params"]
     conditioning = model.get("re_conditioning", {})
     adapter = conditioning.get("deep_adapter", {})

@@ -29,10 +29,11 @@ absolute-P99 scale 0.0806614549. That legacy estimator sampled concatenated
 |Bx| and |By| values from raw trajectory indices 0:800 at all 251 frames; it
 was not computed from the later seed-split histogram routine.
 
-KH activates an opt-in time-local relative L2 objective. Spatial relative
-errors are calculated independently at each time and then averaged over time
-and batch for u_x, u_y, B_x, B_y, vorticity, and current. DT configs
-continue to use the previous global-in-time objective.
+The reported single-Re objective computes spatial relative L2 errors
+independently at each time and then averages over time and batch for u_x, u_y, B_x, B_y,
+and current; vorticity uses one global space-time relative L2. The reported
+multi-Re objective uses global space-time relative L2 for all primary and
+derived fields. DT configs retain their existing global-in-time objective.
 
 ## Training order
 

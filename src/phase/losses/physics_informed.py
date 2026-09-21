@@ -515,6 +515,10 @@ class MHDDirectBFieldLoss(nn.Module):
         magnetic_time_loss_eps: float = 1e-6,
         derived_time_loss_mode: str = "global",
         derived_time_loss_eps: float = 1e-6,
+        vorticity_time_loss_mode: Optional[str] = None,
+        vorticity_time_loss_eps: Optional[float] = None,
+        current_time_loss_mode: Optional[str] = None,
+        current_time_loss_eps: Optional[float] = None,
         **kwargs,
     ):
         super().__init__()
@@ -564,6 +568,24 @@ class MHDDirectBFieldLoss(nn.Module):
             "derived_time_loss_mode", derived_time_loss_mode
         )
         self.derived_time_loss_eps = derived_time_loss_eps
+        self.vorticity_time_loss_mode = self._validate_time_loss_mode(
+            "vorticity_time_loss_mode",
+            vorticity_time_loss_mode or self.derived_time_loss_mode,
+        )
+        self.vorticity_time_loss_eps = (
+            derived_time_loss_eps
+            if vorticity_time_loss_eps is None
+            else vorticity_time_loss_eps
+        )
+        self.current_time_loss_mode = self._validate_time_loss_mode(
+            "current_time_loss_mode",
+            current_time_loss_mode or self.derived_time_loss_mode,
+        )
+        self.current_time_loss_eps = (
+            derived_time_loss_eps
+            if current_time_loss_eps is None
+            else current_time_loss_eps
+        )
         self.last_components = {}
 
     @staticmethod
@@ -880,8 +902,8 @@ class MHDDirectBFieldLoss(nn.Module):
         omega_pred = self.curl_2d(u_pred, v_pred)
         omega_target = self.curl_2d(u_target, v_target)
         return self._component_loss(
-            omega_pred, omega_target, self.derived_time_loss_mode,
-            self.derived_time_loss_eps
+            omega_pred, omega_target, self.vorticity_time_loss_mode,
+            self.vorticity_time_loss_eps
         )
 
     def current_loss(
@@ -894,8 +916,8 @@ class MHDDirectBFieldLoss(nn.Module):
         j_pred = self.curl_2d(Bx_pred, By_pred)
         j_target = self.curl_2d(Bx_target, By_target)
         return self._component_loss(
-            j_pred, j_target, self.derived_time_loss_mode,
-            self.derived_time_loss_eps
+            j_pred, j_target, self.current_time_loss_mode,
+            self.current_time_loss_eps
         )
 
     def delta_B_loss(

@@ -90,8 +90,8 @@ pytest -m checkpoint tests/checkpoint_compatibility/test_kh_scot_legacy_checkpoi
 ```
 
 The test strict-loads both checkpoints and verifies the model-only warm-start
-boundary. Unit tests lock the KH configs, time-local loss semantics, and the
-five-sample-per-regime tiny-validation subset.
+boundary. Unit tests lock the KH configs, reported loss-reduction semantics,
+and the five-sample-per-regime tiny-validation subset.
 
 For Batch 11 checkpoint compatibility, set
 `PHASE_SINGLE_RE_DIFFUSION_CHECKPOINT` to the corrected epoch-90 residual

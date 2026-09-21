@@ -8,8 +8,8 @@ Implemented items:
 - four-channel KH configs for Re=Rm=1000 and all ten regimes;
 - canonical t=[0,5], sub_t=5, and 51-frame physical-time handling;
 - paired single-Re and global multi-Re magnetic absolute-P99 scales;
-- opt-in per-time-slice relative L2 losses for all four primary fields,
-  vorticity, and current;
+- exact reported loss reductions: time-local primary fields and current with
+  global vorticity for single-Re, and global space-time losses for multi-Re;
 - exact single-Re warm start and gated Re/Rm adapter behavior;
 - full-validation checkpoint selection every five epochs and at the final
   epoch;
@@ -17,17 +17,13 @@ Implemented items:
 - strict recipe guards, synthetic regression tests, and external checkpoint
   compatibility tests.
 
-## Historical implementation discrepancy
+## Reported loss reductions
 
-The selected single-Re legacy source applies the configured time-local loss to
-all four primary fields and current density, but leaves vorticity global in
-time. The frozen MHD-World-new source used by the historical multi-Re t=[0,5]
-run accepted all four time-loss YAML keys through kwargs but did not apply
-them. The public recipe implements the intended method selected during the KH
-experiments: all four primary fields plus both derived fields use time-local
-relative L2. Consequently, its model architecture and checkpoint schema are
-compatible with the historical checkpoints, but a fresh training trajectory
-is not expected to reproduce the historical weights bit for bit.
+The public recipes encode the effective objectives that generated the selected
+checkpoints. Single-Re training uses per-time-slice relative L2 for all four
+primary fields and current density, while vorticity uses global space-time
+relative L2. Multi-Re training uses global space-time relative L2 for all four
+primary fields, vorticity, and current. These settings match the objectives used to train the selected checkpoints.
 
 The canonical historical multi-Re result remains the global-P99 t=[0,5]
 chain. The t=[0,4] experiments are retained only as documented ablations and
@@ -57,7 +53,8 @@ The validation pass established that:
 - public loader splits are 8000/1000/1000, every balanced training batch
   contains all ten regimes, and sub_t=5 spans 51 frames from t=0 to t=5;
 - all eight public scOT recipe guards pass, including both new KH guards;
-- direct assertions verify time-local loss semantics, finite gradients,
+- direct assertions verify the reported single- and multi-Re loss reductions,
+  finite gradients,
   deterministic per-epoch tiny-validation resampling, and final-epoch full
   validation;
 - the frozen selected multi-Re implementation and public model produced the

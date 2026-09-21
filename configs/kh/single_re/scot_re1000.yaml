@@ -71,8 +71,12 @@ loss_params:
   v_time_loss_eps: 1.0e-6
   magnetic_time_loss_mode: "time_relative"
   magnetic_time_loss_eps: 1.0e-6
-  derived_time_loss_mode: "time_relative"
+  derived_time_loss_mode: "global"
   derived_time_loss_eps: 1.0e-6
+  vorticity_time_loss_mode: "global"
+  vorticity_time_loss_eps: 1.0e-6
+  current_time_loss_mode: "time_relative"
+  current_time_loss_eps: 1.0e-6
   Du_weight: 1.0
   Dv_weight: 1.0
   DBx_weight: 100.0

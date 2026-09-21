@@ -88,14 +88,18 @@ loss_params:
   v_weight: 1.0
   Bx_weight: 5.0
   By_weight: 5.0
-  u_time_loss_mode: "time_relative"
+  u_time_loss_mode: "global"
   u_time_loss_eps: 1.0e-6
-  v_time_loss_mode: "time_relative"
+  v_time_loss_mode: "global"
   v_time_loss_eps: 1.0e-6
-  magnetic_time_loss_mode: "time_relative"
+  magnetic_time_loss_mode: "global"
   magnetic_time_loss_eps: 1.0e-6
-  derived_time_loss_mode: "time_relative"
+  derived_time_loss_mode: "global"
   derived_time_loss_eps: 1.0e-6
+  vorticity_time_loss_mode: "global"
+  vorticity_time_loss_eps: 1.0e-6
+  current_time_loss_mode: "global"
+  current_time_loss_eps: 1.0e-6
   Du_weight: 1.0
   Dv_weight: 1.0
   DBx_weight: 100.0

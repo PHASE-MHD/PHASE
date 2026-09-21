@@ -29,8 +29,8 @@ five-sample-per-Re diagnostic runs every epoch for monitoring. The public
 config starts a fresh multi-Re optimizer at epoch zero;
 legacy continuation configs are provenance artifacts, not public defaults.
 
-See provenance/batch_12_kh_scot.md for the time-local-loss discrepancy in
-the frozen historical multi-Re source.
+The effective multi-Re objective uses global space-time relative L2 for all
+primary fields, vorticity, and current, matching the frozen training source.
 
 
 ## Artifact hashes

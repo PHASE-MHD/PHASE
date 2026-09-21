@@ -42,13 +42,19 @@ def test_kh_configs_are_locked(monkeypatch, tmp_path):
     assert multi["dataset_params"]["res_per_batch"] == 10
     assert multi["train_params"]["validation_interval"] == 5
     assert multi["train_params"]["checkpoint_metric"] == "denorm_rel_l2"
+    assert single["loss_params"]["u_time_loss_mode"] == "time_relative"
+    assert single["loss_params"]["v_time_loss_mode"] == "time_relative"
+    assert single["loss_params"]["magnetic_time_loss_mode"] == "time_relative"
+    assert single["loss_params"]["vorticity_time_loss_mode"] == "global"
+    assert single["loss_params"]["current_time_loss_mode"] == "time_relative"
     for key in (
         "u_time_loss_mode",
         "v_time_loss_mode",
         "magnetic_time_loss_mode",
-        "derived_time_loss_mode",
+        "vorticity_time_loss_mode",
+        "current_time_loss_mode",
     ):
-        assert multi["loss_params"][key] == "time_relative"
+        assert multi["loss_params"][key] == "global"
 
 
 @pytest.mark.parametrize(
@@ -59,7 +65,7 @@ def test_kh_configs_are_locked(monkeypatch, tmp_path):
             "single",
             ("loss_params", "magnetic_time_loss_mode"),
             "global",
-            "time-relative",
+            "reported objective",
         ),
         (
             "multi",
@@ -100,16 +106,20 @@ def test_time_relative_loss_averages_after_spatial_relative_errors():
     assert loss.item() == pytest.approx(0.55)
 
 
-def test_time_relative_mode_applies_to_primary_and_derived_fields():
+def test_single_re_modes_keep_vorticity_global_and_current_time_relative():
     criterion = MHDDirectBFieldLoss(
         u_time_loss_mode="time_relative",
         v_time_loss_mode="time_relative",
         magnetic_time_loss_mode="time_relative",
-        derived_time_loss_mode="time_relative",
+        derived_time_loss_mode="global",
+        vorticity_time_loss_mode="global",
+        current_time_loss_mode="time_relative",
         u_time_loss_eps=0.0,
         v_time_loss_eps=0.0,
         magnetic_time_loss_eps=0.0,
         derived_time_loss_eps=0.0,
+        vorticity_time_loss_eps=0.0,
+        current_time_loss_eps=0.0,
     )
     target = torch.tensor([[[[1.0, 1.0]], [[10.0, 10.0]]]])
     prediction = target + 1.0
@@ -119,8 +129,15 @@ def test_time_relative_mode_applies_to_primary_and_derived_fields():
     assert all(value == pytest.approx(0.55) for value in components.values())
 
     criterion.curl_2d = lambda qx, qy: qx
-    assert criterion.vorticity_loss(prediction, prediction, target, target).item() == pytest.approx(0.55)
-    assert criterion.current_loss(prediction, prediction, target, target).item() == pytest.approx(0.55)
+    vorticity = criterion.vorticity_loss(
+        prediction, prediction, target, target
+    ).item()
+    current = criterion.current_loss(
+        prediction, prediction, target, target
+    ).item()
+    expected_global = 2.0 / torch.sqrt(torch.tensor(202.0)).item()
+    assert vorticity == pytest.approx(expected_global)
+    assert current == pytest.approx(0.55)
 
 
 class _GroupedDataset(Dataset):

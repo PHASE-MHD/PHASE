@@ -21,7 +21,7 @@
 
 - Every released checkpoint has a Hugging Face model card identifying its matching
   config, selected epoch, byte size, and SHA-256 digest.
-- Downloaded checkpoints are verified with `scripts/verify_artifact.py` before
+- Downloaded checkpoints are verified against their published SHA-256 before
   compatibility tests or reported-result evaluation.
 - Paper results use the held-out test split unless labeled otherwise.
 - Reports record checkpoint and config hashes.

@@ -131,7 +131,7 @@ residual PHASE reconstruction without requiring external checkpoints.
 ## Batch 16 artifact and GPU acceptance
 
 Download checkpoints from their Hugging Face model cards, verify their SHA-256
-digests with `scripts/verify_artifact.py`, and set the checkpoint environment
+digests against the published values, and set the checkpoint environment
 variables named by `tests/checkpoint_compatibility`. Then run:
 
 ```bash

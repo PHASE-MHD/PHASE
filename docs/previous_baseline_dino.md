@@ -18,9 +18,11 @@ The checkpoint is external and is not distributed with PHASE. Verify the exact
 artifact used for the reported result:
 
 ```bash
-python scripts/verify_artifact.py /path/to/tfno_Re1000.pt \
-  a96152ba4dc4b341d9a336c4c619e55835e1776bda8655824f96d25398d59e7d
+sha256sum /path/to/tfno_Re1000.pt
 ```
+
+The reported SHA-256 is
+`a96152ba4dc4b341d9a336c4c619e55835e1776bda8655824f96d25398d59e7d`.
 
 The artifact metadata reports epoch 234, but its original training job and full
 training history cannot be independently reconstructed. That limitation is documented here.

@@ -121,6 +121,9 @@ normalization, warm-start boundary, validation cadence, and full-state resume.
 `unit/test_evaluation.py` verifies the common vector-potential/direct-B Fourier
 derivatives, exact-field metrics, KH metric scope, duplicate sample protection,
 model-family dispatch, and the test-only report contract.
+`unit/test_fourier_utils.py` verifies shared wavenumber ordering and analytic
+spatial derivatives on even and odd rectangular grids with unequal domain
+lengths.
 The synthetic integration test in `integration/test_evaluation_inference.py`
 exercises deterministic tFNO/scOT inference, full-field DINO sampling, and
 residual PHASE reconstruction without requiring external checkpoints.

@@ -39,7 +39,9 @@ def test_vector_potential_and_direct_b_use_identical_spectral_derivatives():
     for name in ("ux", "uy", "Bx", "By", "omega", "j"):
         assert torch.allclose(from_direct[name], from_vecpot[name], atol=1e-10)
     expected_omega = 8 * torch.pi**2 * stream
+    expected_current = 8 * torch.pi**2 * vecpot[2, 0]
     assert torch.allclose(from_direct["omega"][0], expected_omega, atol=1e-10)
+    assert torch.allclose(from_direct["j"][0], expected_current, atol=1e-10)
 
 
 def test_divergence_and_metrics_are_zero_for_exact_periodic_prediction():

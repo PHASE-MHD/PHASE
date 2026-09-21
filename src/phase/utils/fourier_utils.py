@@ -56,7 +56,7 @@ def create_wavenumbers(
         k_y_arr = torch.cat(
             [
                 torch.arange(start=0, end=ny // 2 + 1, step=1, device=device),
-                torch.arange(start=-ny // 2, end=0, step=1, device=device),
+                torch.arange(start=-k_max_y, end=0, step=1, device=device),
             ],
             0,
         )

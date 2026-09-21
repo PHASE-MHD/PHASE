@@ -31,7 +31,7 @@ def test_four_channel_checkpoints_load_and_warm_start(monkeypatch, tmp_path):
         root / "configs/turbulence/single_re/scot_re1000.yaml"
     )
     multi_config = load_config(
-        root / "configs/ablations/four_channel_hp_physics/multi_re.yaml"
+        root / "configs/turbulence/multi_re/scot.yaml"
     )
 
     single = create_model(single_config).eval()

@@ -39,7 +39,7 @@ is 42.
 | scOT with TL | configs/ablations/scot_with_tl/re1000.yaml | Poseidon-T |
 | naive MR | configs/ablations/naive_multi_regime/multi_re.yaml | corrected scOT-with-TL checkpoint |
 | gated-adapter MR | configs/ablations/gated_adapter_multi_regime/multi_re.yaml | corrected scOT-with-TL checkpoint |
-| four-channel HP/physics | configs/ablations/four_channel_hp_physics/multi_re.yaml | configs/turbulence/single_re/scot_re1000.yaml |
+| four-channel HP/physics | configs/turbulence/multi_re/scot.yaml | configs/turbulence/single_re/scot_re1000.yaml |
 | PHASE | configs/turbulence/multi_re/phase.yaml | MR scOT features and documented historical SR warm start |
 
 Use scripts/train_tfno.py for tFNO, scripts/train_scot.py for deterministic

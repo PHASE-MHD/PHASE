@@ -21,7 +21,7 @@ def _configs(monkeypatch, tmp_path):
     root = Path(__file__).parents[2]
     single = load_config(root / "configs/turbulence/single_re/scot_re1000.yaml")
     multi = load_config(
-        root / "configs/ablations/four_channel_hp_physics/multi_re.yaml"
+        root / "configs/turbulence/multi_re/scot.yaml"
     )
     return single, multi
 

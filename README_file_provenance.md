@@ -62,7 +62,7 @@ explicit correction.
 | `ablations/scot_with_tl/re1000.yaml` | Three-channel POSEIDON-transfer scOT, batch 16. |
 | `ablations/naive_multi_regime/multi_re.yaml` | Constant-map Re/Rm conditioning. |
 | `ablations/gated_adapter_multi_regime/multi_re.yaml` | Gated FiLM/deep-adapter conditioning. |
-| `ablations/four_channel_hp_physics/multi_re.yaml` | Direct-B, projection, MHD, vorticity, and current ablation. |
+| `turbulence/multi_re/scot.yaml` | Direct-B, projection, MHD, vorticity, and current ablation. |
 | `turbulence/single_re/scot_re1000.yaml` | Canonical four-channel Re=1000 DT scOT. |
 | `turbulence/single_re/phase_re1000.yaml` | Corrected residual SR PHASE. |
 | `turbulence/multi_re/phase.yaml` | Reported residual MR PHASE. |

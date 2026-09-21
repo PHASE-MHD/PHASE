@@ -41,7 +41,7 @@ every sample's PDE residual.
 ```bash
 export DATA_ROOT=/path/to/multi_re_four_channel_data
 export OUTPUT_ROOT=/path/to/outputs
-python scripts/train_scot.py --config configs/ablations/four_channel_hp_physics/multi_re.yaml
+python scripts/train_scot.py --config configs/turbulence/multi_re/scot.yaml
 ```
 
 The run uses the same paired global normalization, direct-B objective,

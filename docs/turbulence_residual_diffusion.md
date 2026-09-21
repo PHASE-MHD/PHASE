@@ -56,11 +56,11 @@ relative L2 `0.028242717292159797`.
 ## Generate multi-Re features
 
 Train the deterministic prerequisite with
-`configs/ablations/four_channel_hp_physics/multi_re.yaml`, then run:
+`configs/turbulence/multi_re/scot.yaml`, then run:
 
 ```bash
 python scripts/generate_scot_diffusion_features.py \
-  --conditioner-config configs/ablations/four_channel_hp_physics/multi_re.yaml \
+  --conditioner-config configs/turbulence/multi_re/scot.yaml \
   --conditioner-checkpoint "$MULTI_RE_SCOT_CHECKPOINT" \
   --output-root "$FEATURE_ROOT/turbulence/multi_re/phase"
 

@@ -92,7 +92,7 @@ def test_non_mapping_sections_report_errors(config, expected):
 
 
 def test_malformed_sequences_report_errors():
-    path = ROOT / "configs/ablations/four_channel_hp_physics/multi_re.yaml"
+    path = ROOT / "configs/turbulence/multi_re/scot.yaml"
     config = yaml.safe_load(path.read_text())
     config["dataset_params"]["re_values"] = 1000
     config["normalization_params"]["input_norm"] = 1.0

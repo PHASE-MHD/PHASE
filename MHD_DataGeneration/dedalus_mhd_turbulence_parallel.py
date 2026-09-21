@@ -1,23 +1,19 @@
-"""
-Dedalus script simulating a 2D periodic incompressible MHD flow with a passive
-tracer field for visualization. This script demonstrates solving a 2D periodic
-initial value problem. It can be ran serially or in parallel, and uses the
-built-in analysis framework to save data snapshots to HDF5 files. The
-`plot_snapshots.py` script can be used to produce plots from the saved data.
-The simulation should take a few cpu-minutes to run.
+"""Generate two-dimensional decaying incompressible MHD turbulence.
 
-The initial flow is in the x-direction and depends only on z. The problem is
-non-dimensionalized usign the shear-layer spacing and velocity jump, so the
-resulting viscosity and tracer diffusivity are related to the Reynolds and
-Schmidt numbers as:
+The solver uses a periodic Fourier domain and independently sampled Gaussian
+random fields for the initial stream function and magnetic vector potential.
+The velocity and magnetic fields are constructed as curls of those potentials,
+so both initial fields are divergence-free. A passive tracer initialized from
+the stream function is evolved for visualization but is not an ML data channel.
+
+The nondimensional transport coefficients are
 
     nu = 1 / Re
     eta = 1 / ReM
     D = nu / Schmidt
 
-To run and plot using e.g. 4 processes:
-    $ mpiexec -n 4 python3 shear_flow.py
-    $ mpiexec -n 4 python3 plot_snapshots.py snapshots/*.h5
+Independent trajectories can be generated concurrently with the worker count
+set by ``PBS_NCPUS``. Dedalus writes trajectory snapshots to HDF5 files.
 """
 
 

@@ -158,8 +158,6 @@ def _validate_recipe(config):
             raise ValueError("The previous DINO baseline requires direct full-field targets.")
         forbidden = (
             model_params.get("helmholtz_projection", False),
-            model_params.get("use_vorticity_loss", False),
-            model_params.get("use_current_loss", False),
         )
         if any(forbidden):
             raise ValueError("The previous DINO baseline disables PHASE physics additions.")
@@ -196,12 +194,6 @@ def _validate_recipe(config):
             and model_params.get("project_velocity") is True
             and model_params.get("project_B") is True
             and model_params.get("projection_mode") == "full_field_residual"
-        ),
-        "no derivative-loss ablation": (
-            not model_params.get("use_vorticity_loss", False)
-            and not model_params.get("use_current_loss", False)
-            and float(model_params.get("vorticity_loss_weight", 0.0)) == 0.0
-            and float(model_params.get("current_loss_weight", 0.0)) == 0.0
         ),
         "positive validation interval": int(train.get("validation_interval", 0)) > 0,
         "single optimizer group": not config.get("optimizer_params", {})

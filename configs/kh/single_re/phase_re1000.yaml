@@ -36,10 +36,6 @@ model_params:
   projection_mode: full_field_residual
   domain_size_x: 1.0
   domain_size_y: 1.0
-  use_vorticity_loss: false
-  use_current_loss: false
-  vorticity_loss_weight: 0.0
-  current_loss_weight: 0.0
 
 normalization_params:
   type: paired_minmax

@@ -1,12 +1,11 @@
 from math import sqrt
-from typing import Tuple, Optional, List, Union, Dict, Any, Callable
-import numpy as np
+from typing import Optional, Union, Dict, Any
 import torch
-from torch import nn, einsum
+from torch import nn
 import torch.nn.functional as F
 
 from tqdm import tqdm
-from einops import rearrange, repeat, reduce
+from einops import rearrange, reduce
 
 from ..utils import (
     exists,
@@ -55,10 +54,6 @@ class ElucidatedDiffusion(nn.Module):
         projection_mode: str = "output",
         domain_size_x: float = 1.0,
         domain_size_y: float = 1.0,
-        use_vorticity_loss: bool = False,
-        use_current_loss: bool = False,
-        vorticity_loss_weight: float = 1.0,
-        current_loss_weight: float = 5.0,
     ):
         """
         Initialize the Elucidated Diffusion model.
@@ -99,10 +94,6 @@ class ElucidatedDiffusion(nn.Module):
         self.S_noise = S_noise
         self.domain_size_x = domain_size_x
         self.domain_size_y = domain_size_y
-        self.use_vorticity_loss = use_vorticity_loss
-        self.use_current_loss = use_current_loss
-        self.vorticity_loss_weight = vorticity_loss_weight
-        self.current_loss_weight = current_loss_weight
         self.projection_mode = str(projection_mode or "output").lower()
 
         # Helmholtz projection setup
@@ -431,85 +422,6 @@ class ElucidatedDiffusion(nn.Module):
             self.P_mean + self.P_std * torch.randn((batch_size,), device=self.device)
         ).exp()
 
-    def curl_2d(self, qx: torch.Tensor, qy: torch.Tensor) -> torch.Tensor:
-        """
-        Calculate the z-curl of a 2D vector field with spectral derivatives.
-
-        Args:
-            qx: x-component with shape [batch, time_or_channel, nx, ny]
-            qy: y-component with shape [batch, time_or_channel, nx, ny]
-
-        Returns:
-            d(qy)/dx - d(qx)/dy with shape [batch, time_or_channel, nx, ny]
-        """
-        device = qx.device
-        dtype = qx.dtype
-        nx = qx.size(2)
-        ny = qx.size(3)
-        kx = (
-            2
-            * np.pi
-            / self.domain_size_x
-            * torch.cat(
-                [
-                    torch.arange(0, nx // 2, device=device),
-                    torch.arange(-nx // 2, 0, device=device),
-                ]
-            )
-            .reshape(1, 1, nx, 1)
-            .repeat(1, 1, 1, ny)
-        )
-        ky = (
-            2
-            * np.pi
-            / self.domain_size_y
-            * torch.cat(
-                [
-                    torch.arange(0, ny // 2, device=device),
-                    torch.arange(-ny // 2, 0, device=device),
-                ]
-            )
-            .reshape(1, 1, 1, ny)
-            .repeat(1, 1, nx, 1)
-        )
-
-        kx = kx.to(dtype)
-        ky = ky.to(dtype)
-
-        qx_h = torch.fft.fftn(qx, dim=[2, 3])
-        qy_h = torch.fft.fftn(qy, dim=[2, 3])
-        curl_h = 1j * kx * qy_h - 1j * ky * qx_h
-        curl = torch.fft.ifftn(curl_h, dim=[2, 3]).real
-        return curl
-
-    def derivative_losses(
-        self, pred: torch.Tensor, target: torch.Tensor
-    ) -> torch.Tensor:
-        """Compute optional relative MSE losses for vorticity and current."""
-        loss = pred.new_tensor(0.0)
-
-        eps = 1e-12
-
-        if self.use_vorticity_loss:
-            omega_pred = self.curl_2d(pred[:, 0:1], pred[:, 1:2])
-            omega_target = self.curl_2d(target[:, 0:1], target[:, 1:2])
-            omega_mse = F.mse_loss(omega_pred, omega_target, reduction="none")
-            omega_mse = reduce(omega_mse, "b ... -> b", "mean")
-            omega_power = reduce(omega_target.square(), "b ... -> b", "mean")
-            omega_loss = omega_mse / (omega_power + eps)
-            loss = loss + self.vorticity_loss_weight * omega_loss
-
-        if self.use_current_loss:
-            current_pred = self.curl_2d(pred[:, 2:3], pred[:, 3:4])
-            current_target = self.curl_2d(target[:, 2:3], target[:, 3:4])
-            current_mse = F.mse_loss(current_pred, current_target, reduction="none")
-            current_mse = reduce(current_mse, "b ... -> b", "mean")
-            current_power = reduce(current_target.square(), "b ... -> b", "mean")
-            current_loss = current_mse / (current_power + eps)
-            loss = loss + self.current_loss_weight * current_loss
-
-        return loss
-
     def forward(
         self,
         images: torch.Tensor,
@@ -576,8 +488,6 @@ class ElucidatedDiffusion(nn.Module):
 
         losses = F.mse_loss(denoised, images, reduction="none")
         losses = reduce(losses, "b ... -> b", "mean")
-        if self.use_vorticity_loss or self.use_current_loss:
-            losses = losses + self.derivative_losses(denoised, images)
 
         losses = losses * self.loss_weight(sigmas)
 
@@ -635,10 +545,6 @@ def elucidated_diffusion_default(model_params: Dict[str, Any]) -> ElucidatedDiff
         projection_mode=model_params.get("projection_mode", "output"),
         domain_size_x=model_params.get("domain_size_x", 1.0),
         domain_size_y=model_params.get("domain_size_y", 1.0),
-        use_vorticity_loss=model_params.get("use_vorticity_loss", False),
-        use_current_loss=model_params.get("use_current_loss", False),
-        vorticity_loss_weight=model_params.get("vorticity_loss_weight", 1.0),
-        current_loss_weight=model_params.get("current_loss_weight", 5.0),
     )
 
     return model

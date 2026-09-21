@@ -41,8 +41,6 @@ def test_single_re_phase_recipe_is_residual_and_random(monkeypatch, tmp_path):
     assert config["train_params"]["warm_start_checkpoint"] == ""
     assert config["train_params"]["validation_interval"] == 10
     assert config["train_params"]["checkpoint_metric"] == "denorm_rel_l2"
-    assert config["model_params"]["vorticity_loss_weight"] == 0.0
-    assert config["model_params"]["current_loss_weight"] == 0.0
     assert config["optimizer_params"]["param_groups"]["enabled"] is False
 
 
@@ -55,8 +53,6 @@ def test_multi_re_phase_recipe_preserves_reported_warm_start(monkeypatch, tmp_pa
     assert "historical" in config["train_params"]["warm_start_checkpoint"]
     assert config["train_params"]["validation_interval"] == 5
     assert config["train_params"]["checkpoint_metric"] == "denorm_rel_l2"
-    assert config["model_params"]["vorticity_loss_weight"] == 0.0
-    assert config["model_params"]["current_loss_weight"] == 0.0
     assert config["optimizer_params"]["param_groups"]["enabled"] is False
 
 

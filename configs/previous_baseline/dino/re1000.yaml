@@ -31,8 +31,6 @@ model_params:
   helmholtz_projection: false
   project_velocity: false
   project_B: false
-  use_vorticity_loss: false
-  use_current_loss: false
 
 normalization_params:
   type: minmax

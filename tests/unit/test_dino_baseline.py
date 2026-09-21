@@ -23,8 +23,6 @@ def test_dino_config_is_full_field_and_starts_from_scratch(monkeypatch, tmp_path
     assert config["train_params"]["load_checkpoint"] == ""
     assert config["model_params"]["num_sample_steps"] == 32
     assert config["model_params"]["helmholtz_projection"] is False
-    assert config["model_params"]["use_vorticity_loss"] is False
-    assert config["model_params"]["use_current_loss"] is False
     assert config["train_params"]["epochs"] == 101
     assert config["train_params"]["validation_interval"] == 10
     assert config["train_params"]["checkpoint_metric"] == "denorm_rel_l2"

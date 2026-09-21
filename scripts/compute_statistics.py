@@ -114,13 +114,18 @@ def main() -> None:
         )
         output_dir = Path(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
+        target_kind = (
+            "residual_targets"
+            if args.prediction_mode == "residual"
+            else "targets"
+        )
         for re_value, stats in results.items():
             label = _re_label(re_value)
             input_path = save_npz_statistics(
                 output_dir / f"Re{label}_inputs_stats", stats["inputs"]
             )
             target_path = save_npz_statistics(
-                output_dir / f"Re{label}_residual_targets_stats", stats["targets"]
+                output_dir / f"Re{label}_{target_kind}_stats", stats["targets"]
             )
             print(f"Wrote {input_path}")
             print(f"Wrote {target_path}")

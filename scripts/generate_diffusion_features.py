@@ -20,17 +20,69 @@ from phase.utils import (
 )
 
 
-def _save_split(path, inputs, targets, sample_ids):
-    path = Path(path)
-    path.mkdir(parents=True, exist_ok=True)
-    np.save(path / "diff_inputs.npy", inputs)
-    np.save(path / "diff_targets.npy", targets)
-    np.save(path / "sample_id.npy", np.asarray(sample_ids, dtype=np.int64))
+class FeatureStore:
+    """Incremental directory-backed feature store."""
+
+    def __init__(self, path, count):
+        self.path = Path(path)
+        self.count = int(count)
+        self.offset = 0
+        self.arrays = None
+
+    def append(self, inputs, targets, sample_ids):
+        inputs = np.asarray(inputs)
+        targets = np.asarray(targets)
+        sample_ids = np.asarray(sample_ids)
+        if inputs.shape != targets.shape:
+            raise ValueError("Inputs and targets must have matching shapes")
+        if len(inputs) != len(sample_ids):
+            raise ValueError("Expected one sample ID per trajectory")
+        if self.offset + len(inputs) > self.count:
+            raise RuntimeError(f"Feature store overflow for {self.path}")
+        if self.arrays is None:
+            self.path.mkdir(parents=True, exist_ok=True)
+            shape = (self.count,) + tuple(inputs.shape[1:])
+            self.arrays = {
+                "inputs": np.lib.format.open_memmap(
+                    self.path / "diff_inputs.npy",
+                    mode="w+",
+                    dtype=np.float32,
+                    shape=shape,
+                ),
+                "targets": np.lib.format.open_memmap(
+                    self.path / "diff_targets.npy",
+                    mode="w+",
+                    dtype=np.float32,
+                    shape=shape,
+                ),
+                "sample_id": np.lib.format.open_memmap(
+                    self.path / "sample_id.npy",
+                    mode="w+",
+                    dtype=np.int64,
+                    shape=(self.count,),
+                ),
+            }
+
+        stop = self.offset + len(inputs)
+        self.arrays["inputs"][self.offset:stop] = inputs
+        self.arrays["targets"][self.offset:stop] = targets
+        self.arrays["sample_id"][self.offset:stop] = sample_ids
+        self.offset = stop
+
+    def close(self):
+        if self.offset != self.count:
+            raise RuntimeError(
+                f"Wrote {self.offset} items to {self.path}; expected {self.count}"
+            )
+        if self.arrays is None:
+            raise RuntimeError(f"Cannot close empty feature store: {self.path}")
+        for array in self.arrays.values():
+            array.flush()
 
 
 def _generate_split(loader, model, normalizer, output_path, device, sample_ids):
-    predictions = []
-    targets = []
+    store = FeatureStore(output_path, len(sample_ids))
+    offset = 0
     model.eval()
     with torch.no_grad():
         for inputs, target in loader:
@@ -41,17 +93,15 @@ def _generate_split(loader, model, normalizer, output_path, device, sample_ids):
             _, target, prediction = apply_denormalization(
                 inputs, target, prediction, normalizer, indices, has_grid
             )
-            predictions.append(prediction.cpu().numpy())
-            targets.append(target.cpu().numpy())
-    condition = np.concatenate(predictions).astype(np.float32, copy=False)
-    truth = np.concatenate(targets).astype(np.float32, copy=False)
-    if condition.shape[0] != len(sample_ids):
-        raise ValueError(
-            f"Generated {condition.shape[0]} trajectories but received "
-            f"{len(sample_ids)} sample IDs."
-        )
-    _save_split(output_path, condition, truth, sample_ids)
-    return condition.shape
+            size = prediction.shape[0]
+            store.append(
+                prediction.cpu().float().numpy(),
+                target.cpu().float().numpy(),
+                sample_ids[offset : offset + size],
+            )
+            offset += size
+    store.close()
+    return tuple(store.arrays["inputs"].shape)
 
 
 def generate_features(config, checkpoint_path, output_root, batch_size=4, num_workers=1):

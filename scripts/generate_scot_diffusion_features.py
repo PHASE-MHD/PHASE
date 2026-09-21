@@ -27,6 +27,19 @@ class DiffusionStore:
         self.arrays = None
 
     def append(self, predictions, targets, sample_ids, re_values=None):
+        predictions = np.asarray(predictions)
+        targets = np.asarray(targets)
+        sample_ids = np.asarray(sample_ids)
+        if predictions.shape != targets.shape:
+            raise ValueError("Predictions and targets must have matching shapes")
+        if len(predictions) != len(sample_ids):
+            raise ValueError("Expected one sample ID per trajectory")
+        if self.with_re and (
+            re_values is None or len(re_values) != len(predictions)
+        ):
+            raise ValueError("Expected one Reynolds number per trajectory")
+        if self.offset + len(predictions) > self.count:
+            raise RuntimeError(f"Feature store overflow for {self.path}")
         if self.arrays is None:
             self.path.mkdir(parents=True, exist_ok=True)
             shape = (self.count,) + tuple(predictions.shape[1:])
@@ -56,6 +69,8 @@ class DiffusionStore:
     def close(self):
         if self.offset != self.count:
             raise RuntimeError(f"Wrote {self.offset} items to {self.path}; expected {self.count}")
+        if self.arrays is None:
+            raise RuntimeError(f"Cannot close empty feature store: {self.path}")
         for array in self.arrays.values():
             array.flush()
         (self.path / "FORMAT.txt").write_text(

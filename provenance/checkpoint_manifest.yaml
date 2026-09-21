@@ -37,20 +37,20 @@ artifacts:
     bytes: 250665214
     sha256: b298e6762f7322c5806668224683e9f95a200359f9781c8a88bb8262800c8d8d
     epoch: 98
-  - id: naive_multi_re_epoch59
-    role: Naive multi-regime three-channel scOT
+  - id: naive_multi_re_effective_epoch113
+    role: Naive multi-regime three-channel scOT used by the current paper table; checkpoint-local epoch 53, effective epoch 113
     env_var: PHASE_NAIVE_MULTI_RE_CHECKPOINT
-    path_from_artifact_root: MHD-World-Re-naive/checkpoints/naive_multi_re/corrected_Re1000_warm/poseidon_mhd_re_input_vecpot_TL_corrected_Re1000_warm_bs1_100ep_best_epoch59.pt
-    bytes: 250613160
-    sha256: 887d7d0507b70581194f772de2103ac01478b4c0a12ebd29bc8ea547dd368fdc
-    epoch: 59
-  - id: gated_adapter_multi_re_epoch44
-    role: Gated-adapter multi-regime three-channel scOT
+    path_from_artifact_root: MHD-World-Re-naive/checkpoints/naive_multi_re/corrected_Re1000_warm/restarts/poseidon_mhd_re_input_vecpot_TL_corrected_Re1000_warm_bs1_resume_epoch59_to100_48h.pt
+    bytes: 250887338
+    sha256: 3698689e7d3e958de1a01df84e1ecfd0006275ae14775158d20515b7ef99fa57
+    epoch: 53
+  - id: gated_adapter_multi_re_effective_epoch90
+    role: Gated-adapter multi-regime three-channel scOT used by the current paper table; rebased effective epoch 90
     env_var: PHASE_GATED_ADAPTER_MULTI_RE_CHECKPOINT
-    path_from_artifact_root: MHD-World-new/checkpoints/ablation_table/corrected_Re1000_warm/poseidon_mhd_re_vecpot_TL_corrected_Re1000_warm_FiLMAdapter_bs1_100ep_best_epoch44.pt
-    bytes: 269511548
-    sha256: cf814721e618601bf73abe9b4aea1bde92c689344c57ce39f8ef7dd4b0ace01f
-    epoch: 44
+    path_from_artifact_root: MHD-World-new/checkpoints/ablation_table/corrected_Re1000_warm/restarts/poseidon_mhd_re_vecpot_TL_corrected_Re1000_warm_FiLMAdapter_bs1_effective_epoch90_rebased.pt
+    bytes: 269608052
+    sha256: 0411fbbea2a9ce565a4240674b67fb8d9d3547f5530272685993261f1216b079
+    epoch: 90
   - id: four_channel_scot_re1000_epoch98
     role: Single-Re four-channel scOT warm start
     env_var: PHASE_SINGLE_RE_FOUR_CHANNEL_CHECKPOINT

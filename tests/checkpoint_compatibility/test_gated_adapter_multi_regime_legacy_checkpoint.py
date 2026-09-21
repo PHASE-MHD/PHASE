@@ -71,16 +71,16 @@ def test_gated_adapter_multi_regime_checkpoints_load(monkeypatch, tmp_path):
     scheduler = create_scheduler(optimizer, config)
     scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
 
-    assert checkpoint["epoch"] == 44
-    assert checkpoint["loss"] == pytest.approx(3.1360136553049087)
-    assert checkpoint["denorm_loss_rel_l2"] == pytest.approx(0.026114497476257385)
-    assert checkpoint["denorm_loss_mse"] == pytest.approx(2.6058404335799424e-05)
+    assert checkpoint["epoch"] == 90
+    assert checkpoint["loss"] == pytest.approx(2.8531549996733667)
+    assert checkpoint["denorm_loss_rel_l2"] == pytest.approx(0.024361248968169092)
+    assert checkpoint["denorm_loss_mse"] == pytest.approx(2.3291558048470052e-05)
     assert sum(tensor.numel() for tensor in model.state_dict().values()) == 22_289_366
     assert [len(group["params"]) for group in optimizer.param_groups] == [844, 324]
     assert [group["lr"] for group in optimizer.param_groups] == [1e-7, 1e-3]
     assert [group["weight_decay"] for group in optimizer.param_groups] == [1e-2, 0.0]
     assert len(optimizer.state) == 1168
-    assert scheduler.last_epoch == 45
+    assert scheduler.last_epoch == 91
 
     re = torch.tensor([80.0, 1000.0, 4500.0])
     expected = (torch.log10(re) - 2.9756) / 0.5417

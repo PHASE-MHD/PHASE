@@ -20,6 +20,8 @@ def test_checkpoint_manifest_is_complete_and_unambiguous():
     assert len(env_vars) == len(set(env_vars))
     assert "multi_re_phase_dt_epoch95" in ids
     assert "single_re_phase_dt_residual_epoch90" in ids
+    assert "naive_multi_re_effective_epoch113" in ids
+    assert "gated_adapter_multi_re_effective_epoch90" in ids
     assert "kh_multi_re_phase_t0_5_epoch95" in ids
     for artifact in artifacts:
         assert len(artifact["sha256"]) == 64

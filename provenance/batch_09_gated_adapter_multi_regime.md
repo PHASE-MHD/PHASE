@@ -87,3 +87,11 @@ legacy runtime detail affects transfer mechanics only; it does not alter split
 membership, tensors, optimization, validation values, or checkpoint selection.
 Batch 9 uses global physics normalization, so denormalized validation metrics do
 not require regime metadata.
+
+## Current paper artifact update
+
+The current ablation table supersedes the original epoch-44 snapshot with the
+continuation checkpoint rebased to effective epoch 90. The canonical YAML
+remains the clean 100-epoch recipe; current artifact identity and metrics are
+recorded in `ablations/gated_adapter_multi_regime.md` and
+`checkpoint_manifest.yaml`.

@@ -48,3 +48,11 @@ there is therefore no ambiguity in the weights used for the ablation result.
 The established Apptainer image does not include pytest. The pytest suites are
 committed, and equivalent direct assertions plus full source compilation were
 run successfully in that image.
+
+## Current paper artifact update
+
+The current ablation table supersedes the original epoch-59 snapshot with the
+continuation checkpoint at local epoch 53 (effective epoch 113). The canonical
+YAML remains the clean 100-epoch recipe; current artifact identity and metrics
+are recorded in `ablations/naive_multi_regime.md` and
+`checkpoint_manifest.yaml`.

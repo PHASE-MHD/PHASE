@@ -45,14 +45,14 @@ pytest -m checkpoint \
 
 Set both `PHASE_SCOT_WITH_TL_CHECKPOINT` and
 `PHASE_NAIVE_MULTI_RE_CHECKPOINT` to the corrected single-Re warm start and
-reported epoch-59 naive multi-regime checkpoint before running the marked
-checkpoint test.
+current paper-table continuation checkpoint (checkpoint-local epoch 53,
+effective epoch 113) before running the marked checkpoint test.
 
 ## Batch 9 checkpoint compatibility
 
 Set `PHASE_SCOT_WITH_TL_CHECKPOINT` to the corrected single-Re warm start and
-`PHASE_GATED_ADAPTER_MULTI_RE_CHECKPOINT` to the reported epoch-44 checkpoint,
-then run:
+`PHASE_GATED_ADAPTER_MULTI_RE_CHECKPOINT` to the rebased effective-epoch-90
+checkpoint used by the current paper table, then run:
 
 ```bash
 pytest -m checkpoint \

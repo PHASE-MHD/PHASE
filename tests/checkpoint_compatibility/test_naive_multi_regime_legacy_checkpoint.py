@@ -45,8 +45,16 @@ def test_naive_multi_regime_checkpoints_load(monkeypatch, tmp_path):
     scheduler = create_scheduler(optimizer, config)
     scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
 
-    assert checkpoint["epoch"] == 59
-    assert checkpoint["loss"] == pytest.approx(5.424514629364014)
+    # The continuation retained legacy-local epoch numbering. This is the
+    # effective-epoch-113 artifact used by the current paper table.
+    assert checkpoint["epoch"] == 53
+    assert checkpoint["loss"] == pytest.approx(4.93993993806839)
+    assert checkpoint["denorm_loss_rel_l2"] == pytest.approx(
+        0.03595153240114451
+    )
+    assert checkpoint["denorm_loss_mse"] == pytest.approx(
+        4.320761030385256e-05
+    )
     assert sum(parameter.numel() for parameter in model.parameters()) == 20_777_742
     assert [len(group["params"]) for group in optimizer.param_groups] == [843, 1]
     assert [group["lr"] for group in optimizer.param_groups] == [1e-7, 1e-3]
@@ -55,7 +63,7 @@ def test_naive_multi_regime_checkpoints_load(monkeypatch, tmp_path):
         0.0,
     ]
     assert len(optimizer.state) == 844
-    assert scheduler.last_epoch == 60
+    assert scheduler.last_epoch == 114
 
     re = torch.tensor([80.0, 1000.0, 4500.0])
     expected = (torch.log10(re) - 2.9756) / 0.5417

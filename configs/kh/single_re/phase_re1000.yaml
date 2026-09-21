@@ -40,7 +40,6 @@ model_params:
   use_current_loss: false
   vorticity_loss_weight: 0.0
   current_loss_weight: 0.0
-  re_conditioning: {enabled: false}
 
 normalization_params:
   type: paired_minmax

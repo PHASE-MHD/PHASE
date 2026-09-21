@@ -134,7 +134,7 @@ class PerRePairedMinMaxNormalization(nn.Module):
 
     Training Re values use explicit per-Re statistics. Re values not present in
     the table use linear interpolation/extrapolation in log(Re), matching the
-    continuous FiLM/Re conditioning used by the diffusion model.
+    log-Re parameterization used by the deterministic multi-regime model.
     """
 
     def __init__(

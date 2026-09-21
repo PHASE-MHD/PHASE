@@ -1,9 +1,6 @@
-import math
-from typing import Tuple, List, Optional, Union, Sequence, Any, Callable, Dict
+from typing import Tuple, Optional, Union, Sequence
 import torch
 from torch import nn
-import torch.nn.functional as F
-from einops import rearrange, reduce, repeat
 from functools import partial
 
 from ...utils import exists, default, cast_tuple, divisible_by
@@ -15,104 +12,6 @@ from ..components.layers import (
 )
 from ..components.blocks import ResnetBlock
 from ..components.attention import Attention, LinearAttention
-from ..components.normalization import RMSNorm
-
-
-class ReFiLMConditioner(nn.Module):
-    """Small MLP that maps log-Re/log-ReM features to channel-wise FiLM."""
-
-    def __init__(
-        self,
-        out_channels: int,
-        hidden_dim: int = 128,
-        num_layers: int = 2,
-        log_re_mean: float = 2.9756,
-        log_re_std: float = 0.5417,
-        include_rem: bool = True,
-        residual_scale: float = 1.0,
-        zero_init: bool = True,
-    ):
-        super().__init__()
-        self.out_channels = int(out_channels)
-        self.include_rem = bool(include_rem)
-        self.residual_scale = float(residual_scale)
-        self.register_buffer("log_re_mean", torch.tensor(float(log_re_mean)))
-        self.register_buffer("log_re_std", torch.tensor(float(log_re_std)))
-
-        in_dim = 2 if self.include_rem else 1
-        layers = []
-        current_dim = in_dim
-        for _ in range(max(int(num_layers) - 1, 0)):
-            layers.extend([nn.Linear(current_dim, int(hidden_dim)), nn.GELU()])
-            current_dim = int(hidden_dim)
-        layers.append(nn.Linear(current_dim, 2 * self.out_channels))
-        self.net = nn.Sequential(*layers)
-
-        if zero_init:
-            final = self.net[-1]
-            nn.init.zeros_(final.weight)
-            nn.init.zeros_(final.bias)
-
-    def _normalize_re(self, value: torch.Tensor) -> torch.Tensor:
-        value = value.float().clamp_min(1e-12)
-        return (torch.log10(value) - self.log_re_mean) / self.log_re_std.clamp_min(1e-6)
-
-    def _conditioning_features(self, re: torch.Tensor, rem: Optional[torch.Tensor]) -> torch.Tensor:
-        if rem is None:
-            rem = re
-        features = [self._normalize_re(re).view(-1, 1)]
-        if self.include_rem:
-            features.append(self._normalize_re(rem).view(-1, 1))
-        return torch.cat(features, dim=-1)
-
-    def forward(self, re: torch.Tensor, rem: Optional[torch.Tensor] = None):
-        gamma, beta = self.net(self._conditioning_features(re, rem)).chunk(2, dim=-1)
-        return gamma, beta
-
-
-class ReResidualAdapter2d(nn.Module):
-    """Zero-initialized residual adapter for 2D UNet feature maps."""
-
-    def __init__(
-        self,
-        dim: int,
-        bottleneck_dim: int = 64,
-        hidden_dim: int = 128,
-        num_layers: int = 2,
-        log_re_mean: float = 2.9756,
-        log_re_std: float = 0.5417,
-        include_rem: bool = True,
-        adapter_scale: float = 1.0,
-        gate_type: str = "channel",
-    ):
-        super().__init__()
-        if gate_type not in {"scalar", "channel"}:
-            raise ValueError("gate_type must be 'scalar' or 'channel'.")
-        self.dim = int(dim)
-        self.adapter_scale = float(adapter_scale)
-        self.gate_type = gate_type
-        self.conditioner = ReFiLMConditioner(
-            out_channels=(self.dim if gate_type == "channel" else 1),
-            hidden_dim=hidden_dim,
-            num_layers=num_layers,
-            log_re_mean=log_re_mean,
-            log_re_std=log_re_std,
-            include_rem=include_rem,
-            zero_init=True,
-        )
-        bottleneck_dim = int(min(max(1, bottleneck_dim), self.dim))
-        self.norm = nn.GroupNorm(1, self.dim)
-        self.down = nn.Conv2d(self.dim, bottleneck_dim, 1)
-        self.act = nn.GELU()
-        self.up = nn.Conv2d(bottleneck_dim, self.dim, 1)
-        nn.init.zeros_(self.up.weight)
-        nn.init.zeros_(self.up.bias)
-
-    def forward(self, hidden_states: torch.Tensor, re: torch.Tensor, rem: Optional[torch.Tensor] = None) -> torch.Tensor:
-        gamma, _beta = self.conditioner(re, rem)
-        gate = 1.0 + gamma.to(hidden_states.dtype).view(hidden_states.shape[0], -1, 1, 1)
-        update = self.up(self.act(self.down(self.norm(hidden_states))))
-        return hidden_states + self.adapter_scale * gate * update
 
 
 class UNet(nn.Module):
@@ -149,7 +48,6 @@ class UNet(nn.Module):
             Union[bool, Tuple[bool, ...]]
         ] = None,  # defaults to full attention only for inner most layer
         flash_attn: bool = False,
-        re_conditioning: Optional[Dict[str, Any]] = None,
         padding_mode: str = "zeros",
     ):
         """
@@ -183,19 +81,6 @@ class UNet(nn.Module):
             )
         self.padding_mode = padding_mode
         input_channels = channels * (2 if self_condition else 1)
-
-        self.re_conditioning_config = re_conditioning or {}
-        self.re_conditioning_enabled = bool(self.re_conditioning_config.get("enabled", False))
-        self.re_conditioning_type = self.re_conditioning_config.get("type", "output_film")
-        self.re_reference = float(self.re_conditioning_config.get("reference_re", 1000.0))
-        self.output_re_conditioning_enabled = (
-            self.re_conditioning_enabled
-            and self.re_conditioning_type in {"output_film", "deep_adapter_output_film"}
-        )
-        self.deep_re_conditioning_enabled = (
-            self.re_conditioning_enabled
-            and self.re_conditioning_type in {"deep_adapter", "deep_adapter_output_film"}
-        )
 
         init_dim = default(init_dim, dim)
         self.init_conv = nn.Conv2d(
@@ -325,112 +210,6 @@ class UNet(nn.Module):
         self.final_res_block = resnet_block(init_dim * 2, init_dim)
         self.final_conv = nn.Conv2d(init_dim, self.out_dim, 1)
 
-        re_hidden_dim = self.re_conditioning_config.get("hidden_dim", 128)
-        re_num_layers = self.re_conditioning_config.get("num_layers", 2)
-        log_re_mean = self.re_conditioning_config.get("log_re_mean", 2.9756)
-        log_re_std = self.re_conditioning_config.get("log_re_std", 0.5417)
-        include_rem = self.re_conditioning_config.get("include_rem", True)
-        residual_scale = self.re_conditioning_config.get("residual_scale", 1.0)
-        deep_config = self.re_conditioning_config.get("deep_adapter", {})
-
-        self.re_output_conditioner = None
-        if self.output_re_conditioning_enabled:
-            self.re_output_conditioner = ReFiLMConditioner(
-                out_channels=self.out_dim,
-                hidden_dim=re_hidden_dim,
-                num_layers=re_num_layers,
-                log_re_mean=log_re_mean,
-                log_re_std=log_re_std,
-                include_rem=include_rem,
-                residual_scale=residual_scale,
-                zero_init=True,
-            )
-
-        def make_adapter(adapter_dim):
-            if not self.deep_re_conditioning_enabled:
-                return nn.Identity()
-            return ReResidualAdapter2d(
-                dim=adapter_dim,
-                bottleneck_dim=deep_config.get("bottleneck_dim", 64),
-                hidden_dim=deep_config.get("hidden_dim", re_hidden_dim),
-                num_layers=deep_config.get("num_layers", re_num_layers),
-                log_re_mean=log_re_mean,
-                log_re_std=log_re_std,
-                include_rem=include_rem,
-                adapter_scale=deep_config.get("adapter_scale", 1.0),
-                gate_type=deep_config.get("gate_type", "channel"),
-            )
-
-        self.down_re_adapters = nn.ModuleList([
-            nn.ModuleList([make_adapter(dim_in), make_adapter(dim_in)])
-            for dim_in, _dim_out in in_out
-        ])
-        self.mid_re_adapters = nn.ModuleList([make_adapter(mid_dim), make_adapter(mid_dim)])
-        self.up_re_adapters = nn.ModuleList([
-            nn.ModuleList([make_adapter(dim_out), make_adapter(dim_out)])
-            for _dim_in, dim_out in reversed(in_out)
-        ])
-        self.final_re_adapter = make_adapter(init_dim)
-
-    def _prepare_re_tensor(
-        self, value: Optional[torch.Tensor], batch: int, device: torch.device, dtype: torch.dtype
-    ) -> torch.Tensor:
-        if value is None:
-            return torch.full((batch,), self.re_reference, device=device, dtype=dtype)
-        value = value.to(device=device, dtype=dtype).view(-1)
-        if value.numel() == 1 and batch != 1:
-            value = value.expand(batch)
-        if value.shape[0] != batch:
-            raise ValueError(
-                f"Re conditioning batch size mismatch: got {value.shape[0]} values for batch {batch}."
-            )
-        return value
-
-    def _apply_re_adapter(self, adapter: nn.Module, x: torch.Tensor, re: Optional[torch.Tensor], rem: Optional[torch.Tensor]):
-        if not self.deep_re_conditioning_enabled or isinstance(adapter, nn.Identity):
-            return x
-        re_tensor = self._prepare_re_tensor(re, x.shape[0], x.device, x.dtype)
-        rem_tensor = self._prepare_re_tensor(rem, x.shape[0], x.device, x.dtype) if rem is not None else re_tensor
-        return adapter(x, re_tensor, rem_tensor)
-
-    def _apply_output_re_film(self, x: torch.Tensor, re: Optional[torch.Tensor], rem: Optional[torch.Tensor]):
-        if self.re_output_conditioner is None:
-            return x
-        re_tensor = self._prepare_re_tensor(re, x.shape[0], x.device, x.dtype)
-        rem_tensor = self._prepare_re_tensor(rem, x.shape[0], x.device, x.dtype) if rem is not None else re_tensor
-        gamma, beta = self.re_output_conditioner(re_tensor, rem_tensor)
-        gamma = gamma.to(x.dtype).view(x.shape[0], -1, 1, 1)
-        beta = beta.to(x.dtype).view(x.shape[0], -1, 1, 1)
-        return x + self.re_output_conditioner.residual_scale * (x * gamma + beta)
-
-    def get_optimizer_parameters(self, optimizer_params):
-        param_group_config = optimizer_params.get("param_groups", {})
-        if not param_group_config or not param_group_config.get("enabled", False):
-            return self.parameters()
-
-        base_lr = param_group_config.get("pretrained_lr", optimizer_params.get("lr", 1e-4))
-        new_lr = param_group_config.get("new_lr", optimizer_params.get("lr", 1e-4))
-        weight_decay = optimizer_params.get("weight_decay", 0.0)
-        new_weight_decay = param_group_config.get("new_weight_decay", weight_decay)
-        base_weight_decay = param_group_config.get("pretrained_weight_decay", weight_decay)
-
-        base_params = []
-        re_params = []
-        for name, param in self.named_parameters():
-            if not param.requires_grad:
-                continue
-            if name.startswith(("re_output_conditioner", "down_re_adapters", "mid_re_adapters", "up_re_adapters", "final_re_adapter")):
-                re_params.append(param)
-            else:
-                base_params.append(param)
-
-        groups = []
-        if base_params:
-            groups.append({"params": base_params, "lr": base_lr, "weight_decay": base_weight_decay, "name": "base_diffusion"})
-        if re_params:
-            groups.append({"params": re_params, "lr": new_lr, "weight_decay": new_weight_decay, "name": "re_conditioning"})
-        return groups
-
     @property
     def downsample_factor(self) -> int:
         """
@@ -446,8 +225,6 @@ class UNet(nn.Module):
         x: torch.Tensor,
         time: torch.Tensor,
         x_self_cond: Optional[torch.Tensor] = None,
-        re: Optional[torch.Tensor] = None,
-        rem: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
         Forward pass through the UNet model.
@@ -478,32 +255,26 @@ class UNet(nn.Module):
 
         h = []
 
-        for (block1, block2, attn, downsample), adapters in zip(self.downs, self.down_re_adapters):
+        for block1, block2, attn, downsample in self.downs:
             x = block1(x, t)
-            x = self._apply_re_adapter(adapters[0], x, re, rem)
             h.append(x)
 
             x = block2(x, t)
-            x = self._apply_re_adapter(adapters[1], x, re, rem)
             x = attn(x) + x
             h.append(x)
 
             x = downsample(x)
 
         x = self.mid_block1(x, t)
-        x = self._apply_re_adapter(self.mid_re_adapters[0], x, re, rem)
         x = self.mid_attn(x) + x
         x = self.mid_block2(x, t)
-        x = self._apply_re_adapter(self.mid_re_adapters[1], x, re, rem)
 
-        for (block1, block2, attn, upsample), adapters in zip(self.ups, self.up_re_adapters):
+        for block1, block2, attn, upsample in self.ups:
             x = torch.cat((x, h.pop()), dim=1)
             x = block1(x, t)
-            x = self._apply_re_adapter(adapters[0], x, re, rem)
 
             x = torch.cat((x, h.pop()), dim=1)
             x = block2(x, t)
-            x = self._apply_re_adapter(adapters[1], x, re, rem)
             x = attn(x) + x
 
             x = upsample(x)
@@ -511,6 +282,4 @@ class UNet(nn.Module):
         x = torch.cat((x, r), dim=1)
 
         x = self.final_res_block(x, t)
-        x = self._apply_re_adapter(self.final_re_adapter, x, re, rem)
-        x = self.final_conv(x)
-        return self._apply_output_re_film(x, re, rem)
+        return self.final_conv(x)

@@ -31,7 +31,7 @@ class _FakeModel(nn.Module):
     def forward(self, value):
         return value
 
-    def sample(self, condition, num_sample_steps, re=None, rem=None):
+    def sample(self, condition, num_sample_steps):
         if self.projection_mode:
             return torch.zeros_like(condition)
         return condition
@@ -230,7 +230,7 @@ def test_diffusion_adapter_filters_before_sampling(monkeypatch, tmp_path):
     model = _FakeModel(3)
     calls = []
 
-    def sample(condition, num_sample_steps, re=None, rem=None):
+    def sample(condition, num_sample_steps):
         calls.append(condition.clone())
         return condition
 

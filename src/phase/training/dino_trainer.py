@@ -64,7 +64,6 @@ def _train_epoch(model, loader, optimizer, device, clip_norm):
             target,
             condition,
             re=_metadata_re(metadata),
-            rem=metadata.get("rem") if metadata is not None else None,
             input_normalizer=dataset.input_normalizer,
             target_normalizer=dataset.target_normalizer,
             channel_indices=channel_indices,
@@ -97,8 +96,6 @@ def _validate(model, loader, device, num_sample_steps):
             prediction = model.sample(
                 condition,
                 num_sample_steps=num_sample_steps,
-                re=re,
-                rem=metadata.get("rem") if metadata is not None else None,
             )
             totals[0] += float(mse(prediction, target))
             if residual_mode:
@@ -163,7 +160,6 @@ def _validate_recipe(config):
             model_params.get("helmholtz_projection", False),
             model_params.get("use_vorticity_loss", False),
             model_params.get("use_current_loss", False),
-            model_params.get("re_conditioning", {}).get("enabled", False),
         )
         if any(forbidden):
             raise ValueError("The previous DINO baseline disables PHASE physics additions.")
@@ -201,9 +197,6 @@ def _validate_recipe(config):
             and model_params.get("project_B") is True
             and model_params.get("projection_mode") == "full_field_residual"
         ),
-        "no diffusion Re conditioning": not model_params.get(
-            "re_conditioning", {}
-        ).get("enabled", False),
         "no derivative-loss ablation": (
             not model_params.get("use_vorticity_loss", False)
             and not model_params.get("use_current_loss", False)

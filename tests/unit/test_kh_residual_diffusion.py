@@ -51,7 +51,6 @@ def test_kh_multi_re_diffusion_uses_single_re_weights_only(monkeypatch, tmp_path
     assert config["train_params"]["warm_start_checkpoint"].endswith(
         "kh_single_re_phase_re1000.pt"
     )
-    assert config["model_params"]["re_conditioning"]["enabled"] is False
 
 
 def test_kh_diffusion_architecture_matches_between_stages(monkeypatch, tmp_path):
@@ -129,17 +128,6 @@ def test_kh_recipe_rejects_wrong_time_contract(
     )
     config["dataset_params"][key] = value
     with pytest.raises(ValueError, match=message):
-        _validate_recipe(config)
-
-
-def test_kh_recipe_rejects_diffusion_re_conditioning(monkeypatch, tmp_path):
-    config = _config(
-        "configs/kh/multi_re/phase.yaml",
-        monkeypatch,
-        tmp_path,
-    )
-    config["model_params"]["re_conditioning"]["enabled"] = True
-    with pytest.raises(ValueError, match="no diffusion Re conditioning"):
         _validate_recipe(config)
 
 

@@ -229,8 +229,6 @@ def _diffusion_records(
                 prediction = model.sample(
                     condition,
                     num_sample_steps=num_sample_steps,
-                    re=metadata.get("re") if metadata is not None else None,
-                    rem=metadata.get("rem") if metadata is not None else None,
                 )
                 re_tensor = metadata.get("re") if metadata is not None else None
                 if residual_mode:

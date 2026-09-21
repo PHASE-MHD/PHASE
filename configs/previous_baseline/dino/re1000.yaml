@@ -33,7 +33,6 @@ model_params:
   project_B: false
   use_vorticity_loss: false
   use_current_loss: false
-  re_conditioning: {enabled: false}
 
 normalization_params:
   type: minmax

@@ -121,9 +121,7 @@ class ElucidatedDiffusion(nn.Module):
         return next(self.net.parameters()).device
 
     def get_optimizer_parameters(self, optimizer_params):
-        """Delegate optional optimizer parameter grouping to the backbone."""
-        if hasattr(self.net, "get_optimizer_parameters"):
-            return self.net.get_optimizer_parameters(optimizer_params)
+        """Return the diffusion parameters as one optimizer group."""
         return self.parameters()
 
     def c_skip(self, sigma: Union[torch.Tensor, float]) -> torch.Tensor:
@@ -188,11 +186,6 @@ class ElucidatedDiffusion(nn.Module):
         sigma: Union[torch.Tensor, float],
         self_cond: Optional[torch.Tensor] = None,
         clamp: bool = False,
-        re: Optional[torch.Tensor] = None,
-        rem: Optional[torch.Tensor] = None,
-        input_normalizer=None,
-        target_normalizer=None,
-        channel_indices=None,
     ) -> torch.Tensor:
         """
         Apply the preconditioned network forward pass.
@@ -219,8 +212,6 @@ class ElucidatedDiffusion(nn.Module):
             self.c_in(padded_sigma) * noised_images,
             self.c_noise(sigma),
             self_cond,
-            re=re,
-            rem=rem,
         )
 
         out = (
@@ -267,11 +258,6 @@ class ElucidatedDiffusion(nn.Module):
         num_sample_steps: Optional[int] = None,
         clamp: bool = True,
         apply_projection: bool = True,
-        re: Optional[torch.Tensor] = None,
-        rem: Optional[torch.Tensor] = None,
-        input_normalizer=None,
-        target_normalizer=None,
-        channel_indices=None,
     ) -> torch.Tensor:
         """
         Generate samples using the standard sampling procedure.
@@ -317,7 +303,7 @@ class ElucidatedDiffusion(nn.Module):
             images_hat = images + sqrt(sigma_hat**2 - sigma**2) * eps
 
             model_output = self.preconditioned_network_forward(
-                images_hat, sigma_hat, self_cond, clamp=clamp, re=re, rem=rem
+                images_hat, sigma_hat, self_cond, clamp=clamp
             )
 
             denoised_over_sigma = (images_hat - model_output) / sigma_hat
@@ -326,7 +312,7 @@ class ElucidatedDiffusion(nn.Module):
 
             if sigma_next != 0:
                 model_output_next = self.preconditioned_network_forward(
-                    images_next, sigma_next, self_cond, clamp=clamp, re=re, rem=rem
+                    images_next, sigma_next, self_cond, clamp=clamp
                 )
 
                 denoised_prime_over_sigma = (
@@ -353,11 +339,6 @@ class ElucidatedDiffusion(nn.Module):
         self_cond: torch.Tensor,
         batch_size: Optional[int] = None,
         num_sample_steps: Optional[int] = None,
-        re: Optional[torch.Tensor] = None,
-        rem: Optional[torch.Tensor] = None,
-        input_normalizer=None,
-        target_normalizer=None,
-        channel_indices=None,
     ) -> torch.Tensor:
         """
         Generate samples using the DPM++ solver.
@@ -393,7 +374,7 @@ class ElucidatedDiffusion(nn.Module):
         old_denoised = None
         for i in tqdm(range(len(sigmas) - 1)):
             denoised = self.preconditioned_network_forward(
-                images, sigmas[i].item(), self_cond, re=re, rem=rem
+                images, sigmas[i].item(), self_cond
             )
 
             t, t_next = t_fn(sigmas[i]), t_fn(sigmas[i + 1])
@@ -534,7 +515,6 @@ class ElucidatedDiffusion(nn.Module):
         images: torch.Tensor,
         self_cond: Optional[torch.Tensor] = None,
         re: Optional[torch.Tensor] = None,
-        rem: Optional[torch.Tensor] = None,
         input_normalizer=None,
         target_normalizer=None,
         channel_indices=None,
@@ -574,7 +554,7 @@ class ElucidatedDiffusion(nn.Module):
         noised_images = images + padded_sigmas * noise
 
         denoised = self.preconditioned_network_forward(
-            noised_images, sigmas, self_cond, re=re, rem=rem
+            noised_images, sigmas, self_cond
         )
         if self.helmholtz_projection:
             if self.projection_mode == "full_field_residual":
@@ -631,7 +611,6 @@ def elucidated_diffusion_default(model_params: Dict[str, Any]) -> ElucidatedDiff
         attn_heads=model_params.get("attn_heads", 4),
         attn_dim_head=model_params.get("attn_dim_head", 32),
         dropout=model_params.get("dropout", 0.0),
-        re_conditioning=model_params.get("re_conditioning", {}),
         padding_mode=model_params.get("padding_mode", "zeros"),
     )
 

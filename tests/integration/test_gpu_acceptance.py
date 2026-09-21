@@ -130,7 +130,6 @@ def _small_diffusion(*, residual):
                 "project_velocity": True,
                 "project_B": True,
                 "projection_mode": "full_field_residual" if residual else "output",
-                "re_conditioning": {"enabled": False},
             }
         }
     )

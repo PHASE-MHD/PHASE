@@ -10,6 +10,8 @@ readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
   {name = "Radhika Achikanath Chirakkara", email = "radhika.ac.97@gmail.com"},
+  {name = "Rajdeep Halder"},
+  {name = "Zezheng Song"},
 ]
 requires-python = ">=3.11,<3.12"
 dependencies = [

@@ -13,7 +13,7 @@ Generated, Git-ignored directories (`build/`, `outputs/`, `.pytest_cache/`,
 - **New**: written for this public repository.
 - **Metadata**: configuration, documentation, provenance, or licensing.
 
-`COPY_MANIFEST.md` and `provenance/batch_*.md` contain the detailed source
+`README_src_changes.md` and `provenance/batch_*.md` contain the detailed source
 paths, hashes, decisions, and validation evidence. “Working tree” is stated
 where canonical behavior included uncommitted legacy research changes.
 
@@ -27,7 +27,6 @@ where canonical behavior included uncommitted legacy research changes.
 | `README_poseidon.md` | New | External POSEIDON weights and transfer-learning setup. |
 | `README_src_changes.md` | New metadata | High-level legacy-source change record. |
 | `README_file_provenance.md` | New metadata | This file-level inventory. |
-| `COPY_MANIFEST.md` | New metadata | Authoritative legacy-to-public source map. |
 | `THIRD_PARTY_NOTICES.md` | New metadata | Limited third-party attribution. |
 | `LICENSE` | New metadata | MIT license. |
 | `pyproject.toml` | New | Package metadata, dependencies, entry points, and pytest settings. |

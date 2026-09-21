@@ -60,7 +60,7 @@ loss_params:
   use_data_loss: true
   use_ic_loss: true
   use_pde_loss: true
-  use_constraint_loss: true
+  use_constraint_loss: false
   u_weight: 1.0
   v_weight: 1.0
   Bx_weight: 5.0

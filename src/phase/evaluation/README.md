@@ -6,7 +6,6 @@ Unified held-out-test evaluation for tFNO, DINO, scOT, and PHASE.
 - `physics.py`: computes Fourier derivatives, derived fields, divergence, and spectra.
 - `metrics.py`: evaluates field, spectral, and distribution errors.
 - `reporting.py`: writes text, JSON, and CSV reports with run provenance.
-- `__init__.py`: exports the public evaluation interface.
 
 All diagnostics operate on denormalized physical fields. The common periodic
 Fourier convention is

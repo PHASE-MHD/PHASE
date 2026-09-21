@@ -1,35 +1,24 @@
-# Command-line scripts
+# Scripts
 
-- `prepare_data.py`: convert Dedalus HDF5 trajectories or vector-potential
-  arrays to canonical PHASE `.npy` layouts.
+# Previous baselines
+- `train_tfno.py`: train the no warm-start tFNO baseline (based on previous work by Rosofsky and Huerta (2023)).
+- `train_dino.py`: train the full-field EDM diffusion baseline (based on previous work by Kacmaz et al. (2025)).
+- `generate_diffusion_features.py`: generate full-field DINO conditioner.
+
+# scOT and PHASE scripts
+- `prepare_data.py`: convert Dedalus HDF5 trajectories and vector-potential
+  arrays to PHASE `.npy` layouts.
 - `compute_statistics.py`: compute train-only trajectory or diffusion
   normalization statistics.
-- `train_tfno.py`: train the previous-study, no-warm-start tFNO baseline.
-- `verify_artifact.py`: check an external checkpoint against its documented
-  SHA-256 digest.
-- `generate_diffusion_features.py`: generate full-field DINO conditioner/DNS
-  pairs from the released tFNO.
-- `train_dino.py`: train the previous-study full-field EDM diffusion baseline.
-- `train_scot.py`: train the guarded three-channel scOT ablations. Batches 6-9
-  implement the no-transfer, POSEIDON-transfer, naive multi-regime, and gated-
-  adapter multi-regime recipes.
+- `train_scot.py`: train the three-channel scOT ablations - no transfer learning ablation, ablation with POSEIDON transfer, naive multi-regime, and gated-
+  adapter multi-regime ablations.
+- `generate_scot_diffusion_features.py` exports physical-unit scOT/DNS pairs for
+single- or multi-regime residual diffusion. 
 
-`generate_scot_diffusion_features.py` exports physical-unit scOT/DNS pairs for
-single- or multi-Re residual diffusion. `train_dino.py` now dispatches both the
-locked previous DINO full-field recipe and the guarded PHASE residual recipes.
-
+# Evaluation scripts
 - `evaluate_error.py`: run the unified held-out-test evaluator for tFNO, DINO,
-  deterministic scOT, or residual PHASE. It requires an explicit Re and writes
+  deterministic scOT, or PHASE. It requires an explicit Reynolds number and writes
   JSON, aggregate CSV, per-sample CSV, and text reports.
 - `visualize.py`: generate held-out-test DNS/model/error fields, turbulence
   spectra and RMS-normalized PDFs, or KH passive-tracer post-processing. It
-  requires an explicit Re and sample ID and records artifact hashes.
-- `validate_configs.py`: audit one recipe or the complete config tree. Add
-  `--check-paths` after setting environment variables to catch missing inputs
-  before requesting a GPU.
-- `submit_ablation_smoke_suite.sh`: generate and optionally submit reduced
-  smoke tests for the first six DT ablations.
-- `submit_dt_acceptance_chain.sh` and `submit_kh_acceptance_chain.sh`: generate
-  and optionally submit six dependent data-to-model acceptance stages for DT
-  or KH. These PBS launchers require explicit site paths and a project code;
-  use `DRY_RUN=1` to inspect generated scripts without submitting jobs.
+  requires an explicit Re and sample ID.

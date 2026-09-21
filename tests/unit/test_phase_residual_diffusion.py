@@ -124,7 +124,7 @@ def test_residual_validation_schedule_matches_reported_runs():
     ]
     assert sr_epochs == list(range(10, 100, 10))
     assert mr_epochs == list(range(5, 100, 5))
-    assert _should_validate(0, 100, 10, "previous_dino")
+    assert not _should_validate(0, 100, 10, "previous_dino")
     assert _should_validate(99, 100, 10, "previous_dino")
     with pytest.raises(ValueError, match="validation_interval"):
         _should_validate(1, 100, 0, "phase_residual_single_re")

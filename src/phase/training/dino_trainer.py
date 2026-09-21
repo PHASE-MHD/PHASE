@@ -44,7 +44,9 @@ def _should_validate(epoch, num_epochs, interval, recipe):
         raise ValueError("validation_interval must be positive.")
     if recipe in _RESIDUAL_RECIPES:
         return epoch != 0 and epoch % interval == 0
-    return epoch % interval == 0 or epoch == num_epochs - 1
+    return epoch != 0 and (
+        epoch % interval == 0 or epoch == num_epochs - 1
+    )
 
 
 def _train_epoch(model, loader, optimizer, device, clip_norm):
@@ -169,6 +171,17 @@ def _validate_recipe(config):
             train.get("warm_start_checkpoint", "")
         ).strip():
             raise ValueError("The previous DINO diffusion model starts from scratch.")
+        expected_epochs = 10 if train.get("acceptance_run") is True else 101
+        if train.get("epochs") != expected_epochs:
+            raise ValueError(
+                f"The previous DINO baseline requires {expected_epochs} epochs."
+            )
+        if train.get("validation_interval") != 10:
+            raise ValueError("The previous DINO baseline validates every ten epochs.")
+        if train.get("checkpoint_metric") != "denorm_rel_l2":
+            raise ValueError(
+                "The previous DINO baseline checkpoints on denorm_rel_l2."
+            )
         return recipe
     if recipe not in _RESIDUAL_RECIPES:
         raise ValueError("Unknown diffusion recipe: " + str(recipe))
@@ -417,6 +430,18 @@ def train_dino(config, resume_checkpoint=None):
     )
     interval = int(train.get("validation_interval", 10))
     sample_steps = int(model_params.get("num_sample_steps", 32))
+    checkpoint_metric_name = train.get("checkpoint_metric", "denorm_rel_l2")
+    checkpoint_metric_indices = {
+        "model_val_loss": 0,
+        "denorm_rel_l2": 1,
+        "denorm_mse": 2,
+    }
+    if checkpoint_metric_name not in checkpoint_metric_indices:
+        raise ValueError(
+            "train_params.checkpoint_metric must be one of "
+            + str(sorted(checkpoint_metric_indices))
+        )
+    checkpoint_metric_index = checkpoint_metric_indices[checkpoint_metric_name]
     history = []
 
     for epoch in range(start_epoch, int(train["epochs"])):
@@ -436,8 +461,9 @@ def train_dino(config, resume_checkpoint=None):
                 validation_denorm_rel_l2=metrics[1],
                 validation_denorm_mse=metrics[2],
             )
-            if metrics[1] < best:
-                best = metrics[1]
+            checkpoint_metric = metrics[checkpoint_metric_index]
+            if checkpoint_metric < best:
+                best = checkpoint_metric
                 _checkpoint(
                     train["checkpoint_path"],
                     model,
@@ -445,9 +471,7 @@ def train_dino(config, resume_checkpoint=None):
                     scheduler,
                     epoch,
                     metrics,
-                    selected_metric_index=(
-                        1 if recipe in _RESIDUAL_RECIPES else 0
-                    ),
+                    selected_metric_index=checkpoint_metric_index,
                 )
                 selected_checkpoint_path = train["checkpoint_path"]
         history.append(row)

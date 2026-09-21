@@ -415,6 +415,41 @@ def _validate_conditioner(config, errors):
     )
     if model.get("model_type") != "tfno":
         errors.append("conditioner configs currently support model_type='tfno' only")
+    if config.get("conditioner_recipe") == "previous_dino_tfno":
+        expected_model = {
+            "model_variant": "3d",
+            "in_channels": 6,
+            "out_channels": 3,
+            "decoder_layers": 2,
+            "dimension": 3,
+            "latent_channels": 32,
+            "num_fno_layers": 8,
+            "num_fno_modes": 8,
+            "padding": [5, 0, 0],
+            "padding_type": "constant",
+            "activation_fn": "gelu",
+            "coord_features": False,
+            "rank": 0.5,
+            "factorization": "cp",
+        }
+        if any(model.get(key) != value for key, value in expected_model.items()):
+            errors.append("previous DINO conditioner architecture is not canonical")
+        if not (
+            data.get("train_size") == 900
+            and data.get("val_plus_test_size") == 100
+            and data.get("seed") == 42
+            and data.get("sub_t") == 4
+            and data.get("sub_x") == 1
+            and data.get("t_range") == [0.0, 1.0]
+            and data.get("x_range") == [0.0, 1.0]
+            and data.get("y_range") == [0.0, 1.0]
+        ):
+            errors.append("previous DINO conditioner data recipe is not canonical")
+        if not (
+            norm.get("type") == "minmax"
+            and norm.get("feature_range") == [-1, 1]
+        ):
+            errors.append("previous DINO conditioner normalization is not canonical")
 
 
 def validate_config(config, *, check_paths=False):

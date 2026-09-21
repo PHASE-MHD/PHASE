@@ -73,6 +73,9 @@ def generate_features(config, checkpoint_path, output_root, batch_size=4, num_wo
         seed=dataset.get("seed", 42),
         sub_t=dataset.get("sub_t", 1),
         sub_x=dataset.get("sub_x", 1),
+        t_range=tuple(dataset.get("t_range", (0.0, 1.0))),
+        x_range=tuple(dataset.get("x_range", (0.0, 1.0))),
+        y_range=tuple(dataset.get("y_range", (0.0, 1.0))),
     )
     model = create_model(config).to(device)
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)

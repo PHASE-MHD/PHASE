@@ -73,5 +73,5 @@ python scripts/train_dino.py \
 ```
 
 The canonical run uses 101 epochs indexed 0--100, batch size 64, validation
-every ten epochs, 32 sampling steps, and checkpoint selection by denormalized
-relative L2. `load_checkpoint` must remain empty.
+at epochs 10, 20, ..., 100, 32 sampling steps, and checkpoint selection by
+denormalized relative L2. `load_checkpoint` must remain empty.

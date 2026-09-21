@@ -26,6 +26,9 @@ def test_dino_config_is_full_field_and_starts_from_scratch(monkeypatch, tmp_path
     assert config["model_params"]["re_conditioning"]["enabled"] is False
     assert config["model_params"]["use_vorticity_loss"] is False
     assert config["model_params"]["use_current_loss"] is False
+    assert config["train_params"]["epochs"] == 101
+    assert config["train_params"]["validation_interval"] == 10
+    assert config["train_params"]["checkpoint_metric"] == "denorm_rel_l2"
 
 
 def test_direct_diffusion_dataset_does_not_replace_target_with_residual(tmp_path):

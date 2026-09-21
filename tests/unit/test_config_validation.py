@@ -31,6 +31,12 @@ def test_residual_recipe_rejects_direct_targets():
 def test_conditioner_is_not_treated_as_a_training_recipe():
     path = ROOT / "configs/previous_baseline/dino/conditioner_re1000.yaml"
     assert validate_config_file(path, expand_environment=False) == []
+    config = yaml.safe_load(path.read_text())
+    config["model_params"]["decoder_layers"] = 1
+    assert (
+        "previous DINO conditioner architecture is not canonical"
+        in validate_config(config)
+    )
 
 
 def test_kh_time_contract_is_checked():

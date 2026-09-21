@@ -74,6 +74,6 @@ train_params:
   checkpoint_path: ${OUTPUT_ROOT}/checkpoints/dino_re1000.pt
   load_checkpoint: ""
   validation_interval: 10
-  checkpoint_metric: denormalized_relative_l2
+  checkpoint_metric: denorm_rel_l2
   clip_grad: true
   clip_grad_max_norm: 1.0

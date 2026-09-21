@@ -21,7 +21,7 @@ def _criterion_loss(criterion, loader, prediction, target, inputs):
     return criterion(prediction, target)
 
 
-def _run_epoch(model, loader, criterion, device, optimizer=None):
+def _run_epoch(model, loader, criterion, device, optimizer=None, clip_norm=None):
     training = optimizer is not None
     model.train(training)
     total = 0.0
@@ -36,7 +36,10 @@ def _run_epoch(model, loader, criterion, device, optimizer=None):
             loss = _criterion_loss(criterion, loader, prediction, target, inputs)
             if training:
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                if clip_norm is not None:
+                    torch.nn.utils.clip_grad_norm_(
+                        model.parameters(), max_norm=clip_norm
+                    )
                 optimizer.step()
             total += float(loss.detach())
     return total / max(len(loader), 1)
@@ -111,6 +114,21 @@ def train_tfno(config):
     optimizer = create_optimizer(model.parameters(), config)
     scheduler = create_scheduler(optimizer, config)
     train = config["train_params"]
+    if train.get("recipe") != "previous_tfno":
+        raise ValueError("The tFNO baseline requires recipe=previous_tfno.")
+    if (
+        train.get("validation_interval") != 1
+        or train.get("checkpoint_metric") != "model_val_loss"
+    ):
+        raise ValueError(
+            "The tFNO baseline validates every epoch and checkpoints on "
+            "model_val_loss."
+        )
+    clip_norm = (
+        float(train["clip_grad_max_norm"])
+        if train.get("clip_grad", False)
+        else None
+    )
     load_checkpoint = str(train.get("load_checkpoint", "")).strip()
     if load_checkpoint:
         raise ValueError(
@@ -121,7 +139,9 @@ def train_tfno(config):
     best = math.inf
     history = []
     for epoch in range(train["epochs"]):
-        train_loss = _run_epoch(model, train_loader, criterion, device, optimizer)
+        train_loss = _run_epoch(
+            model, train_loader, criterion, device, optimizer, clip_norm
+        )
         val_loss = _run_epoch(model, val_loader, criterion, device)
         val_rel_l2, val_mse = _denormalized_metrics(model, val_loader, device)
         if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):

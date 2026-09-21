@@ -10,6 +10,7 @@
 - Split: 900 train / 50 validation / 50 held-out test, seed 42
 - Temporal subsampling: `sub_t=4`, giving 26 images per trajectory
 - Training: 101 epochs (indices 0--100), batch size 64
+- Validation: epochs 10, 20, ..., 100; no epoch-zero validation
 - Validation and evaluation sampling: 32 EDM steps
 - Reported checkpoint: epoch 100, selected by denormalized relative L2
 - Training job: `178482355.gadi-pbs`

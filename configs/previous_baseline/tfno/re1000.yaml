@@ -77,7 +77,11 @@ optimizer_params:
   patience: 5
 
 train_params:
+  recipe: previous_tfno
   epochs: 100
   checkpoint_path: ${OUTPUT_ROOT}/checkpoints/tfno_re1000.pt
   load_checkpoint: ""
-  checkpoint_metric: normalized_validation_loss
+  validation_interval: 1
+  checkpoint_metric: model_val_loss
+  clip_grad: true
+  clip_grad_max_norm: 1.0

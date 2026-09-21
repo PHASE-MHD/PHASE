@@ -9,7 +9,9 @@
 - Split: 900 train / 50 validation / 50 held-out test, seed 42
 - Temporal subsampling: `sub_t=4`
 - Training: 100 epochs (indices 0--99), batch size 1
-- Best checkpoint: epoch 99, selected by normalized validation loss
+- Validation: every epoch
+- Gradient clipping: maximum norm 1.0
+- Best checkpoint: epoch 99, selected by model validation loss
 - Legacy job: `178392259.gadi-pbs`
 
 ## Frozen legacy sources

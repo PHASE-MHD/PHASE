@@ -20,7 +20,11 @@ def test_tfno_config_is_canonical_and_has_no_warm_start(monkeypatch, tmp_path):
     assert config["dataset_params"]["sub_t"] == 4
     assert config["loss_params"]["nu"] == pytest.approx(1e-3)
     assert config["loss_params"]["eta"] == pytest.approx(1e-3)
+    assert config["train_params"]["recipe"] == "previous_tfno"
     assert config["train_params"]["load_checkpoint"] == ""
+    assert config["train_params"]["validation_interval"] == 1
+    assert config["train_params"]["checkpoint_metric"] == "model_val_loss"
+    assert config["train_params"]["clip_grad_max_norm"] == pytest.approx(1.0)
     assert "$" not in config["dataset_params"]["data_path"]
 
 

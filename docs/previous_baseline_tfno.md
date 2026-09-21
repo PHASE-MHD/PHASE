@@ -32,5 +32,5 @@ python scripts/train_tfno.py \
 
 The canonical configuration intentionally keeps `load_checkpoint: ""`.
 Training therefore starts at epoch zero without a warm start. The best
-checkpoint is selected by normalized validation loss, matching the reported
-legacy run.
+checkpoint is selected every epoch by model validation loss. Gradients are
+clipped to a maximum norm of 1.0, matching the reported run.

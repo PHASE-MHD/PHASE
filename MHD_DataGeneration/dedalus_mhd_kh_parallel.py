@@ -2,24 +2,16 @@
 Dedalus script simulating a 2D periodic incompressible MHD Kelvin-Helmholtz flow
 with a passive tracer field for visualization. This script demonstrates solving a 2D periodic
 initial value problem. It can be ran serially or in parallel, and uses the
-built-in analysis framework to save data snapshots to HDF5 files. The
-`plot_snapshots.py` script can be used to produce plots from the saved data.
-The simulation should take a few cpu-minutes to run.
+built-in analysis framework to save data snapshots to HDF5 files.
 
 The initial velocity is a periodic double-shear Kelvin-Helmholtz profile generated
 from a streamfunction, and the magnetic vector potential is initialized with the
 same smooth random periodic field used by the turbulence generator. The problem is
-non-dimensionalized usign the shear-layer spacing and velocity jump, so the
-resulting viscosity and tracer diffusivity are related to the Reynolds and
-Schmidt numbers as:
+non-dimensionalized using the shear-layer spacing and velocity jump, so the
+resulting viscosity and tracer diffusivity are related to the Reynolds numbers as:
 
     nu = 1 / Re
     eta = 1 / ReM
-    D = nu / Schmidt
-
-To run and plot using e.g. 4 processes:
-    $ mpiexec -n 4 python3 shear_flow.py
-    $ mpiexec -n 4 python3 plot_snapshots.py snapshots/*.h5
 """
 
 
@@ -112,14 +104,9 @@ def check_if_complete(sim_outputs, Nt=101):
     except Exception:
         return False
     
-        
-
-    
-
 def _periodic_gaussian(y, center, width, length):
     dy = np.minimum(np.abs(y - center), length - np.abs(y - center))
     return np.exp(-(dy / width) ** 2)
-
 
 def _streamfunction_from_ux(ux_y, length):
     """Return periodic psi(y) with d psi / d y = ux_y and zero mean."""
@@ -132,7 +119,6 @@ def _streamfunction_from_ux(ux_y, length):
     psi_hat[mask] = ux_hat[mask] / (1j * ky[mask])
     psi = np.fft.ifft(psi_hat).real
     return psi - np.mean(psi)
-
 
 def make_kh_streamfunctions(nsim, nx, ny, lx, ly, U0=1.0, delta=0.05, epsilon=0.01, mode=1, sigma=0.2, seed=0):
     """Build periodic double-shear KH streamfunctions on an (nx, ny) grid.

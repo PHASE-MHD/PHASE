@@ -3,17 +3,14 @@
 The solver uses a periodic Fourier domain and independently sampled Gaussian
 random fields for the initial stream function and magnetic vector potential.
 The velocity and magnetic fields are constructed as curls of those potentials,
-so both initial fields are divergence-free. A passive tracer initialized from
-the stream function is evolved for visualization but is not an ML data channel.
+so both initial fields are divergence-free.
 
-The nondimensional transport coefficients are
+The viscosity and magnetic diffusivity are set by
 
     nu = 1 / Re
     eta = 1 / ReM
-    D = nu / Schmidt
 
-Independent trajectories can be generated concurrently with the worker count
-set by ``PBS_NCPUS``. Dedalus writes trajectory snapshots to HDF5 files.
+Dedalus writes trajectory snapshots to HDF5 files.
 """
 
 
@@ -99,10 +96,6 @@ def check_if_complete(sim_outputs, Nt=101):
             return False
     except Exception:
         return False
-    
-        
-
-    
 
 if __name__ == '__main__':
     args = parse_arguments()

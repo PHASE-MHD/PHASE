@@ -2,13 +2,24 @@
 SR / single_re = single-regime
 MR / multi_re = multi-regime
 
+Previous baseline configs:
+- `previous_baseline/tfno/re1000.yaml`: three-channel Re=Rm=1000 tFNO trained from scratch
+- `previous_baseline/dino/conditioner_re1000.yaml`: tFNO conditioner used to generate DINO features
+- `previous_baseline/dino/re1000.yaml`: full-field DINO conditioned on the Re=Rm=1000 tFNO
+
 Ablation configs:
 - `ablations/scot_without_tl/re1000.yaml`: three-channel scOT trained from scratch at `Re=Rm=1000`
 - `ablations/scot_with_tl/re1000.yaml`: three-channel scOT initialized with transfer learning from POSEIDON weights `camlab-ethz/Poseidon-T` at `Re=Rm=1000`
 - `ablations/naive_multi_regime/multi_re.yaml`: warm-started three-channel
   scOT with naive Re/Rm input maps
+- `ablations/gated_adapter_multi_regime/multi_re.yaml`: warm-started three-channel
+  scOT with gated adapter Re/Rm conditioning
+- `ablations/four_channel_hp_physics/multi_re.yaml`: four-channel MR scOT with
+  Helmholtz projection and MHD, vorticity, and current losses
 
 Turbulence configs:
+- `turbulence/single_re/scot_re1000.yaml`: four-channel Re=Rm=1000 scOT with
+  POSEIDON transfer learning, Helmholtz projection, and physics losses
 - `turbulence/single_re/phase_re1000.yaml`: corrected four-field SR PHASE residual
   diffusion from random initialization.
 - `turbulence/multi_re/phase.yaml`: MR PHASE residual diffusion with per-Re

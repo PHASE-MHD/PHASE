@@ -9,10 +9,7 @@ incompressible magnetohydrodynamics (MHD) trajectories used by PHASE.
 - `dedalus_mhd_kh_parallel.py`: double-shear-layer Kelvin-Helmholtz (KH)
   instability.
 - `my_random_fields.py`: periodic Gaussian random-field generator used to
-  initialize the velocity streamfunction and/or magnetic vector potential.
-
-The generators write raw Dedalus HDF5 snapshots. Conversion to the arrays used
-for model training is a separate preprocessing step; see `../docs/preprocessing.md`.
+  initialize the velocity streamfunction and magnetic vector potential.
 
 ## Physical System
 
@@ -21,47 +18,20 @@ periodic Fourier domain. Dedalus evolves the velocity vector `u`, pressure `p`,
 out-of-plane magnetic vector potential `A`, and passive tracer `s`. The in-plane
 magnetic field is reconstructed as
 
-```text
-B = curl(A z_hat),
-```
+B = curl(A z_hat)
 
-which is divergence-free by construction. The nondimensional transport
-coefficients are
+which is divergence-free by construction. The transport coefficients are
 
-```text
 nu  = 1 / Re
 eta = 1 / ReM
-D   = nu / Schmidt
-```
 
-where `nu`, `eta`, and `D` are the kinematic viscosity, magnetic diffusivity,
-and passive-tracer diffusivity, respectively.
+where `nu` and `eta` are the kinematic viscosity and magnetic diffusivity,
+respectively.
 
 The turbulence generator samples periodic Gaussian random fields for both the
-velocity streamfunction and magnetic potential. The KH generator uses a
+velocity streamfunction and magnetic potential. This is adapted from Rosofsky and Huerta (2023) and Kacmaz et al. (2025). The KH generator uses a
 periodic double-shear velocity profile with a transverse perturbation and a
-Gaussian-random magnetic potential.
-
-## Requirements
-
-The scripts require Python 3.10 or a compatible Python version with:
-
-- Dedalus 3
-- NumPy
-- h5py
-- PyTorch
-- mpi4py and an MPI implementation
-- FFTW
-- Matplotlib
-- docopt
-
-`my_random_fields.py` must remain in the same directory as the two entry-point
-scripts. PyTorch is used only to sample the initial Gaussian random fields; the
-Dedalus simulations themselves run on CPUs.
-
-The production environment used Dedalus 3.0.5 and Python 3.10. Installation of
-Dedalus and its native MPI, FFTW, and HDF5 dependencies is platform-specific;
-consult the official Dedalus installation documentation for the target system.
+Gaussian-random magnetic potential. `my_random_fields.py` must remain in the same directory as the two entry-point scripts.
 
 ## Running Decaying Turbulence
 
@@ -78,8 +48,6 @@ PBS_NCPUS=1 python dedalus_mhd_turbulence_parallel.py \
   --output_dt 1e-2 \
   --output_dir outputs/turbulence_Re1000
 ```
-
-This configuration saves 101 frames over `t = [0, 1]`.
 
 ## Running Kelvin-Helmholtz Instability
 
@@ -104,41 +72,6 @@ PBS_NCPUS=1 python dedalus_mhd_kh_parallel.py \
   --output_dir outputs/kh_Re1000
 ```
 
-This configuration saves 251 frames over `t = [0, 5]`.
-
-## Parallel Execution
-
-Each trajectory is an independent Dedalus solve. The scripts use a Python
-`multiprocessing.Pool`, with the worker count read from `PBS_NCPUS`:
-
-```bash
-PBS_NCPUS=8 python dedalus_mhd_turbulence_parallel.py --N 50 [other options]
-```
-
-If `PBS_NCPUS` is not set, the scripts use one worker. Set the number of workers
-to the CPU allocation granted by the scheduler. These scripts should not also
-be launched through multiple MPI ranks: parallelism across trajectories is
-already managed by the multiprocessing pool.
-
-By default, integration uses the fixed time step supplied through `--Dt` and
-the fourth-order `RK443` Dedalus timestepper. Passing `--use_cfl` enables the
-Dedalus CFL controller instead. Use `--skip_exists` to skip trajectories whose
-output already contains the expected number of snapshots.
-
-## Output Layout
-
-For `--N 3 --output_dir outputs/example`, the scripts create:
-
-```text
-outputs/example/
-|-- output-0/
-|   `-- output-0_s1.h5
-|-- output-1/
-|   `-- output-1_s1.h5
-`-- output-2/
-    `-- output-2_s1.h5
-```
-
 The exact HDF5 filename is assigned by Dedalus. Each snapshot file contains the
 following tasks:
 
@@ -150,14 +83,3 @@ following tasks:
   channel.
 
 PHASE models use `(u_x, u_y, B_x, B_y)` after preprocessing.
-
-## Reproducibility Notes
-
-- `my_random_fields.py` initializes the PyTorch random seed to zero.
-- KH perturbation phases are controlled independently by `--kh_seed`.
-- `Re` and `ReM` must both be specified explicitly when generating a dataset.
-- The canonical multi-regime experiments use
-  `Re = Rm = [80, 200, 400, 650, 1000, 1500, 2050, 2750, 3600, 4500]`.
-- Output directories are overwritten by Dedalus unless existing complete
-  trajectories are skipped with `--skip_exists`.
-

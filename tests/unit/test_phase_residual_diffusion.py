@@ -60,41 +60,6 @@ def test_multi_re_phase_recipe_preserves_reported_warm_start(monkeypatch, tmp_pa
     assert config["optimizer_params"]["param_groups"]["enabled"] is False
 
 
-def test_dt_acceptance_diffusion_configs_form_clean_residual_chain(
-    monkeypatch, tmp_path
-):
-    single = _config(
-        "configs/acceptance/dt_20pct_10ep/single_re_phase.yaml",
-        monkeypatch,
-        tmp_path,
-    )
-    multi = _config(
-        "configs/acceptance/dt_20pct_10ep/multi_re_phase.yaml",
-        monkeypatch,
-        tmp_path,
-    )
-
-    assert _validate_recipe(single) == "phase_residual_single_re"
-    assert _validate_recipe(multi) == "phase_residual_multi_re"
-    for config in (single, multi):
-        assert config["train_params"]["epochs"] == 10
-        assert config["train_params"]["acceptance_run"] is True
-        assert config["dataset_params"]["prediction_mode"] == "residual"
-        assert config["model_params"]["projection_mode"] == "full_field_residual"
-        assert [
-            config["dataset_params"][key]
-            for key in (
-                "source_train_sample_fraction",
-                "source_validation_sample_fraction",
-                "source_test_sample_fraction",
-            )
-        ] == [0.2, 0.1, 0.1]
-    assert single["train_params"]["warm_start_checkpoint"] == ""
-    assert multi["train_params"]["warm_start_checkpoint"] == (
-        single["train_params"]["checkpoint_path"]
-    )
-
-
 def test_residual_projection_operates_on_reconstructed_full_field():
     projection = HelmholtzProjectionDiffusion(project_velocity=True, project_B=True)
     condition = torch.randn(2, 4, 8, 8)

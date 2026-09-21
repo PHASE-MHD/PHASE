@@ -1,10 +1,8 @@
-import os
 from pathlib import Path
 
 import pytest
 import torch
 
-import phase.training.tfno_trainer as tfno_trainer
 from phase.losses import create_loss
 from phase.physics import compute_constraints
 from phase.utils import load_config
@@ -24,28 +22,6 @@ def test_tfno_config_is_canonical_and_has_no_warm_start(monkeypatch, tmp_path):
     assert config["loss_params"]["eta"] == pytest.approx(1e-3)
     assert config["train_params"]["load_checkpoint"] == ""
     assert "$" not in config["dataset_params"]["data_path"]
-
-
-def test_tfno_trainer_forwards_opt_in_sample_fractions(monkeypatch, tmp_path):
-    for name in ("DATA_ROOT", "STATS_ROOT", "OUTPUT_ROOT"):
-        monkeypatch.setenv(name, str(tmp_path / name.lower()))
-    path = Path(__file__).parents[2] / (
-        "configs/acceptance/ablation_smoke_20pct_10ep/tfno_re1000.yaml"
-    )
-    config = load_config(path)
-    captured = {}
-
-    def stop_after_loader(*args, **kwargs):
-        captured.update(kwargs)
-        raise RuntimeError("loader captured")
-
-    monkeypatch.setattr(tfno_trainer, "get_dataloaders", stop_after_loader)
-    with pytest.raises(RuntimeError, match="loader captured"):
-        tfno_trainer.train_tfno(config)
-
-    assert captured["train_sample_fraction"] == pytest.approx(0.2)
-    assert captured["validation_sample_fraction"] == pytest.approx(0.1)
-    assert captured["test_sample_fraction"] == pytest.approx(0.1)
 
 
 def test_vector_potential_constraints_are_finite():

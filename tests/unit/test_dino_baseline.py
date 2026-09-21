@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 import torch
 
-from scripts import generate_diffusion_features
 from phase.data import DiffusionDataset
 from phase.models.checkpoint_mapping import map_official_tfno_state_dict
 from phase.utils import load_config
@@ -27,35 +26,6 @@ def test_dino_config_is_full_field_and_starts_from_scratch(monkeypatch, tmp_path
     assert config["model_params"]["re_conditioning"]["enabled"] is False
     assert config["model_params"]["use_vorticity_loss"] is False
     assert config["model_params"]["use_current_loss"] is False
-
-
-def test_dino_feature_generation_forwards_opt_in_sample_fractions(
-    monkeypatch, tmp_path
-):
-    for name in ("DATA_ROOT", "STATS_ROOT"):
-        monkeypatch.setenv(name, str(tmp_path / name.lower()))
-    path = Path(__file__).parents[2] / (
-        "configs/acceptance/ablation_smoke_20pct_10ep/"
-        "dino_conditioner_re1000.yaml"
-    )
-    config = load_config(path)
-    captured = {}
-
-    def stop_after_loader(*args, **kwargs):
-        captured.update(kwargs)
-        raise RuntimeError("loader captured")
-
-    monkeypatch.setattr(
-        generate_diffusion_features, "get_dataloaders", stop_after_loader
-    )
-    with pytest.raises(RuntimeError, match="loader captured"):
-        generate_diffusion_features.generate_features(
-            config, tmp_path / "unused.pt", tmp_path / "features"
-        )
-
-    assert captured["train_sample_fraction"] == pytest.approx(0.2)
-    assert captured["validation_sample_fraction"] == pytest.approx(0.1)
-    assert captured["test_sample_fraction"] == pytest.approx(0.1)
 
 
 def test_direct_diffusion_dataset_does_not_replace_target_with_residual(tmp_path):

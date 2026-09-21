@@ -71,31 +71,6 @@ explicit correction.
 | `kh/multi_re/scot_t0_5.yaml` | Ten-regime global-P99 KH scOT, `t=[0,5]`. |
 | `kh/multi_re/residual_diffusion_t0_5.yaml` | Ten-regime per-Re-normalized KH residual diffusion. |
 
-### configs/acceptance
-
-These are **New reduced-data tests**, not paper-result configs. They preserve
-the production modes while using 20% training data, 10% held-out data, and ten
-epochs.
-
-| File | Purpose |
-| --- | --- |
-| `ablation_smoke_20pct_10ep/tfno_re1000.yaml` | tFNO smoke. |
-| `ablation_smoke_20pct_10ep/dino_conditioner_re1000.yaml` | DINO feature smoke. |
-| `ablation_smoke_20pct_10ep/dino_re1000.yaml` | DINO training smoke. |
-| `ablation_smoke_20pct_10ep/scot_without_tl_re1000.yaml` | No-TL scOT smoke. |
-| `ablation_smoke_20pct_10ep/scot_with_tl_re1000.yaml` | TL scOT smoke. |
-| `ablation_smoke_20pct_10ep/naive_multi_re.yaml` | Naive-MR smoke. |
-| `ablation_smoke_20pct_10ep/gated_adapter_multi_re.yaml` | Gated-MR smoke. |
-| `dt_20pct_10ep/single_re_scot.yaml` | DT single-Re scOT stage. |
-| `dt_20pct_10ep/single_re_phase.yaml` | DT single-Re residual stage. |
-| `dt_20pct_10ep/multi_re_scot.yaml` | DT multi-Re scOT stage. |
-| `dt_20pct_10ep/multi_re_phase.yaml` | DT multi-Re residual stage. |
-| `kh_20pct_10ep/README.md` | KH acceptance scope. |
-| `kh_20pct_10ep/single_re_scot.yaml` | KH single-Re scOT stage. |
-| `kh_20pct_10ep/single_re_phase.yaml` | KH single-Re residual stage. |
-| `kh_20pct_10ep/multi_re_scot.yaml` | KH multi-Re scOT stage. |
-| `kh_20pct_10ep/multi_re_phase.yaml` | KH multi-Re residual stage. |
-
 All `.gitkeep` files are empty placeholders with no runtime behavior.
 
 ## src/phase

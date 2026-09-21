@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert MHD trajectories into canonical PHASE NumPy arrays."""
+"""Convert MHD trajectories into PHASE NumPy arrays."""
 
 from __future__ import annotations
 

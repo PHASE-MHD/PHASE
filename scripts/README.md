@@ -1,21 +1,20 @@
 # Scripts
 
-# Previous baselines
+## Previous baselines
 - `train_tfno.py`: train the no warm-start tFNO baseline (based on previous work by Rosofsky and Huerta (2023)).
-- `train_dino.py`: train the full-field EDM diffusion baseline (based on previous work by Kacmaz et al. (2025)).
-- `generate_diffusion_features.py`: generate full-field DINO conditioner.
+- `train_dino.py`: train the full-field EDM diffusion baseline (based on previous work by Kacmaz et al. (2025)) or PHASE residual diffusion, as selected by the configuration.
+- `generate_diffusion_features.py`: generate full-field DINO conditioner predictions and DNS targets.
 
-# scOT and PHASE scripts
+## scOT and PHASE scripts
 - `prepare_data.py`: convert Dedalus HDF5 trajectories and vector-potential
   arrays to PHASE `.npy` layouts.
 - `compute_statistics.py`: compute train-only trajectory or diffusion
   normalization statistics.
-- `train_scot.py`: train the three-channel scOT ablations - no transfer learning ablation, ablation with POSEIDON transfer, naive multi-regime, and gated-
-  adapter multi-regime ablations.
-- `generate_scot_diffusion_features.py` exports physical-unit scOT/DNS pairs for
-single- or multi-regime residual diffusion. 
+- `train_scot.py`: train the three-channel scOT ablations and the four-channel turbulence and KH scOT models.
+- `generate_scot_diffusion_features.py`: export physical-unit scOT/DNS pairs
+  for single- or multi-regime residual diffusion.
 
-# Evaluation scripts
+## Evaluation scripts
 - `evaluate_error.py`: run the unified held-out-test evaluator for tFNO, DINO,
   deterministic scOT, or PHASE. It requires an explicit Reynolds number and writes
   JSON, aggregate CSV, per-sample CSV, and text reports.

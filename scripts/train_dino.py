@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train a previous-study DINO or PHASE residual-diffusion recipe."""
+"""Train a previous-study DINO or PHASE residual-diffusion experiment."""
 
 import argparse
 

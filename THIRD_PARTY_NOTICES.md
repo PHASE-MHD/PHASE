@@ -1,6 +1,7 @@
 # Third-Party Notices
 
-PHASE is primarily original project work by Radhika Achikanath Chirakkara.
+PHASE is original project work by Radhika Achikanath Chirakkara, Rajdeep
+Halder, and Zezheng Song.
 Only limited, specifically documented portions of the repository are adapted
 from earlier MIT-licensed research software. Attribution below applies solely
 to those adapted portions; it does not indicate authorship, ownership, or
@@ -14,9 +15,9 @@ Selected implementation components are adapted from:
 - [MHD-World](https://github.com/rhaldarpurdue/MHD-World) and its project
   development variants
 
-Every adapted file or component is identified in the repository's
-file-level provenance records. The original MIT notice applicable to those
-portions is reproduced below.
+Adapted components and their source origins are summarized in
+`README_src_changes.md`. The original MIT notice applicable to those portions
+is reproduced below.
 
 ```text
 MIT License
@@ -42,6 +43,5 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-See `README_file_provenance.md` and `README_src_changes.md`
-for the audited source inventory and the intentional changes made during
-admission to the public package.
+See `README_src_changes.md` for the source inventory and intentional changes
+made during admission to the public package.

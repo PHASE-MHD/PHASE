@@ -6,9 +6,8 @@ consolidate the eight paper ablations and the selected decaying-turbulence
 Job scripts, logs, checkpoints, analysis outputs, and paper-only plotting
 scripts are excluded from the source inventory.
 
-The file-by-file consolidation inventory is maintained in
-`README_file_provenance.md`; this file explains why the recovered changes are
-needed.
+This file records the recovered source origins, consolidation decisions, and
+reasons those changes are needed.
 
 It was assembled from the legacy working trees, saved Git status reports, Git
 history, source diffs, and evaluation records. Git cannot identify the author of every

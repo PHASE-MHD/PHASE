@@ -76,7 +76,12 @@ def test_kh_diffusion_architecture_matches_between_stages(monkeypatch, tmp_path)
         ("model_params", "sigma_data", 1.0, "canonical KH EDM"),
         ("optimizer_params", "lr", 1.0e-4, "canonical KH optimizer"),
         ("train_loader_params", "batch_size", 32, "canonical KH train loader"),
-        ("train_params", "epochs", 99, "100-epoch KH training"),
+        (
+            "train_params",
+            "epochs",
+            99,
+            "KH training length matches declared mode",
+        ),
         ("dataset_params", "source_output_dt", 0.01, "physical dt=0.1"),
     ],
 )

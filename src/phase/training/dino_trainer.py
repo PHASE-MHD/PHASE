@@ -306,7 +306,8 @@ def _validate_recipe(config):
                     and dataset.get("source_sub_t") == 5
                     and dataset.get("frames_per_trajectory") == 51
                 ),
-                "100-epoch KH training": train.get("epochs") == 100,
+                "KH training length matches declared mode": train.get("epochs")
+                == (10 if train.get("acceptance_run") is True else 100),
                 "five-epoch KH full validation": train.get(
                     "validation_interval"
                 )

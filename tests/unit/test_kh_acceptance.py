@@ -6,6 +6,7 @@ import pytest
 import yaml
 
 from phase.config_validation import validate_config
+from phase.training.dino_trainer import _validate_recipe
 from phase.training.scot_trainer import (
     _validate_kh_multi_re,
     _validate_kh_single_re,
@@ -88,3 +89,16 @@ def test_kh_acceptance_scot_recipes_pass_runtime_guards(monkeypatch, tmp_path):
 
     _validate_kh_single_re(single_re)
     _validate_kh_multi_re(multi_re)
+
+
+def test_kh_acceptance_diffusion_recipes_pass_runtime_guards(
+    monkeypatch, tmp_path
+):
+    for name in ("FEATURE_ROOT", "STATS_ROOT", "OUTPUT_ROOT"):
+        monkeypatch.setenv(name, str(tmp_path / name.lower()))
+
+    single_re = load_config(CONFIG_ROOT / "single_re_phase.yaml")
+    multi_re = load_config(CONFIG_ROOT / "multi_re_phase.yaml")
+
+    assert _validate_recipe(single_re) == "kh_phase_residual_single_re"
+    assert _validate_recipe(multi_re) == "kh_phase_residual_multi_re"

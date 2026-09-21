@@ -1,5 +1,5 @@
 """
-Diffusion models implementation for neural operator super resolution.
+Diffusion models implementation for neural operator.
 """
 
 from .models.backbones.unet import UNet

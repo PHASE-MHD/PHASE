@@ -34,7 +34,7 @@ def test_conditioner_is_not_treated_as_a_training_recipe():
 
 
 def test_kh_time_contract_is_checked():
-    path = ROOT / "configs/kh/multi_re/residual_diffusion_t0_5.yaml"
+    path = ROOT / "configs/kh/multi_re/phase.yaml"
     config = yaml.safe_load(path.read_text())
     config["dataset_params"]["frames_per_trajectory"] = 41
     errors = validate_config(config)
@@ -130,7 +130,7 @@ def test_invalid_yaml_reports_error(tmp_path):
     ],
 )
 def test_kh_time_contract_rejects_wrong_types(key, value, expected):
-    path = ROOT / "configs/kh/multi_re/residual_diffusion_t0_5.yaml"
+    path = ROOT / "configs/kh/multi_re/phase.yaml"
     config = yaml.safe_load(path.read_text())
     config["dataset_params"][key] = value
     assert expected in validate_config(config)

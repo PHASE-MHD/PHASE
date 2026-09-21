@@ -35,10 +35,10 @@ def test_kh_single_and_multi_re_diffusion_checkpoints(monkeypatch, tmp_path):
 
     root = Path(__file__).parents[2]
     single_config = load_config(
-        root / "configs/kh/single_re/residual_diffusion_re1000.yaml"
+        root / "configs/kh/single_re/phase_re1000.yaml"
     )
     multi_config = load_config(
-        root / "configs/kh/multi_re/residual_diffusion_t0_5.yaml"
+        root / "configs/kh/multi_re/phase.yaml"
     )
     assert single_config["model_params"] == multi_config["model_params"]
 

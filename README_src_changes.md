@@ -225,17 +225,17 @@ PHASE/
     turbulence/
       single_re/
         scot_re1000.yaml
-        diffusion_re1000.yaml
+        phase_re1000.yaml
       multi_re/
         scot.yaml
-        residual_diffusion.yaml
+        phase.yaml
     kh/
       single_re/
         scot_re1000.yaml
-        residual_diffusion_re1000.yaml
+        phase_re1000.yaml
       multi_re/
         scot_t0_5.yaml
-        residual_diffusion_t0_5.yaml
+        phase.yaml
     ablations/
   scripts/
     prepare_data.py

@@ -26,5 +26,5 @@ Turbulence configs:
 Kelvin-Helmholtz instability configs:
 - `kh/single_re/scot_re1000.yaml`: Re=Rm=1000 KH scOT
 - `kh/multi_re/scot_t0_5.yaml`: multi-regime KH scOT with global paired P99 normalization, gated adapters, and full-validation checkpointing.
-- `kh/single_re/residual_diffusion_re1000.yaml`: four-field KH SR PHASE residual diffusion from random weights.
-- `kh/multi_re/residual_diffusion_t0_5.yaml`: ten-regime KH MR PHASE residual diffusion with per-Re paired normalization and a weights-only single-Re warm start.
+- `kh/single_re/phase_re1000.yaml`: four-field KH SR PHASE residual diffusion from random weights.
+- `kh/multi_re/phase.yaml`: ten-regime KH MR PHASE residual diffusion with per-Re paired normalization and a weights-only single-Re warm start.

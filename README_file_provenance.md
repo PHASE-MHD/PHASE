@@ -67,9 +67,9 @@ explicit correction.
 | `turbulence/single_re/phase_re1000.yaml` | Corrected residual SR PHASE. |
 | `turbulence/multi_re/phase.yaml` | Reported residual MR PHASE. |
 | `kh/single_re/scot_re1000.yaml` | Canonical Re=1000 KH scOT. |
-| `kh/single_re/residual_diffusion_re1000.yaml` | Re=1000 KH residual diffusion. |
+| `kh/single_re/phase_re1000.yaml` | Re=1000 KH residual diffusion. |
 | `kh/multi_re/scot_t0_5.yaml` | Ten-regime global-P99 KH scOT, `t=[0,5]`. |
-| `kh/multi_re/residual_diffusion_t0_5.yaml` | Ten-regime per-Re-normalized KH residual diffusion. |
+| `kh/multi_re/phase.yaml` | Ten-regime per-Re-normalized KH residual diffusion. |
 
 All `.gitkeep` files are empty placeholders with no runtime behavior.
 

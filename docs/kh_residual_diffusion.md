@@ -64,7 +64,7 @@ python scripts/compute_statistics.py diffusion \
   --prediction-mode residual
 
 python scripts/train_dino.py \
-  --config configs/kh/single_re/residual_diffusion_re1000.yaml
+  --config configs/kh/single_re/phase_re1000.yaml
 ```
 
 The feature splits contain 800/100/100 simulations. Statistics are fitted only
@@ -90,7 +90,7 @@ python scripts/compute_statistics.py diffusion-per-re \
   --prediction-mode residual
 
 python scripts/train_dino.py \
-  --config configs/kh/multi_re/residual_diffusion_t0_5.yaml
+  --config configs/kh/multi_re/phase.yaml
 ```
 
 Each regime contributes 800/100/100 simulations. Train-only condition and
@@ -105,7 +105,7 @@ training state with:
 
 ```bash
 python scripts/train_dino.py \
-  --config configs/kh/multi_re/residual_diffusion_t0_5.yaml \
+  --config configs/kh/multi_re/phase.yaml \
   --resume-checkpoint "$OUTPUT_ROOT/checkpoints/kh_multi_re_phase_t0_5.pt"
 ```
 

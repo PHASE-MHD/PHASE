@@ -19,7 +19,7 @@ def _config(path, monkeypatch, tmp_path):
 
 def test_kh_single_re_diffusion_is_four_field_residual(monkeypatch, tmp_path):
     config = _config(
-        "configs/kh/single_re/residual_diffusion_re1000.yaml",
+        "configs/kh/single_re/phase_re1000.yaml",
         monkeypatch,
         tmp_path,
     )
@@ -37,7 +37,7 @@ def test_kh_single_re_diffusion_is_four_field_residual(monkeypatch, tmp_path):
 
 def test_kh_multi_re_diffusion_uses_single_re_weights_only(monkeypatch, tmp_path):
     config = _config(
-        "configs/kh/multi_re/residual_diffusion_t0_5.yaml",
+        "configs/kh/multi_re/phase.yaml",
         monkeypatch,
         tmp_path,
     )
@@ -56,12 +56,12 @@ def test_kh_multi_re_diffusion_uses_single_re_weights_only(monkeypatch, tmp_path
 
 def test_kh_diffusion_architecture_matches_between_stages(monkeypatch, tmp_path):
     single = _config(
-        "configs/kh/single_re/residual_diffusion_re1000.yaml",
+        "configs/kh/single_re/phase_re1000.yaml",
         monkeypatch,
         tmp_path,
     )
     multi = _config(
-        "configs/kh/multi_re/residual_diffusion_t0_5.yaml",
+        "configs/kh/multi_re/phase.yaml",
         monkeypatch,
         tmp_path,
     )
@@ -89,7 +89,7 @@ def test_kh_recipe_rejects_canonical_parameter_drift(
     monkeypatch, tmp_path, section, key, value, message
 ):
     config = _config(
-        "configs/kh/single_re/residual_diffusion_re1000.yaml",
+        "configs/kh/single_re/phase_re1000.yaml",
         monkeypatch,
         tmp_path,
     )
@@ -123,7 +123,7 @@ def test_kh_recipe_rejects_wrong_time_contract(
     monkeypatch, tmp_path, key, value, message
 ):
     config = _config(
-        "configs/kh/single_re/residual_diffusion_re1000.yaml",
+        "configs/kh/single_re/phase_re1000.yaml",
         monkeypatch,
         tmp_path,
     )
@@ -134,7 +134,7 @@ def test_kh_recipe_rejects_wrong_time_contract(
 
 def test_kh_recipe_rejects_diffusion_re_conditioning(monkeypatch, tmp_path):
     config = _config(
-        "configs/kh/multi_re/residual_diffusion_t0_5.yaml",
+        "configs/kh/multi_re/phase.yaml",
         monkeypatch,
         tmp_path,
     )
@@ -145,7 +145,7 @@ def test_kh_recipe_rejects_diffusion_re_conditioning(monkeypatch, tmp_path):
 
 def test_kh_recipe_rejects_runtime_loader_drift(monkeypatch, tmp_path):
     config = _config(
-        "configs/kh/multi_re/residual_diffusion_t0_5.yaml",
+        "configs/kh/multi_re/phase.yaml",
         monkeypatch,
         tmp_path,
     )
@@ -156,7 +156,7 @@ def test_kh_recipe_rejects_runtime_loader_drift(monkeypatch, tmp_path):
 
 def test_kh_multi_re_recipe_rejects_regime_grid_drift(monkeypatch, tmp_path):
     config = _config(
-        "configs/kh/multi_re/residual_diffusion_t0_5.yaml",
+        "configs/kh/multi_re/phase.yaml",
         monkeypatch,
         tmp_path,
     )

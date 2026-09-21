@@ -57,8 +57,8 @@ The canonical KH interval is t=[0,5]. Train in order:
 
 1. configs/kh/single_re/scot_re1000.yaml
 2. configs/kh/multi_re/scot_t0_5.yaml
-3. configs/kh/single_re/residual_diffusion_re1000.yaml
-4. configs/kh/multi_re/residual_diffusion_t0_5.yaml
+3. configs/kh/single_re/phase_re1000.yaml
+4. configs/kh/multi_re/phase.yaml
 
 Multi-Re scOT and diffusion use model-only single-Re warm starts. Both
 diffusion recipes learn residuals in all four fields and project the

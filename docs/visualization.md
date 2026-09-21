@@ -40,7 +40,7 @@ the plotted curves, never the quantitative evaluation report.
 
 ```bash
 python scripts/visualize.py \
-  --config configs/kh/multi_re/residual_diffusion_t0_5.yaml \
+  --config configs/kh/multi_re/phase.yaml \
   --checkpoint /path/to/checkpoint.pt \
   --problem kh \
   --re 2050 \

@@ -383,13 +383,13 @@ epoch-0-to-100 runs. Do not encode continuation epochs in canonical YAML.
 - `MHD-World/configs/config_poseidon_mhd_finetune_KH_Re1000_bfield_p99_bheavy_alltimerel_batch1_subt5_100ep_resume_epoch58_48h.yaml`
   -> `configs/kh/single_re/scot_re1000.yaml`
 - `DINOs/configs/model_mag/singleRe_KH_diffusion_best/config_diffusion_KH_Re1000_bestscot_residual_fullfield_100ep.yaml`
-  -> `configs/kh/single_re/residual_diffusion_re1000.yaml` (**implemented in Batch 13**)
+  -> `configs/kh/single_re/phase_re1000.yaml` (**implemented in Batch 13**)
 - `MHD-World-new/configs/KH_multiRe/config_poseidon_mhd_re_finetune_KH_bfield_p99_bheavy_warm_deep_adapters_100ep_48h_tinyval.yaml`
 - `MHD-World-new/configs/KH_multiRe/config_poseidon_mhd_re_finetune_KH_bfield_globalP99_t0_5_resume_epoch45_100ep_48h_denormrel.yaml`
   -> merge into `configs/kh/multi_re/scot_t0_5.yaml`
 - `DINOs/configs/model_mag/KH_multiRe_diffusion_globalP99_t0_5_epoch55_no_recond_warmstart_Re1000_per_re_norm_workers8_48h/config_diffusion_KH_multiRe_globalP99_t0_5_epoch55_residual_no_recond_warmstart_Re1000_per_re_norm_workers8_48h.yaml`
 - `DINOs/configs/model_mag/KH_multiRe_diffusion_globalP99_t0_5_epoch55_no_recond_warmstart_Re1000_per_re_norm_workers8_restart_epoch75_48h/config_diffusion_KH_multiRe_globalP99_t0_5_epoch55_residual_no_recond_warmstart_Re1000_per_re_norm_workers8_restart_epoch75_48h.yaml`
-  -> merge into `configs/kh/multi_re/residual_diffusion_t0_5.yaml` (**implemented in Batch 13**)
+  -> merge into `configs/kh/multi_re/phase.yaml` (**implemented in Batch 13**)
 
 The canonical KH configs must be fresh epoch-0-to-100 recipes over t=[0,5].
 The legacy deterministic chain selected epoch 55 and reached epoch 75; the

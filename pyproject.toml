@@ -47,6 +47,10 @@ scot = [
 visualization = [
   "matplotlib>=3.7,<4",
 ]
+hub = [
+  "huggingface-hub>=0.24,<1",
+  "safetensors>=0.4,<1",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -1,66 +1,60 @@
 # PHASE
 
-PHASE is a reproducible research implementation of physics-adapted neural
-operators for incompressible magnetohydrodynamics. It includes canonical data
-preprocessing, previous tFNO and DINO baselines, single- and multi-regime scOT
-ablations, gated Reynolds-number adapters, Helmholtz projection, direct-field
-physics losses, and residual diffusion for decaying turbulence and
-Kelvin--Helmholtz instability.
+PHASE is a physics-adapted neural-operator framework for two-dimensional
+incompressible magnetohydrodynamics. It combines POSEIDON transfer learning,
+Reynolds-number conditioning, Helmholtz projection, physics-informed losses,
+and residual diffusion for decaying turbulence and Kelvin--Helmholtz
+instability.
 
-The public package was consolidated from audited research implementations with
-configuration guards, checkpoint compatibility validation, and explicit
-provenance for every reported model family. Training data and model checkpoints remain
-external artifacts and are never committed to the repository.
+## Install
 
-## Current status
+PHASE requires Python 3.11. Create the pinned environment and install the
+package from the repository root:
 
-- Package name: `phase`
-- Version: `0.1.0`
-- Supported Python version: 3.11
-- Packaging: setuptools with a `src/` layout
-- License: MIT
+```bash
+conda env create -f environments/phase-cuda121.yml
+conda activate phase
+python -m pip install -e .
+```
 
-No training datasets, model checkpoints, logs, or generated analysis outputs
-are tracked in Git.
+scOT models additionally require the external POSEIDON dependency described in
+[README_poseidon.md](README_poseidon.md).
 
-Canonical array layouts and normalization rules are documented in
-`docs/data_format.md`. Data conversion and train-only statistics are
-documented in `docs/preprocessing.md`.
-PHASE is MIT-licensed under the project copyright in `LICENSE`. A limited
-number of adapted components retain their original attribution, recorded
-separately and precisely in `THIRD_PARTY_NOTICES.md`.
+## Workflows
 
-## Implemented training paths
+- Generate MHD trajectories with [MHD_DataGeneration](MHD_DataGeneration/README.md).
+- Convert data and fit training-only statistics using the
+  [preprocessing guide](docs/preprocessing.md).
+- Reproduce the tFNO and DINO baselines, model ablations, decaying-turbulence
+  PHASE models, and Kelvin--Helmholtz PHASE models through
+  [docs/README.md](docs/README.md).
+- Run held-out-test [evaluation](docs/evaluation.md) and
+  [visualization](docs/visualization.md).
 
-- Previous tFNO baseline, `Re=Rm=1000`, trained from scratch:
-  `docs/previous_baseline_tfno.md`
-- Previous DINO baseline, full-field EDM diffusion conditioned on the released
-  tFNO: `docs/previous_baseline_dino.md`
-- scOT without POSEIDON transfer learning, `Re=Rm=1000`, batch size 1:
-  `docs/scot_without_transfer_learning.md`
-- scOT with POSEIDON transfer learning, `Re=Rm=1000`, batch size 16:
-  `docs/scot_with_transfer_learning.md`
-- Naive multi-regime scOT with constant Re/Rm input maps:
-  `docs/naive_multi_regime.md`
-- Gated-adapter multi-regime scOT with deep Re/Rm conditioning:
-  `docs/gated_adapter_multi_regime.md`
-- Best four-channel single-Re DT scOT prerequisite:
-  `docs/turbulence_single_re_scot.md`
-- Four-channel multi-regime Helmholtz/physics-loss ablation:
-  `docs/four_channel_hp_physics.md`
-- Single- and multi-Re DT PHASE residual diffusion:
-  `docs/turbulence_residual_diffusion.md`
-- Single- and multi-Re Kelvin-Helmholtz deterministic scOT, canonical `t=[0,5]`:
-  `docs/kh_scot.md`
-- Single- and multi-Re Kelvin-Helmholtz residual diffusion, canonical `t=[0,5]`:
-  `docs/kh_residual_diffusion.md`
-- Unified held-out-test evaluation for tFNO, DINO, scOT, and PHASE:
-  `docs/evaluation.md`
-- Unified held-out-test visualization for all model families:
-  `docs/visualization.md`
+Canonical YAML files under [configs](configs/README.md) define every model,
+dataset split, normalization, loss, optimizer, warm start, and checkpoint
+selection rule.
 
-## Quick source check
+For example:
 
-    python -m compileall -q src scripts
-    python -m pip install --upgrade build
-    python -m build
+```bash
+export DATA_ROOT=/path/to/prepared/data
+export OUTPUT_ROOT=/path/to/outputs
+
+python scripts/train_scot.py \
+  --config configs/turbulence/single_re/scot_re1000.yaml
+```
+
+Training data and model checkpoints are external artifacts and are not tracked
+in Git.
+
+## Development check
+
+```bash
+python -m compileall -q src scripts
+python -m pip install -e ".[dev]"
+python -m build
+```
+
+PHASE is released under the [MIT License](LICENSE). Adapted third-party
+components are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

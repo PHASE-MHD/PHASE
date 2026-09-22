@@ -26,8 +26,6 @@ are tracked in Git.
 Canonical array layouts and normalization rules are documented in
 `docs/data_format.md`. Data conversion and train-only statistics are
 documented in `docs/preprocessing.md`.
-The clean-checkout execution order is in `docs/reproduction.md` and release
-verification is in `docs/release_checklist.md`.
 PHASE is MIT-licensed under the project copyright in `LICENSE`. A limited
 number of adapted components retain their original attribution, recorded
 separately and precisely in `THIRD_PARTY_NOTICES.md`.

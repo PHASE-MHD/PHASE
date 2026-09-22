@@ -14,7 +14,8 @@ python -m pip install --no-deps -e external/poseidon
 
 ## Pretrained weights
 
-Transfer-learning configurations load `camlab-ethz/Poseidon-T` from Hugging Face.
+Transfer-learning configurations load the external `camlab-ethz/Poseidon-T`
+checkpoint through the POSEIDON API.
 
 PHASE retains the pretrained velocity representation and expands the
 input/output pathways for magnetic variables. Exact transfer-learning and

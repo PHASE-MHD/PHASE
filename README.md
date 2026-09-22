@@ -16,30 +16,13 @@ conda env create -f environments/phase-cuda121.yml
 conda activate phase
 python -m pip install -e .
 ```
-## Pretrained models
+## Model artifacts
 
-Install the Hub and model dependencies, then load a complete conditioner and
-diffusion pipeline by repository ID:
-
-```bash
-python -m pip install -e ".[hub,dino,scot]"
-```
-
-```python
-from phase import PHASEPipeline
-import torch
-
-model = PHASEPipeline.from_pretrained(
-    "phaseMHD/PHASE-Turbulence-MR",
-    device="cuda",
-)
-times = torch.linspace(0.0, 1.0, 26, device=model.device)
-prediction = model.predict(initial_fields, times, re=1000, seed=0)
-```
-
-Released model repositories include model-only weights, inference configs,
-and training-derived normalization statistics. PHASE pipelines require the
-pinned POSEIDON installation in [README_poseidon.md](README_poseidon.md).
+For anonymous review, permanent project links and pretrained model artifacts
+are withheld (`<ANONYMIZED_MODEL_ARTIFACT_URL>`). They will be disclosed after
+the review process. The training
+and evaluation workflows remain fully specified by the included configurations
+and documentation.
 
 ## Workflows
 

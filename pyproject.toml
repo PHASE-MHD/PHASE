@@ -8,11 +8,7 @@ version = "0.1.0"
 description = "Physics-adapted neural operators for incompressible MHD"
 readme = "README.md"
 license = {file = "LICENSE"}
-authors = [
-  {name = "Radhika Achikanath Chirakkara", email = "radhika.ac.97@gmail.com"},
-  {name = "Rajdeep Halder"},
-  {name = "Zezheng Song"},
-]
+authors = [{name = "Anonymous Authors"}]
 requires-python = ">=3.11,<3.12"
 dependencies = [
   "h5py>=3.8,<4",
@@ -47,11 +43,6 @@ scot = [
 visualization = [
   "matplotlib>=3.7,<4",
 ]
-hub = [
-  "huggingface-hub>=0.24,<1",
-  "safetensors>=0.4,<1",
-]
-
 [tool.setuptools]
 package-dir = {"" = "src"}
 

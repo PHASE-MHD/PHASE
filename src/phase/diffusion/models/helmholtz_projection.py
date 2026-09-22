@@ -1,4 +1,3 @@
-### Written by Radhika Achikanath Chirakkara, 2026
 ### Adapted for DINOs diffusion model by adapting mhd_pino_repo version
 ### To enforce divergence free conditions on the velocity and magnetic field
 ### use Helmholtz projection to remove compressible modes

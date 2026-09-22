@@ -31,3 +31,8 @@ checkpoints/
 # Local machine configuration
 .env
 *.local.yaml
+
+# Local validation and release bookkeeping
+/configs/acceptance/
+/provenance/
+/tests/

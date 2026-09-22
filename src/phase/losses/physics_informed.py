@@ -347,7 +347,9 @@ class MHDVecPotLoss(nn.Module):
     def vector_potential_to_B(self, A: Tensor) -> Tuple[Tensor, Tensor]:
         nx = A.size(2)
         ny = A.size(3)
-        k_x, k_y = create_wavenumbers(nx, ny, self.Lx, self.Ly, A.device)
+        k_x, k_y = create_wavenumbers(
+            nx, ny, self.Lx, self.Ly, A.device, A.dtype
+        )
         A_h = torch.fft.fftn(A, dim=[2, 3])
         Ax_h = compute_derivative(A_h, k_x)
         Ay_h = compute_derivative(A_h, k_y)
@@ -876,7 +878,7 @@ class MHDDirectBFieldLoss(nn.Module):
     def _wavenumbers(self, q: Tensor) -> Tuple[Tensor, Tensor]:
         nx = q.size(2)
         ny = q.size(3)
-        return create_wavenumbers(nx, ny, self.Lx, self.Ly, q.device)
+        return create_wavenumbers(nx, ny, self.Lx, self.Ly, q.device, q.dtype)
 
     def divergence_2d(self, qx: Tensor, qy: Tensor) -> Tensor:
         k_x, k_y = self._wavenumbers(qx)

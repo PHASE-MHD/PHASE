@@ -51,7 +51,7 @@ def compute_mhd_pde(
     dt = tend / (nt - 1)
 
     # Create wavenumbers for spectral derivatives
-    k_x, k_y = create_wavenumbers(nx, ny, Lx, Ly, device)
+    k_x, k_y = create_wavenumbers(nx, ny, Lx, Ly, device, u.dtype)
 
     # Compute Laplacian operator for pressure calculation
     lap = -(k_x**2 + k_y**2)
@@ -232,7 +232,7 @@ def compute_mhd_bfield_pde(
     device = u.device
     dt = tend / (nt - 1)
 
-    k_x, k_y = create_wavenumbers(nx, ny, Lx, Ly, device)
+    k_x, k_y = create_wavenumbers(nx, ny, Lx, Ly, device, u.dtype)
     lap = -(k_x**2 + k_y**2)
     lap[..., 0, 0] = -1.0
 

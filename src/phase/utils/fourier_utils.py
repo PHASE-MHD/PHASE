@@ -1,70 +1,27 @@
 """Utilities for Fourier-space operations in physics-informed neural networks."""
 
-from typing import Tuple, List, Dict, Optional, Any, Union
+from typing import Tuple
 import torch
-import numpy as np
 
 
 def create_wavenumbers(
-    nx: int, ny: int, Lx: float, Ly: float, device: torch.device
+    nx: int,
+    ny: int,
+    Lx: float,
+    Ly: float,
+    device: torch.device,
+    dtype: torch.dtype | None = None,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """
-    Create wavenumbers for Fourier transforms with proper handling of odd/even grid sizes.
-
-    Args:
-        nx: Number of grid points in x direction
-        ny: Number of grid points in y direction
-        Lx: Domain length in x direction
-        Ly: Domain length in y direction
-        device: Device to place tensors on
-
-    Returns:
-        Tuple of wavenumbers (k_x, k_y) reshaped for grid operations
-    """
-    # Handle x-direction wavenumbers
-    k_max_x = nx // 2
-    if nx % 2 == 0:  # even size
-        # For even sizes, we use -nx/2 to nx/2-1
-        k_x_arr = torch.cat(
-            [
-                torch.arange(start=0, end=k_max_x, step=1, device=device),
-                torch.arange(start=-k_max_x, end=0, step=1, device=device),
-            ],
-            0,
-        )
-    else:  # odd size
-        # For odd sizes, we use -(nx-1)/2 to (nx-1)/2
-        k_x_arr = torch.cat(
-            [
-                torch.arange(start=0, end=k_max_x + 1, step=1, device=device),
-                torch.arange(start=-k_max_x, end=0, step=1, device=device),
-            ],
-            0,
-        )
-
-    # Handle y-direction wavenumbers
-    k_max_y = ny // 2
-    if ny % 2 == 0:  # even size
-        k_y_arr = torch.cat(
-            [
-                torch.arange(start=0, end=ny // 2, step=1, device=device),
-                torch.arange(start=-ny // 2, end=0, step=1, device=device),
-            ],
-            0,
-        )
-    else:  # odd size
-        k_y_arr = torch.cat(
-            [
-                torch.arange(start=0, end=ny // 2 + 1, step=1, device=device),
-                torch.arange(start=-k_max_y, end=0, step=1, device=device),
-            ],
-            0,
-        )
-
-    # Reshape to match grid dimensions (batch, time, x, y)
-    k_x = (2 * np.pi / Lx) * k_x_arr.reshape(nx, 1).repeat(1, ny).reshape(1, 1, nx, ny)
-    k_y = (2 * np.pi / Ly) * k_y_arr.reshape(1, ny).repeat(nx, 1).reshape(1, 1, nx, ny)
-
+    """Return angular Fourier wavenumbers in FFT storage order."""
+    dtype = dtype or torch.get_default_dtype()
+    k_x_arr = 2 * torch.pi * torch.fft.fftfreq(
+        nx, d=Lx / nx, device=device, dtype=dtype
+    )
+    k_y_arr = 2 * torch.pi * torch.fft.fftfreq(
+        ny, d=Ly / ny, device=device, dtype=dtype
+    )
+    k_x = k_x_arr.reshape(1, 1, nx, 1).expand(1, 1, nx, ny)
+    k_y = k_y_arr.reshape(1, 1, 1, ny).expand(1, 1, nx, ny)
     return k_x, k_y
 
 

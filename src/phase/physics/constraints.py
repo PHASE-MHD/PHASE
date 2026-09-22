@@ -32,7 +32,7 @@ def compute_constraints(
     device = u.device
 
     # Create wavenumbers for spectral derivatives
-    k_x, k_y = create_wavenumbers(nx, ny, Lx, Ly, device)
+    k_x, k_y = create_wavenumbers(nx, ny, Lx, Ly, device, u.dtype)
 
     # Compute Fourier transforms
     u_h = torch.fft.fftn(u, dim=[2, 3])

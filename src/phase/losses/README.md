@@ -11,8 +11,5 @@ Losses are evaluated after predictions and targets are returned to physical
 units. Data, initial-condition, magnetic-field, vorticity, and current terms
 use relative L2 errors. PDE and optional divergence residuals use mean-squared
 errors. Multi-regime batches obtain viscosity and magnetic diffusivity from
-their per-sample Re/Rm metadata.
-
-KH recipes may compute spatial relative L2 independently at each time and then
-average over samples and time. Helmholtz projection is a separate model-level
+their per-sample Re/Rm metadata. Helmholtz projection is a separate model-level
 operation; the four-channel PHASE recipes do not use a soft divergence loss.

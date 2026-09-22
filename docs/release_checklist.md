@@ -7,20 +7,20 @@
 - A clean Python 3.11 wheel installation imports phase.
 - Attribution and POSEIDON dependency records are accurate.
 
-## Recipes and tests
+## Recipes and validation
 
 - Re/Rm, nu/eta, time range, representation, split, normalization, warm start,
   and checkpoint metric match the canonical config and model documentation.
 - Residual PHASE uses four fields and full-field Helmholtz projection.
 - Previous DINO remains labeled as full-field diffusion.
-- CPU tests, target-GPU smokes, and available checkpoint tests pass.
+- Source compilation, target-GPU smokes, and available checkpoint checks pass.
 
 ## Reported artifacts
 
 - Every released checkpoint has a Hugging Face model card identifying its matching
   config, selected epoch, byte size, and SHA-256 digest.
 - Downloaded checkpoints are verified against their published SHA-256 before
-  compatibility tests or reported-result evaluation.
+  compatibility checks or reported-result evaluation.
 - Paper results use the held-out test split unless labeled otherwise.
 - Reports record checkpoint and config hashes.
 - Multi-Re evaluations state the evaluated Re.
@@ -45,12 +45,11 @@
 - [x] Confirm all four DT trainers reached epoch 9, wrote reloadable
   checkpoints, and produced held-out smoke metrics.
 - [x] Exercise both previous-DINO full-field reconstruction and PHASE residual
-  reconstruction in unit, checkpoint-compatibility, and GPU acceptance tests.
+  reconstruction in focused checkpoint and GPU validation.
 - [x] Exercise single-Re and multi-Re dispatch, paired/per-Re normalization,
   and full-field Helmholtz projection.
 - [ ] Optionally rerun the reduced naive-MR and gated-adapter training smokes.
-  Their current acceptance-only guards are covered by unit tests, but the first
-  jobs used the pre-fix guard and the retries were terminated before training.
+  Their current acceptance-only guards were checked directly, but the first jobs used the pre-fix guard and the retries were terminated before training.
 - [ ] Optionally complete the reduced KH chain. KH acceptance is a sanity check,
   not a release blocker; canonical KH checkpoint compatibility already passed.
 

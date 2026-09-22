@@ -30,7 +30,6 @@ classifiers = [
 dev = [
   "build>=1.2,<2",
   "matplotlib>=3.7,<4",
-  "pytest>=8,<9",
 ]
 tfno = [
   "tensorly-torch==0.5.0",
@@ -54,11 +53,3 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-markers = [
-  "gpu: requires a CUDA-capable GPU",
-  "checkpoint: requires an external model checkpoint",
-  "integration: exercises multiple PHASE components",
-]

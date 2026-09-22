@@ -8,8 +8,8 @@ physics losses, and residual diffusion for decaying turbulence and
 Kelvin--Helmholtz instability.
 
 The public package was consolidated from audited research implementations with
-configuration guards, checkpoint-compatibility tests, and explicit provenance
-for every reported model family. Training data and model checkpoints remain
+configuration guards, checkpoint compatibility validation, and explicit
+provenance for every reported model family. Training data and model checkpoints remain
 external artifacts and are never committed to the repository.
 
 ## Current status
@@ -18,12 +18,10 @@ external artifacts and are never committed to the repository.
 - Version: `0.1.0`
 - Supported Python version: 3.11
 - Packaging: setuptools with a `src/` layout
-- Tests: pytest
 - License: MIT
 
 No training datasets, model checkpoints, logs, or generated analysis outputs
-are tracked in Git. Small synthetic fixtures may be stored under
-`tests/fixtures/`.
+are tracked in Git.
 
 Canonical array layouts and normalization rules are documented in
 `docs/data_format.md`. Data conversion and train-only statistics are
@@ -63,6 +61,8 @@ separately and precisely in `THIRD_PARTY_NOTICES.md`.
 - Unified held-out-test visualization for all model families:
   `docs/visualization.md`
 
-## Quick validation
+## Quick source check
 
-    pytest -q -m "not gpu and not checkpoint"
+    python -m compileall -q src scripts
+    python -m pip install --upgrade build
+    python -m build

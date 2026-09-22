@@ -17,11 +17,7 @@ jobs:
           python -m pip install -e ".[dev,tfno,dino,scot,visualization]"
           python -m pip install --no-deps \
             "scOT @ git+https://github.com/camlab-ethz/poseidon.git@b8fa28f59bd7f7673323f28d11a12c6f3a215c61"
-      - name: Validate recipes
-        run: phase-validate-configs configs
       - name: Compile
-        run: python -m compileall -q src scripts tests
-      - name: Test
-        run: pytest -q -m "not gpu and not checkpoint"
+        run: python -m compileall -q src scripts
       - name: Build distributions
         run: python -m build

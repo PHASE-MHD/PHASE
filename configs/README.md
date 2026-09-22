@@ -3,7 +3,7 @@ SR / single_re = single-regime
 MR / multi_re = multi-regime
 
 Previous baseline configs:
-- `previous_baseline/tfno/re1000.yaml`: three-channel Re=Rm=1000 tFNO trained from scratch without warm start (Rosofsky and Huerta (2023))
+- `previous_baseline/tfno/re1000.yaml`: three-channel Re=Rm=1000 tFNO trained from scratch without warm start (see Rosofsky and Huerta (2023), Kacmaz et al. (2025))
 - `previous_baseline/dino/conditioner_re1000.yaml`: tFNO conditioner used to generate DINO features
 - `previous_baseline/dino/re1000.yaml`: full-field DINO conditioned on the Re=Rm=1000 tFNO (Kacmaz et al. (2025))
 

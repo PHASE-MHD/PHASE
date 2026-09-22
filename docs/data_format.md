@@ -16,7 +16,7 @@ Supported physical channel sets are:
 ## Diffusion features
 
 Diffusion data can be stored either as one NumPy object dictionary or as a
-directory of contiguous arrays. The canonical keys/files are:
+directory of contiguous arrays. The keys/files are:
 
 - diff_inputs: conditioner trajectories
 - diff_targets: DNS trajectories
@@ -39,6 +39,4 @@ statistics linearly in log(Re) for unseen Reynolds numbers.
 
 ## Raw simulation conversion
 
-Dedalus HDF5 conversion and statistics fitting are preprocessing operations,
-not dataloader responsibilities. Public scripts for those operations are in
-`scripts/prepare_data.py` and `scripts/compute_statistics.py`.
+Dedalus HDF5 conversion and statistics fitting are preprocessing operations. Scripts for those operations are in `scripts/prepare_data.py` and `scripts/compute_statistics.py`.

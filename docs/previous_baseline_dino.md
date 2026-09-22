@@ -1,12 +1,10 @@
 # Previous DINO baseline
 
-This path reproduces the `DINO` row in the PHASE ablation table. A released
+This path reproduces the `DINO` row in the PHASE ablation table. A
 Re=Rm=1000 tFNO checkpoint first predicts `[ux, uy, A]` trajectories. A
-conditional EDM U-Net then learns the complete DNS field at each saved time,
-not the error relative to the tFNO prediction.
+conditional EDM U-Net then learns the complete DNS field at each time.
 
-This baseline intentionally has no Helmholtz projection, Re conditioning,
-vorticity/current loss, residual target, or diffusion warm start.
+This baseline is reained as per the DINO model in Kacmaz et al. (2025) and intentionally has no Helmholtz projection, Re conditioning, vorticity/current loss, residual target, or diffusion warm start.
 
 ## 1. Obtain and verify the conditioner
 
@@ -14,18 +12,7 @@ Download `tfno_Re1000.pt` from the authors' checkpoint folder:
 
 <https://drive.google.com/drive/folders/1hTdHoYCdW59gZYDBUgc06TdY7OHGdghi>
 
-The checkpoint is external and is not distributed with PHASE. Verify the exact
-artifact used for the reported result:
-
-```bash
-sha256sum /path/to/tfno_Re1000.pt
-```
-
-The reported SHA-256 is
-`a96152ba4dc4b341d9a336c4c619e55835e1776bda8655824f96d25398d59e7d`.
-
-The artifact metadata reports epoch 234, but its original training job and full
-training history cannot be independently reconstructed. That limitation is documented here.
+The checkpoint is external and is not distributed with PHASE.
 
 ## 2. Prepare trajectory normalization
 
@@ -49,10 +36,6 @@ python scripts/generate_diffusion_features.py \
   --output-root "$FEATURE_ROOT"
 ```
 
-The output pairs are tFNO predictions and DNS targets, both in physical units,
-with shapes `[N,3,26,128,128]` before the diffusion dataset flattens time.
-Expected trajectory counts are 900 train, 50 validation, and 50 test.
-
 ## 4. Compute separate diffusion statistics
 
 ```bash
@@ -72,7 +55,3 @@ python -m pip install -e '.[dino]'
 python scripts/train_dino.py \
   --config configs/previous_baseline/dino/re1000.yaml
 ```
-
-The canonical run uses 101 epochs indexed 0--100, batch size 64, validation
-at epochs 10, 20, ..., 100, 32 sampling steps, and checkpoint selection by
-denormalized relative L2. `load_checkpoint` must remain empty.

@@ -25,17 +25,6 @@ python scripts/visualize.py \
   --output-dir results/dt_re1000_sample977
 ```
 
-Field panels contain model, DNS, and DNS-model columns for
-`ux,uy,Bx,By,omega,J`. Model and DNS share a symmetric color scale determined
-from DNS; errors use their own symmetric viridis scale. Stored arrays are
-`[x,y]` and are transposed exactly once for display, so horizontal and
-vertical axes correspond to physical x and y.
-
-Spectra use the same integer-shell Fourier sums as evaluation and normalize
-each plotted spectrum by its own total shell power. PDFs use the evaluation
-histogram ranges and DNS RMS scales. These visual normalizations change only
-the plotted curves, never the quantitative evaluation report.
-
 ## Kelvin-Helmholtz instability
 
 ```bash
@@ -49,25 +38,3 @@ python scripts/visualize.py \
   --products fields tracer \
   --output-dir results/kh_re2050_sample62
 ```
-
-The tracer is reconstructed independently from the model and DNS velocity
-snapshots using periodic semi-Lagrangian advection and spectral diffusion. Its
-default diffusivity is `1/Re`, matching the simulation tracer equation, and
-the initial profile marks the two KH shear layers. This is a post-processed
-dye diagnostic, not the original Dedalus tracer state: exact reconstruction is
-impossible without velocities at every internal solver step. The saved NPZ and
-manifest preserve this distinction.
-
-Sample IDs are source-simulation IDs and are split-specific. The example IDs
-above were verified against the canonical held-out feature stores; use an ID
-present in the test store generated for a new dataset.
-
-## Provenance
-
-PNG and PDF are emitted by default. `visualization_manifest.json` records the
-model family, held-out split, Re, exact sample-ID source, checkpoint epoch,
-config/checkpoint hashes, stochastic diffusion seed and sampling steps,
-requested and resolved physical times, frame indices, formats, DPI, domain
-size, tracer parameters, and hashes of every generated artifact. Legacy
-diffusion feature stores without source IDs remain explicitly identified as
-test-split positions.

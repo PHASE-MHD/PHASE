@@ -1,9 +1,6 @@
-# Held-out-test evaluation
+# evaluation
 
-`scripts/evaluate_error.py` is the common evaluator for tFNO, DINO,
-deterministic scOT, and residual-diffusion PHASE checkpoints. It deliberately
-has no validation- or training-split option: public reports always use the
-held-out test split constructed by the model's dataset configuration.
+`scripts/evaluate_error.py` is the common evaluator for tFNO, DINO, scOT, and  PHASE checkpoints. It always uses the held-out test split.
 
 ## Usage
 
@@ -15,15 +12,8 @@ python scripts/evaluate_error.py \
   --re 1000 \
   --output-dir results/dt_mr_phase_re1000
 ```
-
 For multi-regime models, run one command per requested Reynolds number. `--re`
-is required for every model, including single-Re baselines, so the physical
-regime is never inferred from a directory name. `--max-samples` is intended
-only for smoke tests; omit it for reported results. DINO and PHASE use 32 EDM
-sampling steps by default and seed each trajectory with
-`diffusion_seed + sample_id`, making a trajectory's stochastic prediction
-independent of evaluation order.
-
+is required for every model, including single-Re baselines.
 The command writes:
 
 - `evaluate_error.json`: metrics, complete run provenance, and per-sample rows;
@@ -39,7 +29,6 @@ Three-channel models predict `[u_x,u_y,A]`. The evaluator reconstructs
 `[u_x,u_y,B_x,B_y]`. For both representations, the same periodic Fourier
 operators then compute
 `omega=d(u_y)/dx-d(u_x)/dy`, `j=d(B_y)/dx-d(B_x)/dy`, and both divergences.
-No finite-difference or model-specific derivative path is used.
 
 ## Aggregation contract
 
@@ -48,15 +37,10 @@ standard-deviation, and kurtosis errors are first computed on each spatial
 snapshot, then averaged uniformly over time and finally over held-out
 trajectories. Spectrum errors are the mean absolute log10 ratio between
 predicted and DNS shell power. The low-wavenumber band contains shells 1--8;
-the high-wavenumber band contains the remaining resolved shells. This exactly
-preserves the reported turbulence evaluation convention.
+the high-wavenumber band contains the remaining resolved shells.
 
-Turbulence reports contain all metrics. KH reports intentionally contain only
-relative L2, MSE, and velocity/magnetic divergence because homogeneous
-turbulence PDF and low/high-k summary metrics are not used for the instability
-experiments. For KH, each metric is computed over a complete space-time
-trajectory and then averaged uniformly over held-out trajectories, matching
-the canonical deterministic KH evaluation.
+Turbulence reports contain all metrics. KH reports contain only
+relative L2, MSE, and velocity/magnetic divergence. For KH, each metric is computed over a complete space-timetrajectory and then averaged uniformly over test samples.
 
 ## Model-specific reconstruction
 
@@ -68,11 +52,3 @@ the canonical deterministic KH evaluation.
   then evaluates it against DNS.
 - Per-Re PHASE normalization always receives the actual Re metadata. Unseen
   values use the same log-Re interpolation implemented by the normalizer.
-
-Every report stores absolute config/checkpoint paths, their SHA-256 digests,
-the checkpoint epoch, Re, split, diffusion seed, sampling step count, and the
-sample-ID source. Newly generated feature stores carry exact source simulation
-IDs. Legacy diffusion stores without this metadata are explicitly reported as
-using test-split positions. Diffusion evaluation loads only the test store and
-rejects pre-flattened features because their trajectory boundaries cannot be
-verified.

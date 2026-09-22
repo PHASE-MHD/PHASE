@@ -3,14 +3,12 @@
 PHASE diffusion predicts a correction to a deterministic four-channel scOT
 trajectory. Feature files store physical-unit scOT predictions in
 `diff_inputs.npy` and matching DNS trajectories in `diff_targets.npy`. The
-dataset forms the clean diffusion target lazily as `DNS - scOT`, then applies
+dataset forms the clean diffusion target as `DNS - scOT`, then applies
 separate train-only normalization to the condition and residual.
-
 Both recipes use the same EDM U-Net and predict residuals for all four fields
 `[ux, uy, Bx, By]`. During training and inference, the residual is first added
 to the scOT condition in physical units. Helmholtz projection is then applied
-to the reconstructed velocity and magnetic pairs. Projecting the residual by
-itself is intentionally unsupported.
+to the reconstructed velocity and magnetic pairs.
 
 Set the external paths before running either recipe:
 
@@ -23,7 +21,7 @@ export CHECKPOINT_ROOT=/path/to/external/historical/checkpoints
 ```
 
 `CHECKPOINT_ROOT` is required only by the reported multi-Re recipe. Place the
-historical weights-only warm start at
+weights-only warm start at
 `$CHECKPOINT_ROOT/historical/dt_single_re_full_field_diffusion.pt`.
 
 ## Generate single-Re features
@@ -46,13 +44,6 @@ python scripts/train_dino.py \
   --config configs/turbulence/single_re/phase_re1000.yaml
 ```
 
-This is the corrected SR PHASE recipe: paired normalization, random diffusion
-initialization, and checkpoint selection by denormalized relative L2.
-Validation follows the legacy schedule and begins at epoch 10; epoch 0 and an
-unscheduled final epoch are not evaluated for checkpoint selection. The
-audited rerun completed epochs 0--99 and selected epoch 90 with denormalized
-relative L2 `0.028242717292159797`.
-
 ## Generate multi-Re features
 
 Train the deterministic prerequisite with
@@ -72,24 +63,3 @@ python scripts/compute_statistics.py diffusion-per-re \
 python scripts/train_dino.py \
   --config configs/turbulence/multi_re/phase.yaml
 ```
-
-The feature exporter preserves the independent per-Re train/validation/test
-splits, source sample IDs, and Reynolds numbers. The diffusion loader uses
-per-Re paired min-max statistics and balanced batches containing all ten
-training regimes. The diffusion U-Net itself is not Re-conditioned. Full
-validation begins at epoch 5 and then runs every fifth epoch, matching the
-reported training run.
-The selected metric is denormalized relative L2; checkpoints retain that value
-under both `loss` and `denorm_loss_rel_l2`, matching the legacy schema.
-
-## Reported and clean warm starts
-
-The reported MR PHASE run loaded only model weights from the historical
-single-Re Re=1000 full-field diffusion checkpoint. It reset the epoch,
-optimizer, and scheduler and then trained on four-field residual targets. The
-public `phase.yaml` preserves that historical provenance exactly.
-
-For a clean future experiment, replace `warm_start_checkpoint` with the
-canonical corrected single-Re residual checkpoint published on Hugging Face.
-Record that experiment as a new run; do
-not relabel it as the reported MR PHASE result.

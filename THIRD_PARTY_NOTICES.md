@@ -1,22 +1,11 @@
 # Third-Party Notices
 
-PHASE is original project work by Radhika Achikanath Chirakkara, Rajdeep
-Halder, and Zezheng Song.
-Only limited, specifically documented portions of the repository are adapted
-from earlier MIT-licensed research software. Attribution below applies solely
-to those adapted portions; it does not indicate authorship, ownership, or
-endorsement of PHASE as a whole.
+Limited portions of PHASE are adapted from the MIT-licensed
+[DINOs repository](https://github.com/semihkacmaz/DINOs) by Semih Kacmaz.
+These portions comprise the EDM diffusion implementation and the tFNO and DINO
+previous-baseline implementations.
 
-## Adapted research code
-
-Selected implementation components are adapted from:
-
-- [DINOs](https://github.com/semihkacmaz/DINOs)
-- [MHD-World](https://github.com/rhaldarpurdue/MHD-World) and its project
-  development variants
-
-The original MIT notice applicable to the adapted portions is reproduced
-below.
+The following notice applies to those adapted portions:
 
 ```text
 MIT License

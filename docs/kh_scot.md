@@ -8,8 +8,8 @@ fields and include direct-B PDE, vorticity, and current losses.
 
 ## Single-Re scOT
 
-The `Re=Rm=1000` recipe uses paired magnetic P99 scale
-`6.69424514e-2`, batch size 1, and 100 epochs. Primary-field and current
+The `Re=Rm=1000` recipe uses a paired magnetic P99 scale fitted on the
+training split, batch size 1, and 100 epochs. Primary-field and current
 losses are relative L2 values computed per time slice and then averaged over
 time. The vorticity loss retains the historical global space-time relative-L2
 reduction.
@@ -24,9 +24,8 @@ python scripts/train_scot.py \
 
 ## Multi-Re scOT
 
-The multi-regime recipe uses the global paired magnetic P99 scale
-`8.06614549e-2` and the ten canonical Re/Rm values. It warm-starts model
-weights only from the selected single-Re KH scOT checkpoint, while epoch,
+The multi-regime recipe uses one global paired magnetic P99 scale fitted across the
+training regimes. It warm-starts model weights only from the selected single-Re KH scOT checkpoint, while epoch,
 optimizer, and scheduler state start fresh. Balanced batches contain all ten
 regimes through nominal `batch_size=1` and `res_per_batch=10`.
 

@@ -186,20 +186,28 @@ def plot_spectrum_comparison(
     true = derive_fields(truth, representation, lx, ly)
     spectra = {
         "Kinetic energy": (
-            vector_spectrum(pred["ux"][time_index], pred["uy"][time_index]),
-            vector_spectrum(true["ux"][time_index], true["uy"][time_index]),
+            vector_spectrum(
+                pred["ux"][time_index], pred["uy"][time_index], lx, ly
+            ),
+            vector_spectrum(
+                true["ux"][time_index], true["uy"][time_index], lx, ly
+            ),
         ),
         "Magnetic energy": (
-            vector_spectrum(pred["Bx"][time_index], pred["By"][time_index]),
-            vector_spectrum(true["Bx"][time_index], true["By"][time_index]),
+            vector_spectrum(
+                pred["Bx"][time_index], pred["By"][time_index], lx, ly
+            ),
+            vector_spectrum(
+                true["Bx"][time_index], true["By"][time_index], lx, ly
+            ),
         ),
         "Vorticity": (
-            scalar_spectrum(pred["omega"][time_index]),
-            scalar_spectrum(true["omega"][time_index]),
+            scalar_spectrum(pred["omega"][time_index], lx, ly),
+            scalar_spectrum(true["omega"][time_index], lx, ly),
         ),
         "Current density": (
-            scalar_spectrum(pred["j"][time_index]),
-            scalar_spectrum(true["j"][time_index]),
+            scalar_spectrum(pred["j"][time_index], lx, ly),
+            scalar_spectrum(true["j"][time_index], lx, ly),
         ),
     }
     fig, axes = plt.subplots(1, 4, figsize=(15.5, 3.8), sharey=True)

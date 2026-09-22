@@ -20,6 +20,7 @@ from phase.visualization.plots import (
     _normalized_spectrum,
     initial_kh_tracer,
 )
+from phase.evaluation.physics import scalar_spectrum
 
 
 def _trajectory(nt=3, n=16):
@@ -54,6 +55,20 @@ def test_spectrum_display_normalization_is_per_curve():
     zeros = _normalized_spectrum(torch.zeros(3))
     assert torch.isfinite(zeros).all()
     assert torch.count_nonzero(zeros) == 0
+
+
+def test_spectrum_shells_respect_rectangular_domain():
+    nx = ny = 32
+    lx, ly = 2.0, 1.0
+    x = torch.arange(nx, dtype=torch.float64) * lx / nx
+    y = torch.arange(ny, dtype=torch.float64) * ly / ny
+    x_mode = torch.sin(2.0 * torch.pi * x / lx).reshape(nx, 1).repeat(1, ny)
+    y_mode = torch.sin(2.0 * torch.pi * y / ly).reshape(1, ny).repeat(nx, 1)
+
+    # Shell indices use the smallest fundamental frequency. The first x mode
+    # is shell 1, while the first y mode is shell 2 for Lx=2*Ly.
+    assert int(torch.argmax(scalar_spectrum(x_mode, lx, ly))) == 0
+    assert int(torch.argmax(scalar_spectrum(y_mode, lx, ly))) == 1
 
 
 def test_initial_tracer_marks_y_layers_not_x_layers():

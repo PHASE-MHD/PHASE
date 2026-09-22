@@ -694,9 +694,12 @@ def _validate_four_channel_common(
         "soft divergence penalties must be disabled": [
             loss.get("constraint_weight"), loss.get("div_vel_weight"), loss.get("div_B_weight")
         ] == [0.0, 0.0, 0.0],
-        "all configured data, IC, PDE, and constraint branches must remain enabled": all(
+        "data, IC, and PDE branches must remain enabled": all(
             loss.get(name, False)
-            for name in ("use_data_loss", "use_ic_loss", "use_pde_loss", "use_constraint_loss")
+            for name in ("use_data_loss", "use_ic_loss", "use_pde_loss")
+        ),
+        "the unused soft constraint branch must remain disabled": not loss.get(
+            "use_constraint_loss", False
         ),
         "the unit space-time domain must be used": loss.get("Lx") == 1.0
         and loss.get("Ly") == 1.0

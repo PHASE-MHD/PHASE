@@ -200,20 +200,28 @@ def evaluate_record(
 
         spectra = {
             "u": (
-                vector_spectrum(pred["ux"][time_index], pred["uy"][time_index]),
-                vector_spectrum(true["ux"][time_index], true["uy"][time_index]),
+                vector_spectrum(
+                    pred["ux"][time_index], pred["uy"][time_index], lx, ly
+                ),
+                vector_spectrum(
+                    true["ux"][time_index], true["uy"][time_index], lx, ly
+                ),
             ),
             "B": (
-                vector_spectrum(pred["Bx"][time_index], pred["By"][time_index]),
-                vector_spectrum(true["Bx"][time_index], true["By"][time_index]),
+                vector_spectrum(
+                    pred["Bx"][time_index], pred["By"][time_index], lx, ly
+                ),
+                vector_spectrum(
+                    true["Bx"][time_index], true["By"][time_index], lx, ly
+                ),
             ),
             "omega": (
-                scalar_spectrum(pred["omega"][time_index]),
-                scalar_spectrum(true["omega"][time_index]),
+                scalar_spectrum(pred["omega"][time_index], lx, ly),
+                scalar_spectrum(true["omega"][time_index], lx, ly),
             ),
             "j": (
-                scalar_spectrum(pred["j"][time_index]),
-                scalar_spectrum(true["j"][time_index]),
+                scalar_spectrum(pred["j"][time_index], lx, ly),
+                scalar_spectrum(true["j"][time_index], lx, ly),
             ),
         }
         for name, (pred_spectrum, true_spectrum) in spectra.items():

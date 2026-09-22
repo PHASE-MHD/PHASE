@@ -115,3 +115,28 @@ def test_multi_re_p99_reports_paired_scale(tmp_path):
             values["Bx_p99_abs"], values["By_p99_abs"]
         )
     assert result["global"]["chosen_train_p99_abs_B"] > 2.9
+
+
+def test_multi_re_p99_default_matches_multi_re_dataset_splits(tmp_path):
+    paths = {}
+    expected_indices = {}
+    for re_index, re_value in enumerate((80.0, 1000.0)):
+        data = np.zeros((10, 1, 1, 1, 4), dtype=np.float32)
+        data[..., 2] = np.arange(10, dtype=np.float32).reshape(10, 1, 1, 1)
+        path = tmp_path / f"Re{int(re_value)}.npy"
+        np.save(path, data)
+        paths[re_value] = path
+        expected_indices[str(re_value)] = np.random.default_rng(
+            42 + re_index
+        ).permutation(10)[:6]
+
+    result = multi_re_magnetic_p99(
+        paths,
+        train_size=6,
+        bins=100,
+        chunk_size=2,
+    )
+
+    assert result["settings"]["split_mode"] == "multi_re_seed_plus_index"
+    for re_value, expected in expected_indices.items():
+        assert np.array_equal(result["per_re"][re_value]["train_indices"], expected)

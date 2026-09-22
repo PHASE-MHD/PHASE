@@ -255,7 +255,7 @@ def multi_re_magnetic_p99(
     *,
     train_size: int,
     seed: int = 42,
-    split_mode: str = "single_re_seed42",
+    split_mode: str = "multi_re_seed_plus_index",
     sub_t: int = 1,
     sub_x: int = 1,
     time_stop_index: int | None = None,

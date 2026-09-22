@@ -113,26 +113,52 @@ def derive_fields(
     }
 
 
-def _shell_map(nx: int, ny: int, device, dtype) -> torch.Tensor:
-    kx = torch.fft.fftfreq(nx, d=1.0 / nx, device=device, dtype=dtype)
-    ky = torch.fft.fftfreq(ny, d=1.0 / ny, device=device, dtype=dtype)
-    return torch.sqrt(kx.reshape(nx, 1).square() + ky.reshape(1, ny).square())
+def _shell_geometry(
+    nx: int,
+    ny: int,
+    lx: float,
+    ly: float,
+    device,
+    dtype,
+) -> tuple[torch.Tensor, int]:
+    """Return domain-aware shell indices and the largest complete shell."""
+    if not math.isfinite(lx) or not math.isfinite(ly) or lx <= 0.0 or ly <= 0.0:
+        raise ValueError("Spectrum domain lengths must be finite and positive.")
+    kx = torch.fft.fftfreq(nx, d=lx / nx, device=device, dtype=dtype)
+    ky = torch.fft.fftfreq(ny, d=ly / ny, device=device, dtype=dtype)
+    fundamental = min(1.0 / lx, 1.0 / ly)
+    shell_map = torch.sqrt(
+        kx.reshape(nx, 1).square() + ky.reshape(1, ny).square()
+    ) / fundamental
+    max_shell = int(
+        math.floor(min(nx / (2.0 * lx), ny / (2.0 * ly)) / fundamental)
+    )
+    return shell_map, max_shell
 
 
-def scalar_spectrum(field: torch.Tensor) -> torch.Tensor:
-    """Return integer-shell power for one ``[x,y]`` scalar field."""
+def scalar_spectrum(
+    field: torch.Tensor, lx: float = 1.0, ly: float = 1.0
+) -> torch.Tensor:
+    """Return domain-aware integer-shell power for one ``[x,y]`` field."""
     if field.ndim != 2:
         raise ValueError(f"Expected [x,y], got {tuple(field.shape)}.")
     nx, ny = field.shape
-    shell_map = _shell_map(nx, ny, field.device, field.dtype)
+    shell_map, max_shell = _shell_geometry(
+        nx, ny, lx, ly, field.device, field.dtype
+    )
     power = torch.abs(torch.fft.fft2(field) / (nx * ny)).square()
     values = []
-    for mode in range(1, min(nx, ny) // 2 + 1):
+    for mode in range(1, max_shell + 1):
         mask = torch.abs(shell_map - mode) < 0.5
         values.append(power[mask].sum())
     return torch.stack(values)
 
 
-def vector_spectrum(qx: torch.Tensor, qy: torch.Tensor) -> torch.Tensor:
-    """Return integer-shell power for one ``[x,y]`` vector field."""
-    return scalar_spectrum(qx) + scalar_spectrum(qy)
+def vector_spectrum(
+    qx: torch.Tensor,
+    qy: torch.Tensor,
+    lx: float = 1.0,
+    ly: float = 1.0,
+) -> torch.Tensor:
+    """Return domain-aware integer-shell power for one ``[x,y]`` vector field."""
+    return scalar_spectrum(qx, lx, ly) + scalar_spectrum(qy, lx, ly)

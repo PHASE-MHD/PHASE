@@ -60,6 +60,7 @@ def build_parser() -> argparse.ArgumentParser:
     multi.add_argument("--directory-template", default="mhd_Re{re}_N1000")
     multi.add_argument("--data-file", default="mhd_data_4channel.npy")
     add_split_arguments(multi)
+    multi.set_defaults(split_mode="multi_re_seed_plus_index")
     multi.add_argument("--sub-t", type=int, default=1)
     multi.add_argument("--sub-x", type=int, default=1)
     multi.add_argument("--time-stop-index", type=int)

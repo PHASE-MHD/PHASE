@@ -47,6 +47,12 @@ def test_kh_configs_are_locked(monkeypatch, tmp_path):
     assert single["loss_params"]["magnetic_time_loss_mode"] == "time_relative"
     assert single["loss_params"]["vorticity_time_loss_mode"] == "global"
     assert single["loss_params"]["current_time_loss_mode"] == "time_relative"
+    for config in (single, multi):
+        loss = config["loss_params"]
+        assert loss["use_data_loss"] is True
+        assert loss["use_ic_loss"] is True
+        assert loss["use_pde_loss"] is True
+        assert loss["use_constraint_loss"] is False
     for key in (
         "u_time_loss_mode",
         "v_time_loss_mode",

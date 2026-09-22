@@ -45,6 +45,12 @@ def test_four_channel_configs_are_locked(monkeypatch, tmp_path):
     assert multi["dataloader_params"]["train"]["batch_size"] == 1
     assert multi["dataset_params"]["res_per_batch"] == 10
     assert multi["optimizer_params"]["param_groups"]["boundary_group"] == "pretrained"
+    for config in (single, multi):
+        loss = config["loss_params"]
+        assert loss["use_data_loss"] is True
+        assert loss["use_ic_loss"] is True
+        assert loss["use_pde_loss"] is True
+        assert loss["use_constraint_loss"] is False
 
 
 @pytest.mark.parametrize(
@@ -56,6 +62,12 @@ def test_four_channel_configs_are_locked(monkeypatch, tmp_path):
         ("multi", ("dataset_params", "res_per_batch"), 5, "balanced ten-regime"),
         ("multi", ("optimizer_params", "param_groups", "boundary_group"), "new", "pretrained group"),
         ("multi", ("train_params", "warm_start_checkpoint"), "", "warm-start"),
+        (
+            "single",
+            ("loss_params", "use_constraint_loss"),
+            True,
+            "soft constraint branch",
+        ),
     ],
 )
 def test_four_channel_guards_reject_recipe_drift(

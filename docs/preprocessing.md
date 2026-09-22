@@ -1,11 +1,10 @@
 # Data preparation
 
-Install PHASE in editable mode before invoking the scripts:
+Install PHASE:
 
     python -m pip install -e .
 
-The preprocessing tools consume simulation data but do not include or invoke a
-Dedalus solver.
+The preprocessing tools use simulation data but do not include or invoke Dedalus solver. Dedalus data must be generated seperately.
 
 ## Convert Dedalus HDF5 trajectories
 
@@ -45,21 +44,12 @@ default to Lx=Ly=1 and can be changed explicitly.
       --train-size 800 \
       --seed 42
 
-The output contains per-channel mean, population standard deviation, minimum,
-and maximum. Only the deterministic training split is used.
-
-For a multi-Re dataset, use split-mode multi_re_seed_plus_index and pass the
-zero-based Re index matching the order in the training configuration.
-
 ## Compute diffusion statistics
 
     python scripts/compute_statistics.py diffusion \
       --input /path/to/train_features.npy \
       --output-prefix /path/to/residual_stats \
       --prediction-mode residual
-
-Separate input and target files are written. Residual mode computes
-DNS-conditioner before fitting target statistics.
 
 ## Compute multi-Re magnetic p99 scales
 
@@ -69,9 +59,4 @@ DNS-conditioner before fitting target statistics.
       --re-values 80 200 400 650 1000 1500 2050 2750 3600 4500 \
       --train-size 800 \
       --sub-t 5 \
-      --split-mode single_re_seed42
-
-The paired magnetic scale is max(p99(abs(Bx)), p99(abs(By))). The JSON records
-both per-Re and global scales together with the exact split and subsampling
-settings. Use time-stop-index when a run intentionally covers only an initial
-time window, such as the KH t=[0,4] ablation.
+      --split-mode multi_re_seed_plus_index

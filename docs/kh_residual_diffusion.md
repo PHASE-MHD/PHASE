@@ -1,23 +1,28 @@
 # Kelvin-Helmholtz residual diffusion
 
-single- and multi-regime PHASE diffusion recipes
-for the periodic Kelvin-Helmholtz (KH) trajectories. Diffusion learns `DNS - scOT` for all four fields
-`[ux, uy, Bx, By]`.
+These recipes train single- and multi-regime PHASE diffusion models for
+periodic Kelvin-Helmholtz trajectories over `t in [0,5]`. Diffusion learns
+`DNS-scOT` for all four fields `[ux,uy,Bx,By]`.
 
-The projection is not applied to the residual alone. In physical units the implementation forms `scOT + residual`, projects the velocity and magnetic pairs separately, and converts the result back to residual form for the EDM objective.
+Helmholtz projection is applied to the reconstructed physical field, not to
+the residual alone. The implementation forms `scOT+residual`, projects the
+velocity and magnetic pairs separately, and converts the projected correction
+back to normalized residual form for the EDM objective.
 
-The single-Re model starts from random diffusion weights. The multi-Re model loads only the single-Re diffusion model weights, resets epoch, optimizer, and scheduler, then trains across all ten regimes. Its scOT condition remains Re/Rm conditioned; the diffusion U-Net does not.
-
-## Environment
+## Paths
 
 ```bash
-export DATA_ROOT=/path/to/kh/four_channel_arrays
+export DATA_ROOT=/path/to/kh_four_channel_data
 export FEATURE_ROOT=/path/to/generated/diffusion/features
 export STATS_ROOT=/path/to/train_only/diffusion/statistics
 export OUTPUT_ROOT=/path/to/training/outputs
 ```
 
-## Single-Re Re=Rm=1000
+## Single-Re PHASE
+
+The `Re=Rm=1000` model starts from random diffusion weights, uses paired
+min-max statistics fitted on training features, trains for 100 epochs, and
+validates every five epochs.
 
 ```bash
 python scripts/generate_scot_diffusion_features.py \
@@ -37,7 +42,13 @@ python scripts/train_dino.py \
   --config configs/kh/single_re/phase_re1000.yaml
 ```
 
-## Multi-Re t=[0,5]
+## Multi-Re PHASE
+
+The multi-Re model conditions on the canonical `t in [0,5]` gated-adapter
+scOT. It uses per-Re paired min-max statistics and no explicit Re/Rm
+conditioning inside the diffusion U-Net. It loads only diffusion-model weights
+from the selected single-Re residual PHASE checkpoint; epoch, optimizer, and
+scheduler state start fresh.
 
 ```bash
 python scripts/generate_scot_diffusion_features.py \
@@ -56,8 +67,12 @@ python scripts/train_dino.py \
   --config configs/kh/multi_re/phase.yaml
 ```
 
+The canonical run trains for 100 epochs, validates every five epochs, and
+selects the checkpoint by denormalized relative L2. To continue an interrupted
+run with optimizer, scheduler, and epoch state restored:
+
 ```bash
 python scripts/train_dino.py \
   --config configs/kh/multi_re/phase.yaml \
-  --resume-checkpoint "$OUTPUT_ROOT/checkpoints/kh_multi_re_phase_t0_5.pt"
+  --resume-checkpoint /path/to/kh_multi_re_phase_checkpoint.pt
 ```

@@ -1,25 +1,34 @@
 # scOT with POSEIDON transfer learning
 
-This recipe reproduces the three-channel, single-regime transfer-learning
-ablation at `Re=Rm=1000`. It predicts `[u_x,u_y,A]`; magnetic field
-components and current density are derived from `A` during evaluation.
+This recipe reproduces the three-channel single-regime transfer-learning
+ablation at `Re=Rm=1000`. It predicts `[ux,uy,A]`; evaluation derives `Bx`,
+`By`, and current density spectrally from `A`.
 
-## Required inputs
-- Data:
-  `${DATA_ROOT}/mhd_Re1000_N1000/mhd_data_3channel.npy`
-- POSEIDON source and dependencies described in `README_poseidon.md`
-- Hugging Face weights for `camlab-ethz/Poseidon-T`
+The scOT backbone is initialized from the pretrained velocity channels of
+`camlab-ethz/Poseidon-T`. The vector-potential input embedding is initialized
+from the mean velocity embedding, while its output head is initialized to
+zero. Velocity is predicted directly and `A` is learned residually. This is
+transfer learning, not an MHD checkpoint warm start: training starts at epoch
+zero with a new optimizer and scheduler.
 
-## Training
+The objective combines relative-L2 data and initial-condition losses, MHD PDE
+residuals, a soft velocity-divergence penalty, and a relative magnetic-field
+loss derived from `A`. The canonical run uses batch size 16 and 100 epochs;
+all weights and optimizer settings are in
+`configs/ablations/scot_with_tl/re1000.yaml`.
+
+## Train
+
+Follow `README_poseidon.md` to install the external scOT dependency and obtain
+the POSEIDON weights.
 
 ```bash
-export DATA_ROOT=/path/to/data/root
-export OUTPUT_ROOT=/path/to/output/root
+export DATA_ROOT=/path/to/data
+export OUTPUT_ROOT=/path/to/outputs
+
 python scripts/train_scot.py \
   --config configs/ablations/scot_with_tl/re1000.yaml
 ```
 
-Training begins at epoch zero. It does not warm-start from an MHD checkpoint.
-Instead, the four fluid channels of `camlab-ethz/Poseidon-T` initialize the
-scOT backbone. The loss uses data, initial-condition, MHD PDE, divergence-constraint, and
-spectrally derived magnetic-field terms.
+The expected data file is
+`$DATA_ROOT/mhd_Re1000_N1000/mhd_data_3channel.npy`.

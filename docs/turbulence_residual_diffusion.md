@@ -1,33 +1,33 @@
 # Residual diffusion for decaying turbulence
 
-PHASE diffusion predicts a correction to a deterministic four-channel scOT
-trajectory. Feature files store physical-unit scOT predictions in
-`diff_inputs.npy` and matching DNS trajectories in `diff_targets.npy`. The
-dataset forms the clean diffusion target as `DNS - scOT`, then applies
-separate train-only normalization to the condition and residual.
-Both recipes use the same EDM U-Net and predict residuals for all four fields
-`[ux, uy, Bx, By]`. During training and inference, the residual is first added
-to the scOT condition in physical units. Helmholtz projection is then applied
-to the reconstructed velocity and magnetic pairs.
+PHASE diffusion learns the correction between a deterministic four-channel
+scOT trajectory and DNS for all fields `[ux,uy,Bx,By]`. Feature files store
+physical-unit scOT predictions in `diff_inputs.npy` and matching DNS
+trajectories in `diff_targets.npy`; the dataset forms the clean target
+`DNS-scOT`.
 
-Set the external paths before running either recipe:
+Conditioner inputs and residual targets use separate train-only statistics.
+The reconstructed full field, not the residual alone, is projected: PHASE adds
+the residual to scOT in physical units, applies Helmholtz projection separately
+to velocity and magnetic pairs, and converts the projected correction back to
+normalized residual form for the EDM loss.
+
+## Paths
 
 ```bash
 export DATA_ROOT=/path/to/canonical/mhd/data
 export FEATURE_ROOT=/path/to/generated/diffusion/features
-export STATS_ROOT=/path/to/train-only/diffusion/statistics
-export OUTPUT_ROOT=/path/to/new/training/outputs
+export STATS_ROOT=/path/to/train_only/diffusion/statistics
+export OUTPUT_ROOT=/path/to/training/outputs
 export CHECKPOINT_ROOT=/path/to/external/historical/checkpoints
 ```
 
-`CHECKPOINT_ROOT` is required only by the reported multi-Re recipe. Place the
-weights-only warm start at
-`$CHECKPOINT_ROOT/historical/dt_single_re_full_field_diffusion.pt`.
+`CHECKPOINT_ROOT` is needed only for the exact reported multi-Re warm start.
 
-## Generate single-Re features
+## Single-Re PHASE
 
-Train the deterministic prerequisite with
-`configs/turbulence/single_re/scot_re1000.yaml`, then run:
+Train `configs/turbulence/single_re/scot_re1000.yaml`, then generate features,
+fit residual statistics, and train diffusion:
 
 ```bash
 python scripts/generate_scot_diffusion_features.py \
@@ -44,10 +44,13 @@ python scripts/train_dino.py \
   --config configs/turbulence/single_re/phase_re1000.yaml
 ```
 
-## Generate multi-Re features
+This corrected single-Re recipe starts diffusion from random weights, uses
+paired min-max normalization, and trains for 100 epochs with validation every
+ten epochs. Checkpoint selection minimizes denormalized relative L2 error.
 
-Train the deterministic prerequisite with
-`configs/turbulence/multi_re/scot.yaml`, then run:
+## Multi-Re PHASE
+
+Train `configs/turbulence/multi_re/scot.yaml`, then run:
 
 ```bash
 python scripts/generate_scot_diffusion_features.py \
@@ -63,3 +66,10 @@ python scripts/compute_statistics.py diffusion-per-re \
 python scripts/train_dino.py \
   --config configs/turbulence/multi_re/phase.yaml
 ```
+
+The multi-Re model uses per-Re paired min-max statistics, residual targets for
+all four fields, no Re/Rm conditioning inside the diffusion U-Net, 100 epochs,
+and validation every five epochs. Its historical reported run loaded model
+weights only from a single-Re full-field diffusion checkpoint. This warm start
+does not change the multi-Re residual objective; it is retained in the
+canonical config for exact reproducibility.

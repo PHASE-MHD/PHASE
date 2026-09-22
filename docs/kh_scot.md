@@ -1,23 +1,45 @@
 # Kelvin-Helmholtz scOT training
 
-four-channel scOT recipes for the periodic Kelvin-Helmholtz dataset. Both recipes learn (u_x,u_y,B_x,B_y) on
-t in [0,5], apply Helmholtz projection to both vector pairs, and use vorticity, and current losses.
+These recipes train four-channel scOT models for the periodic
+Kelvin-Helmholtz dataset. Both learn `[ux,uy,Bx,By]` over `t in [0,5]`, use
+every fifth stored frame, and therefore see 51 frames at an effective interval
+of 0.1. Both apply Helmholtz projection separately to velocity and magnetic
+fields and include direct-B PDE, vorticity, and current losses.
 
-## Data layout
+## Single-Re scOT
 
-Set DATA_ROOT to a directory containing:
+The `Re=Rm=1000` recipe uses paired magnetic P99 scale
+`6.69424514e-2`, batch size 1, and 100 epochs. Primary-field and current
+losses are relative L2 values computed per time slice and then averaged over
+time. The vorticity loss retains the historical global space-time relative-L2
+reduction.
 
-    $DATA_ROOT/mhd_Re80_N1000/mhd_data_4channel.npy
-    ...
-    $DATA_ROOT/mhd_Re4500_N1000/mhd_data_4channel.npy
+```bash
+export DATA_ROOT=/path/to/kh_four_channel_data
+export OUTPUT_ROOT=/path/to/outputs
 
-## Training order
+python scripts/train_scot.py \
+  --config configs/kh/single_re/scot_re1000.yaml
+```
 
-    export DATA_ROOT=/path/to/KH_multiRe
-    export OUTPUT_ROOT=/path/to/outputs
+## Multi-Re scOT
 
-    python scripts/train_scot.py \
-      --config configs/kh/single_re/scot_re1000.yaml
+The multi-regime recipe uses the global paired magnetic P99 scale
+`8.06614549e-2` and the ten canonical Re/Rm values. It warm-starts model
+weights only from the selected single-Re KH scOT checkpoint, while epoch,
+optimizer, and scheduler state start fresh. Balanced batches contain all ten
+regimes through nominal `batch_size=1` and `res_per_batch=10`.
 
-    python scripts/train_scot.py \
-      --config configs/kh/multi_re/scot_t0_5.yaml
+The canonical historical implementation computes primary, vorticity, and
+current relative-L2 losses globally over space and time; the time-local options
+declared in the legacy config do not alter that reduction. Full validation
+runs every five epochs and selects the checkpoint by denormalized relative L2.
+A five-sample-per-Re diagnostic runs every epoch for monitoring only.
+
+```bash
+python scripts/train_scot.py \
+  --config configs/kh/multi_re/scot_t0_5.yaml
+```
+
+Both configs contain the exact normalization, optimizer, loss, warm-start, and
+checkpoint settings used by the canonical runs.

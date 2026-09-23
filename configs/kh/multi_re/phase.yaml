@@ -82,7 +82,7 @@ optimizer_params:
 
 train_params:
   recipe: kh_phase_residual_multi_re
-  epochs: 100
+  epochs: 300
   checkpoint_path: ${OUTPUT_ROOT}/checkpoints/kh_multi_re_phase_t0_5.pt
   warm_start_checkpoint: ${OUTPUT_ROOT}/checkpoints/kh_single_re_phase_re1000.pt
   warm_start_mode: model_weights_only

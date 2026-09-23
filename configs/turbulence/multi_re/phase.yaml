@@ -77,7 +77,7 @@ optimizer_params:
 
 train_params:
   recipe: phase_residual_multi_re
-  epochs: 100
+  epochs: 300
   checkpoint_path: ${OUTPUT_ROOT}/checkpoints/dt_multi_re_phase.pt
   # Historical reported run: SR Re=1000 full-field diffusion weights, loaded model-only.
   warm_start_checkpoint: ${CHECKPOINT_ROOT}/historical/dt_single_re_full_field_diffusion.pt

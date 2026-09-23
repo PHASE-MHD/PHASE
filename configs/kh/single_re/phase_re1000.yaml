@@ -77,7 +77,7 @@ optimizer_params:
 
 train_params:
   recipe: kh_phase_residual_single_re
-  epochs: 100
+  epochs: 300
   checkpoint_path: ${OUTPUT_ROOT}/checkpoints/kh_single_re_phase_re1000.pt
   warm_start_checkpoint: ""
   warm_start_mode: none

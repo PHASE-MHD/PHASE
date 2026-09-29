@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/branding/phase-logo-primary-1600-white.png" alt="PHASE logo" width="720">
+</p>
+
 # PHASE
 
 PHASE is a physics-adapted neural-operator framework for two-dimensional
